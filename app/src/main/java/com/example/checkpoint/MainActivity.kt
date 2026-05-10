@@ -7,22 +7,40 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.checkpoint.ui.composable.AppBar
+import com.example.checkpoint.ui.composable.CarouselItem
+import com.example.checkpoint.ui.composable.GamesCarousel
 import com.example.checkpoint.ui.theme.CheckpointTheme
+
 
 class MainActivity : ComponentActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
+
+		val carouselItems = listOf(
+			CarouselItem(R.drawable.re9, "Resident Evil Requiem"),
+			CarouselItem(R.drawable.pgm, "Pragmata"),
+			CarouselItem(R.drawable.re8, "Resident Evil Village"),
+			CarouselItem(R.drawable.fl, "007 First Light"),
+			CarouselItem(R.drawable.tmdltd, "Tomodachi Life: Living the Dream")
+		)
+
 		setContent {
 			CheckpointTheme {
-				Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-					Greeting(
-						name = "Android",
-						modifier = Modifier.padding(innerPadding)
+				Scaffold(
+					modifier = Modifier.fillMaxSize(),
+					topBar = {
+						AppBar(
+							title = "Explore"
+						)
+					}) { innerPadding ->
+					GamesCarousel(
+						title = "Popular right now",
+						modifier = Modifier
+							.padding(innerPadding),
+						items = carouselItems
 					)
 				}
 			}
@@ -30,18 +48,3 @@ class MainActivity : ComponentActivity() {
 	}
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-	Text(
-		text = "Hello $name!",
-		modifier = modifier
-	)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-	CheckpointTheme {
-		Greeting("Android")
-	}
-}
