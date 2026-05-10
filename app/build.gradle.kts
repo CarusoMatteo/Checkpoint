@@ -1,6 +1,7 @@
 plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.compose)
+	alias(libs.plugins.serialization)
 }
 
 android {
@@ -14,6 +15,7 @@ android {
 	defaultConfig {
 		applicationId = "com.example.checkpoint"
 		minSdk = 36
+		//noinspection OldTargetApi
 		targetSdk = 36
 		versionCode = 1
 		versionName = "1.0"
@@ -48,6 +50,26 @@ dependencies {
 	implementation(libs.androidx.compose.ui.tooling.preview)
 	implementation(libs.androidx.core.ktx)
 	implementation(libs.androidx.lifecycle.runtime.ktx)
+	// Navigation
+	implementation(libs.androidx.navigation.compose)
+	implementation(libs.ktor.serialization.kotlinx.json)
+	// ViewModel
+	implementation(libs.androidx.lifecycle.viewmodel.compose)
+	implementation(libs.androidx.lifecycle.runtime.compose)
+	// DataStore
+	implementation(libs.androidx.datastore.preferences)
+	// Dependency Injection
+	implementation(libs.koin.androidx.compose)
+	// AsyncImage
+	implementation(libs.coil.compose)
+	// Location
+	// implementation("com.google.android.gms:play-services-location:21.3.0")
+	// implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.0")
+	// HTTP requests
+	implementation(libs.ktor.client.core)
+	implementation(libs.ktor.client.okhttp)
+	implementation(libs.ktor.client.content.negotiation)
+	implementation(libs.ktor.serialization.kotlinx.json)
 	testImplementation(libs.junit)
 	androidTestImplementation(platform(libs.androidx.compose.bom))
 	androidTestImplementation(libs.androidx.compose.ui.test.junit4)
