@@ -1,16 +1,18 @@
 package com.example.checkpoint.ui.composable
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,15 +22,18 @@ import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.checkpoint.R
+import coil.compose.AsyncImage
 
-data class CarouselItem(
-	val imageResId: Int,
-	val contentDescription: String
+data class LocalGame(
+	val name: String,
+	val publisher: String,
+	val imageResourceId: Int
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,9 +41,12 @@ data class CarouselItem(
 fun GamesCarousel(
 	title: String,
 	modifier: Modifier = Modifier,
-	items: List<CarouselItem>
+	carouselItems: List<LocalGame>,
+	hasStartingDivider: Boolean = false
 ) {
 	Column(modifier = modifier.padding(horizontal = 16.dp)) {
+		if (hasStartingDivider) HorizontalDivider()
+
 		Row(
 			modifier = Modifier.fillMaxWidth(),
 			horizontalArrangement = Arrangement.SpaceBetween,
@@ -59,77 +67,62 @@ fun GamesCarousel(
 		}
 
 		HorizontalMultiBrowseCarousel(
-			state = rememberCarouselState { items.count() },
+			state = rememberCarouselState { carouselItems.count() },
 			preferredItemWidth = 150.dp,
 			itemSpacing = 8.dp,
-			modifier = Modifier.padding(vertical = 8.dp)
+			modifier = Modifier
+				.fillMaxWidth()
+				.wrapContentHeight()
+				.padding(vertical = 8.dp)
 		) {
-			Image(
-				modifier = Modifier
-					.size(150.dp, 200.dp)
-					.clickable(onClick = { /* TODO: Navigate to game details */ })
-					.maskClip(MaterialTheme.shapes.extraLarge),
-				painter = painterResource(id = items[it].imageResId),
-				contentDescription = items[it].contentDescription,
-				contentScale = ContentScale.Crop
-			)
+			Box {
+				AsyncImage(
+					modifier = Modifier
+						.maskClip(MaterialTheme.shapes.extraLarge)
+						.size(150.dp, 200.dp)
+						.drawWithContent {
+							drawContent()
+							drawRect(
+								Brush.verticalGradient(
+									colors = listOf(
+										Color.Black.copy(alpha = 0.0f),
+										Color.Black.copy(alpha = 0.0f),
+										Color.Black.copy(alpha = 1.0f)
+									)
+								)
+							)
+						}
+						.combinedClickable(
+							onClick = { /* TODO: Navigate to game details */ },
+							onLongClick = { /* TODO: Show game options */ }
+						),
+					model = carouselItems[it].imageResourceId,
+					contentDescription = carouselItems[it].name,
+					contentScale = ContentScale.Crop
+				)
+				Column(
+					modifier = Modifier
+						.align(Alignment.BottomStart)
+						.padding(horizontal = 12.dp)
+						.padding(bottom = 8.dp)
+				) {
+					Text(
+						text = carouselItems[it].name,
+						style = MaterialTheme.typography.titleMedium,
+						color = Color.White,
+						maxLines = 2,
+						overflow = TextOverflow.Ellipsis,
+						modifier = Modifier
+					)
+					Text(
+						text = carouselItems[it].publisher,
+						style = MaterialTheme.typography.labelSmall,
+						color = Color.White,
+						maxLines = 1,
+						overflow = TextOverflow.Ellipsis,
+					)
+				}
+			}
 		}
-	}
-}
-
-@Preview
-@Composable
-fun GamesCarouselPreview() {
-	Column {
-		GamesCarousel(
-			title = "Popular right now",
-			items = listOf(
-				CarouselItem(
-					R.drawable.re9,
-					"Resident Evil Requiem"
-				),
-				CarouselItem(
-					R.drawable.pgm,
-					"Pragmata"
-				),
-				CarouselItem(
-					R.drawable.re8,
-					"Resident Evil Village"
-				),
-				CarouselItem(
-					R.drawable.fl,
-					"007 First Light"
-				),
-				CarouselItem(
-					R.drawable.tmdltd,
-					"Tomodachi Life: Living the Dream"
-				)
-			)
-		)
-		GamesCarousel(
-			title = "Coming soon",
-			items = listOf(
-				CarouselItem(
-					R.drawable.re9,
-					"Resident Evil Requiem"
-				),
-				CarouselItem(
-					R.drawable.pgm,
-					"Pragmata"
-				),
-				CarouselItem(
-					R.drawable.re8,
-					"Resident Evil Village"
-				),
-				CarouselItem(
-					R.drawable.fl,
-					"007 First Light"
-				),
-				CarouselItem(
-					R.drawable.tmdltd,
-					"Tomodachi Life: Living the Dream"
-				)
-			)
-		)
 	}
 }
