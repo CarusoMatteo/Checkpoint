@@ -10,26 +10,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBar(
 	title: String,
+	navController: NavHostController,
 	modifier: Modifier = Modifier,
-	showBackIconButton: Boolean = false,
 	actions: @Composable RowScope.() -> Unit = { }
 ) {
 	TopAppBar(
 		title = { Text(text = title) },
 		modifier = modifier,
 		navigationIcon = {
-			if (showBackIconButton)
-				IconButton(onClick = { /*TODO: Navigate back*/ }) {
+			if (navController.previousBackStackEntry != null) {
+				IconButton(onClick = { navController.navigateUp() }) {
 					Icon(
 						imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 						contentDescription = "Back"
 					)
 				}
+			}
 		},
 		actions = actions
 	)

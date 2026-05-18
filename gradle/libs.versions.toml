@@ -7,18 +7,19 @@ junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 koinAndroidxCompose = "4.2.1"
-ktorClientContentNegotiation = "3.4.3"
-ktorClientCore = "3.4.3"
-ktorClientOkhttp = "3.4.3"
-ktorSerializationKotlinxJson = "3.4.3"
+ktorClientContentNegotiation = "3.5.0"
+ktorClientCore = "3.5.0"
+ktorClientOkhttp = "3.5.0"
+ktorSerializationKotlinxJson = "3.5.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.21"
 composeBom = "2026.05.00"
+materialIconsExtended = "1.7.8"
 navigationCompose = "2.9.8"
 
 [libraries]
-androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }

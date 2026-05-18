@@ -29,12 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-
-data class LocalGame(
-	val name: String,
-	val publisher: String,
-	val imageResourceId: Int
-)
+import com.example.checkpoint.data.LocalGame
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -25,7 +25,8 @@ android {
 
 	buildTypes {
 		release {
-			isMinifyEnabled = false
+			isMinifyEnabled = true
+			isShrinkResources = true
 			proguardFiles(
 				getDefaultProguardFile("proguard-android-optimize.txt"),
 				"proguard-rules.pro"
@@ -50,9 +51,11 @@ dependencies {
 	implementation(libs.androidx.compose.ui.tooling.preview)
 	implementation(libs.androidx.core.ktx)
 	implementation(libs.androidx.lifecycle.runtime.ktx)
+	// Split button
+	// implementation("androidx.compose.material3:material3:1.5.0-alpha19")
 	// Icons
-	implementation(libs.androidx.compose.material.icons.core)
-	// implementation("androidx.compose.material:material-icons-extended")
+	// implementation(libs.androidx.compose.material.icons.core)
+	implementation(libs.androidx.compose.material.icons.extended)
 	// Navigation
 	implementation(libs.androidx.navigation.compose)
 	implementation(libs.ktor.serialization.kotlinx.json)
