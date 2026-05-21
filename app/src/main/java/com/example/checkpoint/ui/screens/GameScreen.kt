@@ -23,8 +23,10 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.sampleLocalGames
+import com.example.checkpoint.data.toLocalFormat
 import com.example.checkpoint.ui.composable.ReviewScore
 import com.example.checkpoint.ui.composable.SmallSplitButtons
+import java.time.format.FormatStyle
 
 @Composable
 fun GameScreen(
@@ -40,7 +42,19 @@ fun GameScreen(
 	) {
 		GameHeader(
 			game = game,
-			modifier = Modifier.fillMaxWidth()
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(bottom = 8.dp)
+		)
+		GameScreenSection(
+			title = "Description",
+			contentText = game.description,
+			modifier = Modifier.padding(vertical = 8.dp)
+		)
+		GameScreenSection(
+			title = "Release date",
+			contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
+			modifier = Modifier.padding(vertical = 8.dp)
 		)
 	}
 }
@@ -93,5 +107,24 @@ private fun GameHeader(game: LocalGame, modifier: Modifier = Modifier) {
 				}
 			)
 		}
+	}
+}
+
+@Composable
+fun GameScreenSection(
+	title: String,
+	contentText: String,
+	modifier: Modifier = Modifier
+) {
+	Column(modifier = modifier) {
+		Text(
+			text = title,
+			style = MaterialTheme.typography.labelSmall,
+			modifier = Modifier.padding(bottom = 8.dp)
+		)
+		Text(
+			text = contentText,
+			style = MaterialTheme.typography.bodyMedium
+		)
 	}
 }

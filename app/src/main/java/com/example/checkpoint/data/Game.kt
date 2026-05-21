@@ -1,12 +1,28 @@
 package com.example.checkpoint.data
 
 import com.example.checkpoint.R
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 data class LocalGame(
 	val name: String,
 	val publisher: String,
-	val imageResourceId: Int
+	val imageResourceId: Int,
+	val description: String = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur.",
+	val releaseDate: LocalDate = LocalDate.now()
 )
+
+fun LocalDate.toLocalFormat(
+	dateStyle: FormatStyle = FormatStyle.MEDIUM
+): String {
+	return this.format(
+		DateTimeFormatter
+			.ofLocalizedDate(dateStyle)
+			.withLocale(Locale.getDefault())
+	)
+}
 
 
 val sampleLocalGames = listOf(
