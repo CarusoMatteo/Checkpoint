@@ -1,24 +1,30 @@
 package com.example.checkpoint.ui.screens
 
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.composable.ReviewScore
+import com.example.checkpoint.ui.composable.SmallSplitButtons
 
 @Composable
 fun GameScreen(
@@ -45,20 +51,21 @@ private fun GameHeader(game: LocalGame, modifier: Modifier = Modifier) {
 		AsyncImage(
 			modifier = Modifier
 				.clip(MaterialTheme.shapes.extraLarge)
-				.size(150.dp, 200.dp),
+				.width(width = 100.dp),
+			contentScale = ContentScale.FillWidth,
 			model = game.imageResourceId,
 			contentDescription = game.name,
-			contentScale = ContentScale.Crop
 		)
 
 		Column(
-			modifier = Modifier.padding(start = 16.dp)
+			modifier = Modifier.padding(start = 16.dp),
+			verticalArrangement = Arrangement.spacedBy(2.dp)
 		) {
 			Text(
 				text = game.name,
 				style = MaterialTheme.typography.headlineSmall,
-				overflow = TextOverflow.Ellipsis,
-				maxLines = 2
+				maxLines = 2,
+				modifier = Modifier.basicMarquee()
 			)
 			Text(
 				text = game.publisher,
@@ -67,6 +74,23 @@ private fun GameHeader(game: LocalGame, modifier: Modifier = Modifier) {
 			ReviewScore(
 				score = 4.2f,
 				modifier = Modifier.fillMaxWidth()
+			)
+			SmallSplitButtons(
+				onPrimaryClick = { },
+				onSecondaryClick = { },
+				primaryIcon = {
+					Icon(
+						imageVector = Icons.Rounded.AddCircleOutline,
+						contentDescription = null
+					)
+				},
+				primaryLabel = "Add to Backlog",
+				secondaryIcon = {
+					Icon(
+						imageVector = Icons.Rounded.KeyboardArrowDown,
+						contentDescription = null
+					)
+				}
 			)
 		}
 	}
