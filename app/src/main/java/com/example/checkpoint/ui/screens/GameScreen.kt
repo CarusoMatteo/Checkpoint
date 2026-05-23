@@ -27,6 +27,7 @@ import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.toLocalFormat
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LabeledText
+import com.example.checkpoint.ui.composable.LabeledTextWithAction
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.ReviewScore
 import com.example.checkpoint.ui.composable.SmallSplitButtons
@@ -61,13 +62,18 @@ fun GameScreen(
 			LabeledText(
 				title = "Description",
 				contentText = game.description,
-				modifier = Modifier.padding(vertical = 8.dp)
+				modifier = Modifier
+					.padding(vertical = 8.dp)
+					.fillMaxWidth()
 			)
-			LabeledText(
+			LabeledTextWithAction(
 				title = "Release date",
 				contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
-				modifier = Modifier.padding(vertical = 8.dp)
-			)
+				actionText = "Add to calendar",
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(vertical = 8.dp)
+			) { /* TODO: Add to calendar */ }
 		}
 	}
 }
