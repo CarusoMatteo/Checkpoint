@@ -26,6 +26,7 @@ import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.toLocalFormat
 import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
 import com.example.checkpoint.ui.composable.LabeledTextWithAction
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -50,30 +51,36 @@ fun GameScreen(
 			modifier = Modifier
 				.padding(innerPadding)
 				.fillMaxSize()
-				.padding(horizontal = 16.dp)
 				.verticalScroll(scrollState)
 		) {
 			GameHeader(
 				game = game,
 				modifier = Modifier
 					.fillMaxWidth()
+					.padding(horizontal = 16.dp)
 					.padding(bottom = 8.dp)
 			)
 			LabeledText(
 				title = "Description",
 				contentText = game.description,
 				modifier = Modifier
-					.padding(vertical = 8.dp)
+					.padding(vertical = 8.dp, horizontal = 16.dp)
 					.fillMaxWidth()
 			)
+			// if game.releaseDate is in the future, show release date with "Add to calendar" action
 			LabeledTextWithAction(
 				title = "Release date",
 				contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
 				actionText = "Add to calendar",
 				modifier = Modifier
 					.fillMaxWidth()
-					.padding(vertical = 8.dp)
-			) { /* TODO: Add to calendar */ }
+					.padding(vertical = 8.dp, horizontal = 16.dp)
+			) { /* TODO: Add to calendar action */ }
+			// TODO: If game has already released, show LabeledText instead of LabeledTextWithAction.
+			LabeledChipRow(
+				title = "Genres",
+				chips = game.genres
+			)
 		}
 	}
 }
