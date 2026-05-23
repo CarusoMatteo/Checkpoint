@@ -9,10 +9,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.checkpoint.NavigationRoute
+import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.title
 
 import com.example.checkpoint.ui.screens.ExploreScreen
 import com.example.checkpoint.ui.screens.GameScreen
+import com.example.checkpoint.ui.screens.GamesGridScreen
 
 @Composable
 fun AppShell(navController: NavHostController) {
@@ -75,6 +77,14 @@ fun NavGraph(
 		// TODO: Remove
 		composable<NavigationRoute.GameScreen> {
 			GameScreen(
+				navController,
+				modifier = modifier
+			)
+		}
+
+		composable<NavigationRoute.GamesGridScreen> {
+			GamesGridScreen(
+				games = sampleLocalGames,
 				navController,
 				modifier = modifier
 			)

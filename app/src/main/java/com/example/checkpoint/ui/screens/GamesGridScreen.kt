@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,98 +24,82 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.checkpoint.ui.composable.AppBar
-import com.example.checkpoint.ui.composable.LocalGame
+import com.example.checkpoint.data.LocalGame
 
 @Composable
 fun GamesGridScreen(
-    title: String,
-    games: List<LocalGame>,
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+	games: List<LocalGame>,
+	navController: NavHostController,
+	modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        topBar = {
-            AppBar(
-                title = title,
-                showBackIconButton = true,
-                //onBackClick = onBackClick  //uncomment when it will be implemented the Navigation
-            )
-        }
-    ) { innerPadding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = innerPadding.calculateTopPadding() + 8.dp,
-                bottom = innerPadding.calculateBottomPadding() + 8.dp
-            ),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = modifier.fillMaxSize()
-        ) {
-            items(games) { game ->
-                GameGridCard(game = game)
-            }
-        }
-    }
+	LazyVerticalGrid(
+		columns = GridCells.Fixed(2),
+		contentPadding = PaddingValues(16.dp),
+		horizontalArrangement = Arrangement.spacedBy(8.dp),
+		verticalArrangement = Arrangement.spacedBy(8.dp),
+		modifier = modifier.fillMaxSize()
+	) {
+		items(games) { game ->
+			GameGridCard(game = game)
+		}
+	}
 }
 
 @Composable
 fun GameGridCard(
-    game: LocalGame,
-    modifier: Modifier = Modifier
+	game: LocalGame,
+	modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(3f / 4f)
-            .clip(MaterialTheme.shapes.extraLarge)
-            .combinedClickable(
-                onClick = { /* TODO: Game details redirect */ },
-                onLongClick = { /* TODO: May open up Multiple choice window */ }
-            )
-    ) {
-        AsyncImage(
-            model = game.imageResourceId,
-            contentDescription = game.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .drawWithContent {
-                    drawContent()
-                    drawRect(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Black.copy(alpha = 0.0f),
-                                Color.Black.copy(alpha = 0.0f),
-                                Color.Black.copy(alpha = 1.0f)
-                            )
-                        )
-                    )
-                }
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = game.name,
-                style = MaterialTheme.typography.titleSmall,
-                color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = game.publisher,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
+	Box(
+		modifier = modifier
+			.fillMaxWidth()
+			.aspectRatio(3f / 4f)
+			.clip(MaterialTheme.shapes.extraLarge)
+			.combinedClickable(
+				onClick = { /* TODO: Game details redirect */ },
+				onLongClick = { /* TODO: May open up Multiple choice window */ }
+			)
+	) {
+		AsyncImage(
+			model = game.imageResourceId,
+			contentDescription = game.name,
+			contentScale = ContentScale.Crop,
+			modifier = Modifier
+				.fillMaxSize()
+				.drawWithContent {
+					drawContent()
+					drawRect(
+						Brush.verticalGradient(
+							colors = listOf(
+								Color.Black.copy(alpha = 0.0f),
+								Color.Black.copy(alpha = 0.0f),
+								Color.Black.copy(alpha = 1.0f)
+							)
+						)
+					)
+				}
+		)
+		Column(
+			modifier = Modifier
+				.align(Alignment.BottomStart)
+				.padding(horizontal = 12.dp, vertical = 8.dp)
+		) {
+			Text(
+				text = game.name,
+				style = MaterialTheme.typography.titleSmall,
+				color = Color.White,
+				maxLines = 2,
+				overflow = TextOverflow.Ellipsis
+			)
+			Text(
+				text = game.publisher,
+				style = MaterialTheme.typography.labelSmall,
+				color = Color.White,
+				maxLines = 1,
+				overflow = TextOverflow.Ellipsis
+			)
+		}
+	}
 }

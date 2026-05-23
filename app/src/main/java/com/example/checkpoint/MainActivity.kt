@@ -12,9 +12,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.compose.rememberNavController
 import com.example.checkpoint.NavigationRoute.AccountScreen
 import com.example.checkpoint.NavigationRoute.AchievementsScreen
-import com.example.checkpoint.NavigationRoute.CarouselListScreen
 import com.example.checkpoint.NavigationRoute.ExploreScreen
 import com.example.checkpoint.NavigationRoute.GameScreen
+import com.example.checkpoint.NavigationRoute.GamesGridScreen
 import com.example.checkpoint.NavigationRoute.LibraryScreen
 import com.example.checkpoint.NavigationRoute.LoginScreen
 import com.example.checkpoint.NavigationRoute.ProfileScreen
@@ -58,7 +58,7 @@ sealed interface NavigationRoute {
 	}
 
 	@Serializable
-	data object CarouselListScreen : NavigationRoute
+	data object GamesGridScreen : NavigationRoute
 
 	@Serializable
 	data object SearchScreen : NavigationRoute
@@ -100,7 +100,7 @@ sealed interface NavigationRoute {
 fun NavigationRoute.title(): String {
 	return when (this) {
 		ExploreScreen -> "Explore"
-		CarouselListScreen -> "Carousel List"
+		GamesGridScreen -> "Games Grid List"
 		SearchScreen -> "Search"
 		GameScreen -> "Game"
 		UserScreen -> "User"
