@@ -32,7 +32,8 @@ import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
 import com.example.checkpoint.ui.composable.LabeledTextWithAction
 import com.example.checkpoint.ui.composable.NavigationItem
-import com.example.checkpoint.ui.composable.ReviewScore
+import com.example.checkpoint.ui.composable.ReviewList
+import com.example.checkpoint.ui.composable.ReviewRating
 import com.example.checkpoint.ui.composable.SmallSplitButtons
 import java.time.format.FormatStyle
 
@@ -89,6 +90,12 @@ fun GameScreen(
 				carouselItems = sampleLocalGames,
 				hasStartingDivider = true
 			)
+			ReviewList(
+				title = "Reviews",
+				reviews = game.reviews,
+				modifier = Modifier.padding(horizontal = 16.dp),
+				hasStartingDivider = true
+			)
 		}
 	}
 }
@@ -118,8 +125,8 @@ private fun GameHeader(game: LocalGame, modifier: Modifier = Modifier) {
 				text = game.publisher,
 				style = MaterialTheme.typography.titleMedium
 			)
-			ReviewScore(
-				score = 4.2f,
+			ReviewRating(
+				rating = 4.2f,
 				modifier = Modifier.fillMaxWidth()
 			)
 			SmallSplitButtons(

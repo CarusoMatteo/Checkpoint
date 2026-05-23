@@ -11,14 +11,14 @@ import androidx.compose.ui.Modifier
 import kotlin.math.roundToInt
 
 @Composable
-fun ReviewScore(score: Float, modifier: Modifier = Modifier) {
-	val roundedScore = score.coerceIn(0f, 5f).roundToHalf()
+fun ReviewRating(rating: Float, modifier: Modifier = Modifier) {
+	val roundedRating = rating.coerceIn(0f, 5f).roundToHalf()
 	Row(modifier = modifier) {
 		for (i in 1..5) {
 			Icon(
 				imageVector = when {
-					roundedScore >= i -> Icons.Rounded.Star
-					roundedScore >= i - 0.5f -> Icons.AutoMirrored.Rounded.StarHalf
+					roundedRating >= i -> Icons.Rounded.Star
+					roundedRating >= i - 0.5f -> Icons.AutoMirrored.Rounded.StarHalf
 					else -> Icons.Rounded.StarOutline
 				},
 				contentDescription = null
