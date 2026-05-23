@@ -30,7 +30,8 @@ class MainActivity : ComponentActivity() {
 			CheckpointTheme {
 				val navController = rememberNavController()
 				NavGraph(
-					navController = navController
+					navController = navController,
+					startDestination = NavigationRoute.GamesGridScreen
 				)
 			}
 		}
@@ -97,11 +98,12 @@ sealed interface NavigationRoute {
 
 @Composable
 fun NavGraph(
-	navController: NavHostController
+	navController: NavHostController,
+	startDestination: NavigationRoute = NavigationRoute.ExploreScreen,
 ) {
 	NavHost(
 		navController = navController,
-		startDestination = NavigationRoute.GameScreen
+		startDestination = startDestination
 	) {
 		composable<NavigationRoute.ExploreScreen> {
 			ExploreScreen(navController)
