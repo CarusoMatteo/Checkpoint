@@ -24,8 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
+import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.data.toLocalFormat
 import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.GamesCarousel
 import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
 import com.example.checkpoint.ui.composable.LabeledTextWithAction
@@ -67,7 +69,8 @@ fun GameScreen(
 					.padding(vertical = 8.dp, horizontal = 16.dp)
 					.fillMaxWidth()
 			)
-			// if game.releaseDate is in the future, show release date with "Add to calendar" action
+			// TODO: If game has already released, show LabeledText instead of LabeledTextWithAction.
+			// Otherwise, if game.releaseDate is in the future, show release date with "Add to calendar" action
 			LabeledTextWithAction(
 				title = "Release date",
 				contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
@@ -76,10 +79,15 @@ fun GameScreen(
 					.fillMaxWidth()
 					.padding(vertical = 8.dp, horizontal = 16.dp)
 			) { /* TODO: Add to calendar action */ }
-			// TODO: If game has already released, show LabeledText instead of LabeledTextWithAction.
 			LabeledChipRow(
 				title = "Genres",
-				chips = game.genres
+				chips = game.genres,
+				modifier = Modifier.padding(vertical = 8.dp)
+			)
+			GamesCarousel(
+				title = "From the series",
+				carouselItems = sampleLocalGames,
+				hasStartingDivider = true
 			)
 		}
 	}

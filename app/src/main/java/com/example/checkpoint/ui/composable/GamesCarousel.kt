@@ -35,8 +35,8 @@ import com.example.checkpoint.data.LocalGame
 @Composable
 fun GamesCarousel(
 	title: String,
-	modifier: Modifier = Modifier,
 	carouselItems: List<LocalGame>,
+	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false
 ) {
 	Column(modifier = modifier.padding(horizontal = 16.dp)) {
