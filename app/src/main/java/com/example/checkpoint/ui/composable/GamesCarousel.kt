@@ -27,9 +27,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
+import com.example.checkpoint.data.sampleLocalGames
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +45,9 @@ fun GamesCarousel(
 		if (hasStartingDivider) HorizontalDivider()
 
 		Row(
-			modifier = Modifier.fillMaxWidth(),
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(vertical = 8.dp),
 			horizontalArrangement = Arrangement.SpaceBetween,
 			verticalAlignment = Alignment.CenterVertically
 		) {
@@ -68,7 +72,7 @@ fun GamesCarousel(
 			modifier = Modifier
 				.fillMaxWidth()
 				.wrapContentHeight()
-				.padding(vertical = 8.dp)
+				.padding(bottom = 8.dp)
 		) {
 			Box {
 				AsyncImage(
@@ -120,4 +124,14 @@ fun GamesCarousel(
 			}
 		}
 	}
+}
+
+@Preview
+@Composable
+private fun GamesCarouselPreview() {
+	GamesCarousel(
+		title = "Recently Played",
+		carouselItems = sampleLocalGames,
+		hasStartingDivider = true
+	)
 }
