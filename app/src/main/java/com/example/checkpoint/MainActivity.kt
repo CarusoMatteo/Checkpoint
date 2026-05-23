@@ -42,19 +42,8 @@ class MainActivity : ComponentActivity() {
  * Represents a navigation route in the app.
  */
 sealed interface NavigationRoute {
-	/**
-	 * Route that is presented in the bottom navigation bar.
-	 */
-	sealed interface BottomBarRoute : NavigationRoute {
-		val icon: ImageVector
-	}
-
-	// Explore
 	@Serializable
-	data object ExploreScreen : BottomBarRoute {
-		override val icon: ImageVector
-			get() = Icons.Default.Home
-	}
+	data object ExploreScreen : NavigationRoute
 
 	@Serializable
 	data object GamesGridScreen : NavigationRoute
@@ -71,17 +60,11 @@ sealed interface NavigationRoute {
 
 	// Library
 	@Serializable
-	data object LibraryScreen : BottomBarRoute {
-		override val icon: ImageVector
-			get() = Icons.AutoMirrored.Default.List
-	}
+	data object LibraryScreen : NavigationRoute
 
 	// Account
 	@Serializable
-	data object AccountScreen : BottomBarRoute {
-		override val icon: ImageVector
-			get() = Icons.Default.Person
-	}
+	data object AccountScreen : NavigationRoute
 
 	@Serializable
 	data object LoginScreen : NavigationRoute
