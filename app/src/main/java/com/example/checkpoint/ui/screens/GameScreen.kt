@@ -26,6 +26,7 @@ import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.toLocalFormat
 import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.LabeledText
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.ReviewScore
 import com.example.checkpoint.ui.composable.SmallSplitButtons
@@ -57,12 +58,12 @@ fun GameScreen(
 					.fillMaxWidth()
 					.padding(bottom = 8.dp)
 			)
-			GameScreenSection(
+			LabeledText(
 				title = "Description",
 				contentText = game.description,
 				modifier = Modifier.padding(vertical = 8.dp)
 			)
-			GameScreenSection(
+			LabeledText(
 				title = "Release date",
 				contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
 				modifier = Modifier.padding(vertical = 8.dp)
@@ -118,24 +119,5 @@ private fun GameHeader(game: LocalGame, modifier: Modifier = Modifier) {
 				}
 			)
 		}
-	}
-}
-
-@Composable
-fun GameScreenSection(
-	title: String,
-	contentText: String,
-	modifier: Modifier = Modifier
-) {
-	Column(modifier = modifier) {
-		Text(
-			text = title,
-			style = MaterialTheme.typography.labelSmall,
-			modifier = Modifier.padding(bottom = 8.dp)
-		)
-		Text(
-			text = contentText,
-			style = MaterialTheme.typography.bodyMedium
-		)
 	}
 }
