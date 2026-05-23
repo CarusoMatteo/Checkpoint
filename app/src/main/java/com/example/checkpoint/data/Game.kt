@@ -31,7 +31,8 @@ val sampleLocalGames = listOf(
 	LocalGame(
 		"The Legend of Zelda: Breath of the Wild - Nintendo Switch 2 Edition",
 		"Nintendo",
-		R.drawable.botw
+		R.drawable.botw,
+		description = "Travel across vast fields, through forests, and to mountain peaks as you discover what has become of the kingdom of Hyrule-and step into a world of discovery, exploration, and adventure that's been upgraded with performance enhancements in The Legend of Zelda: Breath of the Wild - Nintendo Switch 2 Edition! With improved framerates, faster load times, and enhanced resolution and textures, this thrilling open-air adventure has never looked better!"
 	),
 	LocalGame("Resident Evil Requiem", "CAPCOM", R.drawable.re9),
 	LocalGame("Pragmata", "CAPCOM", R.drawable.pgm),
