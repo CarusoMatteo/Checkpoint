@@ -1,5 +1,6 @@
 package com.example.checkpoint.ui.composable
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,7 +22,12 @@ fun AppBar(
 	actions: @Composable RowScope.() -> Unit = { }
 ) {
 	TopAppBar(
-		title = { Text(text = title) },
+		title = {
+			Text(
+				text = title,
+				modifier = Modifier.basicMarquee()
+			)
+		},
 		modifier = modifier,
 		navigationIcon = {
 			if (navController.previousBackStackEntry != null) {

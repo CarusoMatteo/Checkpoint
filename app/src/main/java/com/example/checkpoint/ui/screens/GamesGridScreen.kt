@@ -27,22 +27,34 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
+import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.NavigationItem
 
 @Composable
 fun GamesGridScreen(
-	games: List<LocalGame>,
 	navController: NavHostController,
+	title: String,
+	games: List<LocalGame>,
 	modifier: Modifier = Modifier
 ) {
-	LazyVerticalGrid(
-		columns = GridCells.Fixed(2),
-		contentPadding = PaddingValues(16.dp),
-		horizontalArrangement = Arrangement.spacedBy(8.dp),
-		verticalArrangement = Arrangement.spacedBy(8.dp),
-		modifier = modifier.fillMaxSize()
-	) {
-		items(games) { game ->
-			GameGridCard(game = game)
+	AppShell(
+		navController,
+		title = title,
+		selectedNavigationItem = NavigationItem.Explore
+	)
+	{ innerPadding ->
+		LazyVerticalGrid(
+			columns = GridCells.Fixed(2),
+			contentPadding = PaddingValues(16.dp),
+			horizontalArrangement = Arrangement.spacedBy(8.dp),
+			verticalArrangement = Arrangement.spacedBy(8.dp),
+			modifier = modifier
+				.padding(innerPadding)
+				.fillMaxSize()
+		) {
+			items(games) { game ->
+				GameGridCard(game = game)
+			}
 		}
 	}
 }

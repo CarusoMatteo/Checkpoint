@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -22,8 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
-import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.data.toLocalFormat
+import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.ReviewScore
 import com.example.checkpoint.ui.composable.SmallSplitButtons
 import java.time.format.FormatStyle
@@ -31,31 +34,40 @@ import java.time.format.FormatStyle
 @Composable
 fun GameScreen(
 	navController: NavHostController,
-	modifier: Modifier = Modifier,
+	game: LocalGame,
 ) {
-	val game = sampleLocalGames.first()
+	val scrollState = rememberScrollState()
 
-	Column(
-		modifier = modifier
-			.fillMaxSize()
-			.padding(horizontal = 16.dp)
-	) {
-		GameHeader(
-			game = game,
+	AppShell(
+		navController,
+		title = "Game",
+		selectedNavigationItem = NavigationItem.Explore
+	)
+	{ innerPadding ->
+		Column(
 			modifier = Modifier
-				.fillMaxWidth()
-				.padding(bottom = 8.dp)
-		)
-		GameScreenSection(
-			title = "Description",
-			contentText = game.description,
-			modifier = Modifier.padding(vertical = 8.dp)
-		)
-		GameScreenSection(
-			title = "Release date",
-			contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
-			modifier = Modifier.padding(vertical = 8.dp)
-		)
+				.padding(innerPadding)
+				.fillMaxSize()
+				.padding(horizontal = 16.dp)
+				.verticalScroll(scrollState)
+		) {
+			GameHeader(
+				game = game,
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(bottom = 8.dp)
+			)
+			GameScreenSection(
+				title = "Description",
+				contentText = game.description,
+				modifier = Modifier.padding(vertical = 8.dp)
+			)
+			GameScreenSection(
+				title = "Release date",
+				contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),
+				modifier = Modifier.padding(vertical = 8.dp)
+			)
+		}
 	}
 }
 
@@ -78,7 +90,6 @@ private fun GameHeader(game: LocalGame, modifier: Modifier = Modifier) {
 			Text(
 				text = game.name,
 				style = MaterialTheme.typography.headlineSmall,
-				maxLines = 2,
 				modifier = Modifier.basicMarquee()
 			)
 			Text(

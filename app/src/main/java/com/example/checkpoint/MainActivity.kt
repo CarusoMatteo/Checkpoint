@@ -8,20 +8,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.checkpoint.NavigationRoute.AccountScreen
-import com.example.checkpoint.NavigationRoute.AchievementsScreen
-import com.example.checkpoint.NavigationRoute.ExploreScreen
-import com.example.checkpoint.NavigationRoute.GameScreen
-import com.example.checkpoint.NavigationRoute.GamesGridScreen
-import com.example.checkpoint.NavigationRoute.LibraryScreen
-import com.example.checkpoint.NavigationRoute.LoginScreen
-import com.example.checkpoint.NavigationRoute.ProfileScreen
-import com.example.checkpoint.NavigationRoute.RegisterScreen
-import com.example.checkpoint.NavigationRoute.SearchScreen
-import com.example.checkpoint.NavigationRoute.UserScreen
-import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.data.sampleLocalGames
+import com.example.checkpoint.ui.screens.ExploreScreen
+import com.example.checkpoint.ui.screens.GameScreen
+import com.example.checkpoint.ui.screens.GamesGridScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import kotlinx.serialization.Serializable
 
@@ -33,7 +29,9 @@ class MainActivity : ComponentActivity() {
 		setContent {
 			CheckpointTheme {
 				val navController = rememberNavController()
-				AppShell(navController)
+				NavGraph(
+					navController = navController
+				)
 			}
 		}
 	}
@@ -97,18 +95,41 @@ sealed interface NavigationRoute {
 	data object AchievementsScreen : NavigationRoute
 }
 
-fun NavigationRoute.title(): String {
-	return when (this) {
-		ExploreScreen -> "Explore"
-		GamesGridScreen -> "Games Grid List"
-		SearchScreen -> "Search"
-		GameScreen -> "Game"
-		UserScreen -> "User"
-		LibraryScreen -> "Library"
-		AccountScreen -> "Account"
-		LoginScreen -> "Login"
-		RegisterScreen -> "Register"
-		ProfileScreen -> "Profile"
-		AchievementsScreen -> "Achievements"
+@Composable
+fun NavGraph(
+	navController: NavHostController
+) {
+	NavHost(
+		navController = navController,
+		startDestination = NavigationRoute.GameScreen
+	) {
+		composable<NavigationRoute.ExploreScreen> {
+			ExploreScreen(navController)
+		}
+		// TODO: Implement these screens
+		composable<NavigationRoute.LibraryScreen> {
+			ExploreScreen(navController)
+			// LibraryScreen(navController)
+		}
+		composable<NavigationRoute.ProfileScreen> {
+			ExploreScreen(navController)
+			// ProfileScreen(navController)
+		}
+
+		// TODO: Remove, these are temporary for testing only
+		composable<NavigationRoute.GameScreen> {
+			GameScreen(
+				navController,
+				game = sampleLocalGames.first()
+			)
+		}
+
+		composable<NavigationRoute.GamesGridScreen> {
+			GamesGridScreen(
+				navController,
+				title = "Popular games",
+				games = sampleLocalGames
+			)
+		}
 	}
 }

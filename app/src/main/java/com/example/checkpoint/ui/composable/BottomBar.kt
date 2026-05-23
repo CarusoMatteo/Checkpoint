@@ -9,54 +9,46 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
+import com.example.checkpoint.NavigationRoute.ExploreScreen
+import com.example.checkpoint.NavigationRoute.LibraryScreen
+import com.example.checkpoint.NavigationRoute.ProfileScreen
+
+/**
+ * An item in the bottom navigation bar.
+ */
+enum class NavigationItem(
+	val label: String,
+	val route: NavigationRoute,
+	val icon: ImageVector
+) {
+	Explore("Explore", ExploreScreen, Icons.Rounded.Home),
+	Library("Library", LibraryScreen, Icons.AutoMirrored.Rounded.List),
+	Profile("Profile", ProfileScreen, Icons.Rounded.Person)
+}
 
 @Composable
 fun BottomBar(
 	navController: NavHostController,
-	currentRoute: NavigationRoute?
+	selectedNavigationItem: NavigationItem
 ) {
-
 	NavigationBar {
-		NavigationBarItem(
-			selected = false,
-			onClick = {
-				navController.navigate(NavigationRoute.ExploreScreen)
-			},
-			icon = {
-				Icon(
-					imageVector = Icons.Rounded.Home,
-					contentDescription = "Explore"
-				)
-			},
-			label = { Text("Explore") }
-		)
-
-		NavigationBarItem(
-			selected = false,
-			onClick = {
-				navController.navigate(NavigationRoute.LibraryScreen)
-			},
-			icon = {
-				Icon(
-					imageVector = Icons.AutoMirrored.Rounded.List,
-					contentDescription = "Library"
-				)
-			},
-			label = { Text("Library") }
-		)
-
-		NavigationBarItem(
-			selected = false,
-			onClick = {},
-			icon = {
-				Icon(
-					imageVector = Icons.Rounded.Person,
-					contentDescription = "Profile"
-				)
-			},
-			label = { Text("Profile") }
-		)
+		NavigationItem.entries.forEach {
+			NavigationBarItem(
+				selected = it == selectedNavigationItem,
+				onClick = {
+					navController.navigate(it.route)
+				},
+				icon = {
+					Icon(
+						imageVector = it.icon,
+						contentDescription = it.label
+					)
+				},
+				label = { Text(it.label) }
+			)
+		}
 	}
 }
