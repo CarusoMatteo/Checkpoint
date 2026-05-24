@@ -17,6 +17,12 @@ val sampleUserProfile = UserProfile(
 			"nec scelerisque lectus metus ut lorem. Aliquam erat volutpat. " +
 			"Pellentesque habitant morbi tristique senectus et netus et malesuada " +
 			"fames ac turpis egestas.",
-	preferredGenres = listOf("Shooter", "Puzzle", "Adventure", "Lorem ipsum dolor"),
+	preferredGenres = listOf(
+		"Shooter",
+		"Puzzle",
+		"Adventure",
+		"First person shooter",
+		"Role Playing Game"
+	),
 	reviews = sampleReviews
 )
