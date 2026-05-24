@@ -1,12 +1,12 @@
 package com.example.checkpoint.data
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.RateReview
 import androidx.compose.material.icons.rounded.SportsEsports
-import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.ui.graphics.vector.ImageVector
 
 data class Achievement(
@@ -61,7 +61,7 @@ val sampleAchievements = listOf(
 		id = 6,
 		name = "Consistent Player",
 		description = "Play 20 games of the same genre",
-		icon = Icons.Rounded.TrendingUp,
+		icon = Icons.AutoMirrored.Rounded.TrendingUp,
 		progress = 3,
 		threshold = 20
 	)
