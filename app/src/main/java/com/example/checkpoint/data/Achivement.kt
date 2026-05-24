@@ -45,7 +45,7 @@ val sampleAchievements = listOf(
 		threshold = 5
 	), Achievement(
 		id = 4,
-		name = "Game Finisher",
+		name = "Course clear!",
 		description = "Finish 10 games",
 		icon = Icons.Rounded.SportsEsports,
 		progress = 7,
