@@ -79,8 +79,8 @@ fun AchievementsScreen(
 				items(achievementsViewModel.allAchievements, key = { it.id }) { achievement ->
 					AchievementRow(
 						achievement = achievement,
-						isPinned = achievementsViewModel.isPinned(achievement.id),
-						canPin = achievementsViewModel.canPin(achievement),
+						isPinned = achievement.id in pinnedIds,
+						canPin = achievement.isUnlocked && (achievement.id in pinnedIds || pinnedIds.size < 3),
 						onTogglePin = { achievementsViewModel.togglePin(achievement.id) })
 					HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 				}
