@@ -25,10 +25,9 @@ fun ReviewList(
 	title: String,
 	reviews: List<ReviewData>,
 	modifier: Modifier = Modifier,
-	hasStartingDivider: Boolean = false
+	hasStartingDivider: Boolean = false,
+	hasWriteReviewButton: Boolean = true
 ) {
-	val hasWriteReviewButton = true
-
 	Column(modifier = modifier) {
 		if (hasStartingDivider) HorizontalDivider()
 
