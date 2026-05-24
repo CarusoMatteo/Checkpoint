@@ -37,6 +37,11 @@ fun ExploreScreen(
 				games = sampleLocalGames,
 				hasStartingDivider = true
 			)
+			LazyGamesCarousel(
+				title = "Since you liked ${sampleLocalGames.first().name}",
+				games = sampleLocalGames,
+				hasStartingDivider = true
+			)
 		}
 	}
 }
