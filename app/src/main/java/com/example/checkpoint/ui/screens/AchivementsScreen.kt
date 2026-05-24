@@ -181,7 +181,7 @@ private fun AchievementRow(
 }
 
 @Composable
-private fun AchievementBadge(achievement: Achievement) {
+fun AchievementBadge(achievement: Achievement) {
 	val bgColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primaryContainer
 	else MaterialTheme.colorScheme.surfaceVariant
 
