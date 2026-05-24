@@ -80,7 +80,7 @@ fun AchievementsScreen(
 					AchievementRow(
 						achievement = achievement,
 						isPinned = achievementsViewModel.isPinned(achievement.id),
-						canPin = achievementsViewModel.canPin(achievement.id),
+						canPin = achievementsViewModel.canPin(achievement),
 						onTogglePin = { achievementsViewModel.togglePin(achievement.id) })
 					HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 				}

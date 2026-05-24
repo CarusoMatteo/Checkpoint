@@ -29,5 +29,6 @@ class AchievementsViewModel : ViewModel() {
 	}
 
 	fun isPinned(achievementId: Int): Boolean = achievementId in _pinnedIds.value
-	fun canPin(achievementId: Int): Boolean = isPinned(achievementId) || _pinnedIds.value.size < 3
+	fun canPin(achievement: Achievement): Boolean =
+		achievement.isUnlocked && (isPinned(achievement.id) || _pinnedIds.value.size < 3)
 }
