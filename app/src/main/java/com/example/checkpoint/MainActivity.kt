@@ -5,15 +5,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.checkpoint.data.sampleLocalGames
+import com.example.checkpoint.ui.screens.AchievementsScreen
 import com.example.checkpoint.ui.screens.ExploreScreen
 import com.example.checkpoint.ui.screens.GameScreen
 import com.example.checkpoint.ui.screens.GamesGridScreen
+import com.example.checkpoint.ui.screens.ProfileScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
+import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import kotlinx.serialization.Serializable
 
 
@@ -26,7 +30,7 @@ class MainActivity : ComponentActivity() {
 				val navController = rememberNavController()
 				NavGraph(
 					navController = navController,
-					startDestination = NavigationRoute.GamesGridScreen
+					startDestination = NavigationRoute.ProfileScreen
 				)
 			}
 		}
@@ -79,6 +83,9 @@ fun NavGraph(
 	navController: NavHostController,
 	startDestination: NavigationRoute = NavigationRoute.ExploreScreen,
 ) {
+	// Istanziato qui lo scope all'Activity, condiviso tra ProfileScreen e AchievementsScreen
+	val achievementsViewModel: AchievementsViewModel = viewModel()
+
 	NavHost(
 		navController = navController,
 		startDestination = startDestination
@@ -92,8 +99,15 @@ fun NavGraph(
 			// LibraryScreen(navController)
 		}
 		composable<NavigationRoute.ProfileScreen> {
-			ExploreScreen(navController)
-			// ProfileScreen(navController)
+			//ExploreScreen(navController)
+			ProfileScreen(navController, achievementsViewModel = achievementsViewModel)
+		}
+		//raggiungibile solo da ProfileScreen
+		composable<NavigationRoute.AchievementsScreen> {
+			AchievementsScreen(
+				navController = navController,
+				achievementsViewModel = achievementsViewModel
+			)
 		}
 
 		// TODO: Remove, these are temporary for testing only
