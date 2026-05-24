@@ -34,7 +34,7 @@ fun ProfilePicture(
 }
 
 @Composable
-fun ProfileMonogram(
+private fun ProfileMonogram(
 	letter: Char,
 	modifier: Modifier = Modifier
 ) {

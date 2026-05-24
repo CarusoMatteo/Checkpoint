@@ -13,8 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.outlined.Settings
@@ -29,21 +30,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.Achievement
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.UserProfile
 import com.example.checkpoint.data.sampleUserProfile
 import com.example.checkpoint.ui.composable.AppShell
-import com.example.checkpoint.ui.composable.LabeledChipRow
+import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
-import com.example.checkpoint.ui.composable.ProfileMonogram
+import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 
@@ -55,6 +53,7 @@ fun ProfileScreen(
 	profile: UserProfile = sampleUserProfile
 ) {
 	val pinned = achievementsViewModel.pinnedAchievements
+	val scrollState = rememberScrollState()
 
 	AppShell(
 		navController = navController,
@@ -65,67 +64,63 @@ fun ProfileScreen(
 				Icon(Icons.Outlined.Settings, contentDescription = "Settings")
 			}
 		}) { innerPadding ->
-		LazyColumn(
+		Column(
 			modifier = modifier
 				.padding(innerPadding)
 				.fillMaxSize()
+				.verticalScroll(scrollState)
 		) {
-			item {
-				ProfileHeader(
-					profile = profile, modifier = Modifier
-						.fillMaxWidth()
-						.padding(vertical = 16.dp, horizontal = 16.dp)
-				)
-			}
-			item {
-				HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-				ProfileSection(
-					title = "Biography",
-					onUpdateClick = { /* TODO */ },
-					modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp)
-				) {
-					Text(
-						text = profile.bio,
-						style = MaterialTheme.typography.bodyMedium,
-						textAlign = TextAlign.Justify
-					)
-				}
-			}
+			ProfileHeader(
+				profile = profile, modifier = Modifier
+					.fillMaxWidth()
+					.padding(vertical = 8.dp, horizontal = 16.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			ProfileSection(
+				title = "Biography",
+				onUpdateClick = { /* TODO */ },
+				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+			)
+			Text(
+				text = profile.bio,
+				style = MaterialTheme.typography.bodyMedium,
+				modifier = Modifier
+					.padding(horizontal = 16.dp)
+					.padding(bottom = 8.dp)
+			)
 
-			item {
-				HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-				ProfileSection(
-					title = "Favourite Genres",
-					onUpdateClick = { /* TODO */ },
-					modifier = Modifier.padding(vertical = 16.dp)
-				) {
-					LabeledChipRow(
-						title = "Favourite Genres",
-						chips = profile.preferredGenres.map { ChipContent(label = it) },
-						padding = PaddingValues(horizontal = 16.dp)
-					)
-				}
-			}
 
-			item {
-				HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-				AchievementsSection(
-					pinnedAchievements = pinned, onSeeAllClick = {
-						navController.navigate(NavigationRoute.AchievementsScreen)
-					},
-					modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp)
-				)
-			}
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			ProfileSection(
+				title = "Favourite Genres",
+				onUpdateClick = { /* TODO */ },
+				modifier = Modifier
+					.padding(top = 16.dp)
+					.padding(horizontal = 16.dp)
+			)
+			ChipRow(
+				chips = profile.preferredGenres.map { ChipContent(label = it) },
+				padding = PaddingValues(horizontal = 16.dp),
+				modifier = Modifier.padding(bottom = 8.dp)
+			)
 
-			item {
-				HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-				ReviewList(
-					title = "Your Reviews",
-					reviews = profile.reviews,
-					modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
-					hasWriteReviewButton = false
-				)
-			}
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			AchievementsSection(
+				pinnedAchievements = pinned, onSeeAllClick = {
+					navController.navigate(NavigationRoute.AchievementsScreen)
+				},
+				modifier = Modifier
+					.padding(horizontal = 16.dp)
+					.padding(bottom = 8.dp)
+			)
+
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			ReviewList(
+				title = "Your Reviews",
+				reviews = profile.reviews,
+				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
+				hasWriteReviewButton = false
+			)
 		}
 	}
 }
@@ -134,20 +129,10 @@ fun ProfileScreen(
 private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
 		Box(contentAlignment = Alignment.BottomEnd) {
-			if (profile.user.profilePicture != null) {
-				AsyncImage(
-					model = profile.user.profilePicture,
-					contentDescription = "Avatar",
-					contentScale = ContentScale.Crop,
-					modifier = Modifier
-						.size(80.dp)
-						.clip(CircleShape)
-				)
-			} else {
-				ProfileMonogram(
-					letter = profile.user.name.first(), modifier = Modifier.size(80.dp)
-				)
-			}
+			ProfilePicture(
+				user = profile.user,
+				modifier = Modifier.size(80.dp)
+			)
 			Box(
 				modifier = Modifier
 					.size(24.dp)
@@ -185,38 +170,37 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 private fun ProfileSection(
 	title: String,
 	onUpdateClick: () -> Unit,
-	modifier: Modifier = Modifier,
-	content: @Composable () -> Unit
+	modifier: Modifier = Modifier
 ) {
-	Column(modifier = modifier) {
-		Row(
-			modifier = Modifier.fillMaxWidth(),
-			horizontalArrangement = Arrangement.SpaceBetween,
-			verticalAlignment = Alignment.CenterVertically
-		) {
-			Text(
-				text = title,
-				style = MaterialTheme.typography.titleMedium,
-				fontWeight = FontWeight.Bold
+	Row(
+		modifier = modifier
+			.fillMaxWidth()
+			.padding(bottom = 8.dp),
+		horizontalArrangement = Arrangement.SpaceBetween,
+		verticalAlignment = Alignment.CenterVertically
+	) {
+		Text(
+			text = title,
+			style = MaterialTheme.typography.titleMedium,
+			fontWeight = FontWeight.Bold
+		)
+		FilledTonalButton(onClick = onUpdateClick) {
+			Icon(
+				imageVector = Icons.Rounded.Edit,
+				contentDescription = null,
+				modifier = Modifier.size(16.dp)
 			)
-			FilledTonalButton(onClick = onUpdateClick) {
-				Icon(
-					imageVector = Icons.Rounded.Edit,
-					contentDescription = null,
-					modifier = Modifier.size(16.dp)
-				)
-				Spacer(Modifier.width(4.dp))
-				Text("Update")
-			}
+			Spacer(Modifier.width(4.dp))
+			Text("Update")
 		}
-		Spacer(Modifier.height(8.dp))
-		content()
 	}
 }
 
 @Composable
 private fun AchievementsSection(
-	pinnedAchievements: List<Achievement>, onSeeAllClick: () -> Unit, modifier: Modifier = Modifier
+	pinnedAchievements: List<Achievement>,
+	onSeeAllClick: () -> Unit,
+	modifier: Modifier = Modifier
 ) {
 	Column(modifier = modifier) {
 		Row(
@@ -248,7 +232,7 @@ private fun AchievementsSection(
 			Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 				pinnedAchievements.forEach { achievement ->
 					Row(verticalAlignment = Alignment.CenterVertically) {
-						ProfileMonogram(letter = achievement.name.first())
+						AchievementBadge(achievement)
 						Spacer(Modifier.width(12.dp))
 						Column {
 							Text(
