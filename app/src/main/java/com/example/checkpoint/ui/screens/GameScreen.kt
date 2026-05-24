@@ -87,7 +87,7 @@ fun GameScreen(
 			)
 			GamesCarousel(
 				title = "From the series",
-				carouselItems = sampleLocalGames,
+				games = sampleLocalGames,
 				hasStartingDivider = true
 			)
 			ReviewList(

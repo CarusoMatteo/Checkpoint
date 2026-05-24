@@ -31,11 +31,11 @@ fun ExploreScreen(
 		) {
 			GamesCarousel(
 				title = "Popular right now",
-				carouselItems = sampleLocalGames
+				games = sampleLocalGames
 			)
 			GamesCarousel(
 				title = "Coming soon",
-				carouselItems = sampleLocalGames,
+				games = sampleLocalGames,
 				hasStartingDivider = true
 			)
 		}

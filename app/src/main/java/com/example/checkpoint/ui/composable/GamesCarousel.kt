@@ -37,7 +37,7 @@ import com.example.checkpoint.data.sampleLocalGames
 @Composable
 fun GamesCarousel(
 	title: String,
-	carouselItems: List<LocalGame>,
+	games: List<LocalGame>,
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false
 ) {
@@ -66,7 +66,7 @@ fun GamesCarousel(
 		}
 
 		HorizontalMultiBrowseCarousel(
-			state = rememberCarouselState { carouselItems.count() },
+			state = rememberCarouselState { games.count() },
 			preferredItemWidth = 150.dp,
 			itemSpacing = 8.dp,
 			modifier = Modifier
@@ -95,8 +95,8 @@ fun GamesCarousel(
 							onClick = { /* TODO: Navigate to game details */ },
 							onLongClick = { /* TODO: Show game options */ }
 						),
-					model = carouselItems[it].imageResourceId,
-					contentDescription = carouselItems[it].name,
+					model = games[it].imageResourceId,
+					contentDescription = games[it].name,
 					contentScale = ContentScale.Crop
 				)
 				Column(
@@ -106,7 +106,7 @@ fun GamesCarousel(
 						.padding(bottom = 8.dp)
 				) {
 					Text(
-						text = carouselItems[it].name,
+						text = games[it].name,
 						style = MaterialTheme.typography.titleMedium,
 						color = Color.White,
 						maxLines = 2,
@@ -114,7 +114,7 @@ fun GamesCarousel(
 						modifier = Modifier
 					)
 					Text(
-						text = carouselItems[it].publisher,
+						text = games[it].publisher,
 						style = MaterialTheme.typography.labelSmall,
 						color = Color.White,
 						maxLines = 1,
@@ -131,7 +131,7 @@ fun GamesCarousel(
 private fun GamesCarouselPreview() {
 	GamesCarousel(
 		title = "Recently Played",
-		carouselItems = sampleLocalGames,
+		games = sampleLocalGames,
 		hasStartingDivider = true
 	)
 }
