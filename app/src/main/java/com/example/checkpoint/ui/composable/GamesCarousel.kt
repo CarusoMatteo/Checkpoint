@@ -1,14 +1,19 @@
 package com.example.checkpoint.ui.composable
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,7 +38,67 @@ import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.sampleLocalGames
 
+@Composable
+fun LazyGamesCarousel(
+	title: String,
+	games: List<LocalGame>,
+	modifier: Modifier = Modifier,
+	hasStartingDivider: Boolean = false
+) {
+	Column(modifier = modifier) {
+		if (hasStartingDivider) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+		Row(
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(horizontal = 16.dp, vertical = 8.dp),
+			horizontalArrangement = Arrangement.SpaceBetween,
+			verticalAlignment = Alignment.CenterVertically
+		) {
+			Text(
+				text = title,
+				style = MaterialTheme.typography.titleMedium,
+				// overflow = TextOverflow.Ellipsis,
+				maxLines = 1,
+				modifier = Modifier
+					.weight(1f)
+					.basicMarquee()
+			)
+			IconButton(
+				onClick = { /* TODO: Open vertical carousel list */ }
+			) {
+				Icon(
+					imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+					contentDescription = "See all"
+				)
+			}
+		}
+
+		LazyRow(
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(bottom = 8.dp),
+			contentPadding = PaddingValues(horizontal = 16.dp),
+			horizontalArrangement = Arrangement.spacedBy(8.dp)
+		) {
+			items(games) { game ->
+				GameCover(
+					game = game,
+					showInformationOverlay = true,
+					onClick = { /* TODO: Navigate to game details */ },
+					onLongClick = { /* TODO: Show game options */ },
+					modifier = Modifier.height(200.dp)
+				)
+			}
+		}
+	}
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
+@Deprecated(
+	"This implementation is deprecated.",
+	replaceWith = ReplaceWith("LazyGamesCarousel(title, games, modifier, hasStartingDivider)")
+)
 @Composable
 fun GamesCarousel(
 	title: String,
@@ -128,8 +193,8 @@ fun GamesCarousel(
 
 @Preview
 @Composable
-private fun GamesCarouselPreview() {
-	GamesCarousel(
+private fun LazyGamesCarouselPreview() {
+	LazyGamesCarousel(
 		title = "Recently Played",
 		games = sampleLocalGames,
 		hasStartingDivider = true
