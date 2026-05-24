@@ -1,12 +1,9 @@
 package com.example.checkpoint.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,14 +16,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Brightness4
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,21 +36,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.Achievement
-import com.example.checkpoint.data.Review
-import com.example.checkpoint.data.User
-import com.example.checkpoint.data.sampleReviews
+import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.UserProfile
 import com.example.checkpoint.data.sampleUserProfile
-import com.example.checkpoint.ui.composable.AppShell
-import com.example.checkpoint.ui.composable.NavigationItem
-import com.example.checkpoint.ui.composable.ReviewRating
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
+import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.LabeledChipRow       // ← riutilizzato
+import com.example.checkpoint.ui.composable.NavigationItem
+import com.example.checkpoint.ui.composable.ProfileMonogram       // ← riutilizzato
+import com.example.checkpoint.ui.composable.ReviewList            // ← riutilizzato
 
 @Composable
 fun ProfileScreen(
@@ -67,8 +64,15 @@ fun ProfileScreen(
 	AppShell(
 		navController = navController,
 		title = "Welcome back!",
-		selectedNavigationItem = NavigationItem.Profile
-	) { innerPadding ->
+		selectedNavigationItem = NavigationItem.Profile,
+		appBarActions = {
+			IconButton(onClick = { /* TODO: Settings */ }) {
+				Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+			}
+			IconButton(onClick = { /* TODO: Toggle theme */ }) {
+				Icon(Icons.Outlined.LightMode, contentDescription = "Toggle theme")
+			}
+		}) { innerPadding ->
 		LazyColumn(
 			modifier = modifier
 				.padding(innerPadding)
@@ -82,7 +86,6 @@ fun ProfileScreen(
 						.padding(vertical = 16.dp)
 				)
 			}
-
 			item {
 				HorizontalDivider()
 				ProfileSection(
@@ -100,12 +103,16 @@ fun ProfileScreen(
 
 			item {
 				HorizontalDivider()
-				ProfileSection(/* TODO:cambia con quello scorrevole di Matte*/
+				ProfileSection(
 					title = "Favourite Genres",
 					onUpdateClick = { /* TODO */ },
 					modifier = Modifier.padding(vertical = 16.dp)
 				) {
-					GenreChips(genres = profile.preferredGenres)
+					LabeledChipRow(
+						title = "",
+						chips = profile.preferredGenres.map { ChipContent(label = it) },
+						padding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+					)
 				}
 			}
 
@@ -120,25 +127,13 @@ fun ProfileScreen(
 
 			item {
 				HorizontalDivider()
-				Spacer(Modifier.height(16.dp))
-				Text(
-					text = "Your Reviews",
-					style = MaterialTheme.typography.titleMedium,
-					fontWeight = FontWeight.Bold
-				)
-				Spacer(Modifier.height(12.dp))
-			}
-
-			items(profile.reviews.size) { index ->
-				ReviewCard(
-					review = profile.reviews[index],
-					modifier = Modifier
-						.fillMaxWidth()
-						.padding(bottom = 8.dp)
+				/* TODO : chiedi a Matte se il bottone "Leave a  Review" puo essere tolto dal compose */
+				ReviewList(
+					title = "Your Reviews",
+					reviews = profile.reviews,
+					modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
 				)
 			}
-
-			item { Spacer(Modifier.height(8.dp)) }
 		}
 	}
 }
@@ -157,26 +152,14 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 						.clip(CircleShape)
 				)
 			} else {
-				Box(
-					modifier = Modifier
-						.size(80.dp)
-						.clip(CircleShape)
-						.background(MaterialTheme.colorScheme.primaryContainer),
-					contentAlignment = Alignment.Center
-				) {
-					Text(
-						text = profile.user.name.first().uppercaseChar().toString(),
-						style = MaterialTheme.typography.headlineMedium,
-						color = MaterialTheme.colorScheme.onPrimaryContainer
-					)
-				}
+				ProfileMonogram(
+					letter = profile.user.name.first(), modifier = Modifier.size(80.dp)
+				)
 			}
-			// Edit badge
 			Box(
 				modifier = Modifier
 					.size(24.dp)
 					.clip(CircleShape)
-					.background(MaterialTheme.colorScheme.surface)
 					.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
 				contentAlignment = Alignment.Center
 			) {
@@ -239,22 +222,6 @@ private fun ProfileSection(
 	}
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun GenreChips(genres: List<String>) {
-	FlowRow(
-		horizontalArrangement = Arrangement.spacedBy(8.dp),
-		verticalArrangement = Arrangement.spacedBy(4.dp)
-	) {
-		genres.forEach { genre ->
-			InputChip(
-				selected = false,
-				onClick = {},
-				label = { Text(text = genre, maxLines = 1, overflow = TextOverflow.Ellipsis) })
-		}
-	}
-}
-
 @Composable
 private fun AchievementsSection(
 	pinnedAchievements: List<Achievement>, onSeeAllClick: () -> Unit, modifier: Modifier = Modifier
@@ -289,20 +256,8 @@ private fun AchievementsSection(
 			Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 				pinnedAchievements.forEach { achievement ->
 					Row(verticalAlignment = Alignment.CenterVertically) {
-						Box(
-							modifier = Modifier
-								.size(40.dp)
-								.clip(CircleShape)
-								.background(MaterialTheme.colorScheme.primaryContainer),
-							contentAlignment = Alignment.Center
-						) {
-							Icon(
-								imageVector = achievement.icon,
-								contentDescription = null,
-								tint = MaterialTheme.colorScheme.primary,
-								modifier = Modifier.size(22.dp)
-							)
-						}
+						// ← ProfileMonogram riutilizzato anche qui
+						ProfileMonogram(letter = achievement.name.first())
 						Spacer(Modifier.width(12.dp))
 						Column {
 							Text(
@@ -318,53 +273,6 @@ private fun AchievementsSection(
 						}
 					}
 				}
-			}
-		}
-	}
-}
-
-@Composable
-private fun ReviewCard(review: Review, modifier: Modifier = Modifier) {
-	Card(
-		modifier = modifier, colors = CardDefaults.cardColors(
-			containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-		), shape = MaterialTheme.shapes.medium
-	) {
-		Row(
-			modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top
-		) {
-			// Avatar placeholder
-			Box(
-				modifier = Modifier
-					.size(40.dp)
-					.clip(CircleShape)
-					.background(MaterialTheme.colorScheme.primaryContainer),
-				contentAlignment = Alignment.Center
-			) {
-				Text(
-					text = review.creator.name.first().uppercaseChar().toString(),
-					style = MaterialTheme.typography.titleSmall,
-					color = MaterialTheme.colorScheme.onPrimaryContainer
-				)
-			}
-			Spacer(Modifier.width(12.dp))
-			Column {
-				Text(
-					text = review.creator.name,
-					style = MaterialTheme.typography.titleSmall,
-					fontWeight = FontWeight.Bold
-				)
-
-				ReviewRating(
-					rating = review.rating, modifier = Modifier.padding(vertical = 2.dp)
-				)
-				Text(
-					text = review.comment,
-					style = MaterialTheme.typography.bodySmall,
-					color = MaterialTheme.colorScheme.onSurfaceVariant,
-					maxLines = 3,
-					overflow = TextOverflow.Ellipsis
-				)
 			}
 		}
 	}
