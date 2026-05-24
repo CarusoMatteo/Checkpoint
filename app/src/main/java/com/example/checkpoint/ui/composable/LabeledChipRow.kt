@@ -32,18 +32,31 @@ fun LabeledChipRow(
 				.padding(padding)
 				.padding(bottom = 8.dp)
 		)
-		LazyRow(
+		ChipRow(
+			chips,
 			modifier = Modifier.fillMaxWidth(),
-			contentPadding = padding,
-			horizontalArrangement = Arrangement.spacedBy(8.dp)
-		) {
-			items(chips) { chip ->
-				FilterChip(
-					label = { Text(chip.label) },
-					onClick = chip.action,
-					selected = chip.selected
-				)
-			}
+			padding
+		)
+	}
+}
+
+@Composable
+fun ChipRow(
+	chips: List<ChipContent>,
+	modifier: Modifier = Modifier,
+	padding: PaddingValues = PaddingValues(horizontal = 16.dp)
+) {
+	LazyRow(
+		modifier = modifier,
+		contentPadding = padding,
+		horizontalArrangement = Arrangement.spacedBy(8.dp)
+	) {
+		items(chips) { chip ->
+			FilterChip(
+				label = { Text(chip.label) },
+				onClick = chip.action,
+				selected = chip.selected
+			)
 		}
 	}
 }
@@ -53,6 +66,15 @@ fun LabeledChipRow(
 private fun LabeledChipRowPreview() {
 	LabeledChipRow(
 		title = "Genres",
+		chips = sampleChipContents,
+		modifier = Modifier.fillMaxWidth()
+	)
+}
+
+@Preview
+@Composable
+private fun ChipRowPreview() {
+	ChipRow(
 		chips = sampleChipContents,
 		modifier = Modifier.fillMaxWidth()
 	)
