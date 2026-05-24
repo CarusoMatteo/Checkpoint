@@ -27,10 +27,10 @@ import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.data.toLocalFormat
 import com.example.checkpoint.ui.composable.AppShell
-import com.example.checkpoint.ui.composable.GamesCarousel
 import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
 import com.example.checkpoint.ui.composable.LabeledTextWithAction
+import com.example.checkpoint.ui.composable.LazyGamesCarousel
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.composable.ReviewRating
@@ -85,7 +85,7 @@ fun GameScreen(
 				chips = game.genres,
 				modifier = Modifier.padding(vertical = 8.dp)
 			)
-			GamesCarousel(
+			LazyGamesCarousel(
 				title = "From the series",
 				games = sampleLocalGames,
 				hasStartingDivider = true

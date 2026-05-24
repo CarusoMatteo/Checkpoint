@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.composable.AppShell
-import com.example.checkpoint.ui.composable.GamesCarousel
+import com.example.checkpoint.ui.composable.LazyGamesCarousel
 import com.example.checkpoint.ui.composable.NavigationItem
 
 @Composable
@@ -20,8 +20,7 @@ fun ExploreScreen(
 		navController,
 		title = "Explore",
 		selectedNavigationItem = NavigationItem.Explore
-	)
-	{ innerPadding ->
+	) { innerPadding ->
 		val scrollState = rememberScrollState()
 
 		Column(
@@ -29,11 +28,11 @@ fun ExploreScreen(
 				.padding(innerPadding)
 				.verticalScroll(scrollState)
 		) {
-			GamesCarousel(
+			LazyGamesCarousel(
 				title = "Popular right now",
 				games = sampleLocalGames
 			)
-			GamesCarousel(
+			LazyGamesCarousel(
 				title = "Coming soon",
 				games = sampleLocalGames,
 				hasStartingDivider = true
