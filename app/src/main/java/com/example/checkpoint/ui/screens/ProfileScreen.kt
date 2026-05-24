@@ -18,9 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Brightness4
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,10 +44,10 @@ import com.example.checkpoint.data.UserProfile
 import com.example.checkpoint.data.sampleUserProfile
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.composable.AppShell
-import com.example.checkpoint.ui.composable.LabeledChipRow       // ← riutilizzato
+import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
-import com.example.checkpoint.ui.composable.ProfileMonogram       // ← riutilizzato
-import com.example.checkpoint.ui.composable.ReviewList            // ← riutilizzato
+import com.example.checkpoint.ui.composable.ProfileMonogram
+import com.example.checkpoint.ui.composable.ReviewList
 
 @Composable
 fun ProfileScreen(
@@ -58,7 +56,6 @@ fun ProfileScreen(
 	modifier: Modifier = Modifier,
 	profile: UserProfile = sampleUserProfile
 ) {
-	val pinnedAchievements by achievementsViewModel.pinnedIds.collectAsState()
 	val pinned = achievementsViewModel.pinnedAchievements
 
 	AppShell(
@@ -126,8 +123,7 @@ fun ProfileScreen(
 			}
 
 			item {
-				HorizontalDivider()
-				/* TODO : chiedi a Matte se il bottone "Leave a  Review" puo essere tolto dal compose */
+				HorizontalDivider()/* TODO : chiedi a Matte se il bottone "Leave a  Review" puo essere tolto dal compose */
 				ReviewList(
 					title = "Your Reviews",
 					reviews = profile.reviews,
@@ -256,7 +252,6 @@ private fun AchievementsSection(
 			Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 				pinnedAchievements.forEach { achievement ->
 					Row(verticalAlignment = Alignment.CenterVertically) {
-						// ← ProfileMonogram riutilizzato anche qui
 						ProfileMonogram(letter = achievement.name.first())
 						Spacer(Modifier.width(12.dp))
 						Column {
