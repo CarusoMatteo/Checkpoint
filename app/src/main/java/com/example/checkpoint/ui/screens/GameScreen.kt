@@ -13,7 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +50,21 @@ fun GameScreen(
 	AppShell(
 		navController,
 		title = "Game",
-		selectedNavigationItem = NavigationItem.Explore
+		selectedNavigationItem = NavigationItem.Explore,
+		appBarActions = {
+			IconButton(onClick = { /* TODO: Toggle follow/unfollow game */ }) {
+				if (game.notificationsEnabled) Icon(
+					imageVector = Icons.Rounded.Notifications,
+					contentDescription = "Unfollow game",
+					// modifier = Modifier.padding(horizontal = 8.dp)
+				)
+				else Icon(
+					imageVector = Icons.Rounded.NotificationsNone,
+					contentDescription = "Follow game",
+					// modifier = Modifier.padding(horizontal = 8.dp)
+				)
+			}
+		}
 	)
 	{ innerPadding ->
 		Column(
@@ -71,7 +88,8 @@ fun GameScreen(
 					.fillMaxWidth()
 			)
 			// TODO: If game has already released, show LabeledText instead of LabeledTextWithAction.
-			// Otherwise, if game.releaseDate is in the future, show release date with "Add to calendar" action
+			//  Otherwise, if game.releaseDate is in the future,
+			//  show release date with "Add to calendar" action
 			LabeledTextWithAction(
 				title = "Release date",
 				contentText = game.releaseDate.toLocalFormat(FormatStyle.LONG),

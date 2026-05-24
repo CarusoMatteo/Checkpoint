@@ -13,7 +13,8 @@ data class LocalGame(
 	val description: String = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur.",
 	val releaseDate: LocalDate = LocalDate.now(),
 	val genres: List<ChipContent> = sampleChipContents,
-	val reviews: List<Review> = sampleReviews
+	val reviews: List<Review> = sampleReviews,
+	val notificationsEnabled: Boolean = false
 )
 
 fun LocalDate.toLocalFormat(

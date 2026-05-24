@@ -1,6 +1,7 @@
 package com.example.checkpoint.ui.composable
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -16,6 +17,7 @@ fun AppShell(
 	navController: NavHostController,
 	title: String,
 	selectedNavigationItem: NavigationItem,
+	appBarActions: @Composable RowScope.() -> Unit = { },
 	content: @Composable (PaddingValues) -> Unit
 ) {
 	Scaffold(
@@ -23,7 +25,8 @@ fun AppShell(
 		topBar = {
 			AppBar(
 				title = title,
-				navController = navController
+				navController = navController,
+				actions = appBarActions
 			)
 		},
 		bottomBar = {
