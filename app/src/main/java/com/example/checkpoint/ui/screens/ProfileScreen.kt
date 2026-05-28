@@ -1,6 +1,6 @@
 package com.example.checkpoint.ui.screens
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +41,7 @@ import com.example.checkpoint.data.sampleUserProfile
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
+import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
@@ -128,25 +129,24 @@ fun ProfileScreen(
 @Composable
 private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-		Box(contentAlignment = Alignment.BottomEnd) {
+		Box(
+			contentAlignment = Alignment.BottomEnd,
+			modifier = Modifier
+		) {
 			ProfilePicture(
 				user = profile.user,
-				modifier = Modifier.size(80.dp)
-			)
-			Box(
 				modifier = Modifier
-					.size(24.dp)
+					.size(80.dp)
 					.clip(CircleShape)
-					.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-				contentAlignment = Alignment.Center
-			) {
-				Icon(
-					imageVector = Icons.Rounded.Edit,
-					contentDescription = "Edit avatar",
-					modifier = Modifier.size(14.dp),
-					tint = MaterialTheme.colorScheme.onSurface
-				)
-			}
+					.clickable(onClick = { /* TODO: Edit profile picture */ }),
+				fontSize = ProfileMonogramFontSize.Profile
+			)
+			Icon(
+				imageVector = Icons.Rounded.Edit,
+				contentDescription = "Edit profile picture",
+				tint = MaterialTheme.colorScheme.onSurface,
+				modifier = Modifier.size(24.dp)
+			)
 		}
 
 		Spacer(Modifier.width(16.dp))

@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.checkpoint.data.User
@@ -20,7 +21,8 @@ import com.example.checkpoint.data.User
 @Composable
 fun ProfilePicture(
 	user: User,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	fontSize: ProfileMonogramFontSize = ProfileMonogramFontSize.Review
 ) {
 	if (user.profilePicture != null) {
 		// TODO: Load actual profile picture if the user has one
@@ -28,15 +30,22 @@ fun ProfilePicture(
 	} else {
 		ProfileMonogram(
 			letter = user.name.first(),
-			modifier
+			modifier,
+			fontSize = fontSize
 		)
 	}
+}
+
+enum class ProfileMonogramFontSize(val size: TextUnit) {
+	Review(16.sp),
+	Profile(35.sp)
 }
 
 @Composable
 private fun ProfileMonogram(
 	letter: Char,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	fontSize: ProfileMonogramFontSize = ProfileMonogramFontSize.Review
 ) {
 	Box(
 		contentAlignment = Alignment.Center,
@@ -49,7 +58,7 @@ private fun ProfileMonogram(
 			text = letter.uppercaseChar().toString(),
 			style = TextStyle(
 				color = MaterialTheme.colorScheme.onPrimaryContainer,
-				fontSize = 16.sp,
+				fontSize = fontSize.size,
 				fontWeight = FontWeight.Medium
 			)
 		)
