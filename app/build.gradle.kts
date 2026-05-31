@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.compose)
 	alias(libs.plugins.serialization)
+	alias(libs.plugins.ksp)
+}
+
+val localProperties = Properties().apply {
+	val f = rootProject.file("local.properties")
+	if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -39,7 +47,19 @@ android {
 	}
 	buildFeatures {
 		compose = true
+		buildConfig = true
 	}
+	defaultConfig {
+		buildConfigField(
+			"String", "IGDB_CLIENT_ID",
+			"\"${localProperties["IGDB_CLIENT_ID"] ?: ""}\""
+		)
+		buildConfigField(
+			"String", "IGDB_ACCESS_TOKEN",
+			"\"${localProperties["IGDB_ACCESS_TOKEN"] ?: ""}\""
+		)
+	}
+
 }
 
 dependencies {
@@ -58,7 +78,7 @@ dependencies {
 	implementation(libs.androidx.compose.material.icons.extended)
 	// Navigation
 	implementation(libs.androidx.navigation.compose)
-	implementation(libs.ktor.serialization.kotlinx.json)
+//	implementation(libs.ktor.serialization.kotlinx.json)
 	// ViewModel
 	implementation(libs.androidx.lifecycle.viewmodel.compose)
 	implementation(libs.androidx.lifecycle.runtime.compose)
@@ -72,10 +92,20 @@ dependencies {
 	// implementation("com.google.android.gms:play-services-location:21.3.0")
 	// implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.0")
 	// HTTP requests
-	implementation(libs.ktor.client.core)
-	implementation(libs.ktor.client.okhttp)
-	implementation(libs.ktor.client.content.negotiation)
-	implementation(libs.ktor.serialization.kotlinx.json)
+	// Ktor
+	implementation(libs.ktor.client.android)
+	implementation(libs.ktor.client.content.neg)
+	implementation(libs.ktor.serialization.json)
+	implementation(libs.ktor.client.logging)
+	// Room
+	implementation(libs.androidx.room.ktx)
+	implementation(libs.androidx.room.runtime)
+	ksp(libs.androidx.room.compiler)
+
+	// Koin
+	implementation(libs.koin.android)
+	implementation(libs.koin.androidx.compose)
+
 	testImplementation(libs.junit)
 	androidTestImplementation(platform(libs.androidx.compose.bom))
 	androidTestImplementation(libs.androidx.compose.ui.test.junit4)
