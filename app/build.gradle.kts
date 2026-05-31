@@ -36,8 +36,7 @@ android {
 			isMinifyEnabled = true
 			isShrinkResources = true
 			proguardFiles(
-				getDefaultProguardFile("proguard-android-optimize.txt"),
-				"proguard-rules.pro"
+				getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
 			)
 		}
 	}
@@ -51,12 +50,10 @@ android {
 	}
 	defaultConfig {
 		buildConfigField(
-			"String", "IGDB_CLIENT_ID",
-			"\"${localProperties["IGDB_CLIENT_ID"] ?: ""}\""
+			"String", "IGDB_CLIENT_ID", "\"${localProperties["IGDB_CLIENT_ID"] ?: ""}\""
 		)
 		buildConfigField(
-			"String", "IGDB_ACCESS_TOKEN",
-			"\"${localProperties["IGDB_ACCESS_TOKEN"] ?: ""}\""
+			"String", "IGDB_ACCESS_TOKEN", "\"${localProperties["IGDB_ACCESS_TOKEN"] ?: ""}\""
 		)
 	}
 
