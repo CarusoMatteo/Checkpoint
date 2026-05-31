@@ -71,7 +71,7 @@ sealed interface NavigationRoute {
 	data object LoginScreen : NavigationRoute
 
 	@Serializable
-	data object RegisterScreen : NavigationRoute
+	data object SignUpScreen : NavigationRoute
 
 	@Serializable
 	data object ProfileScreen : NavigationRoute
@@ -125,6 +125,18 @@ fun NavGraph(
 				navController,
 				title = "Popular games",
 				games = sampleLocalGames
+			)
+		}
+
+		composable<NavigationRoute.LoginScreen> {
+			LoginScreen(
+				navController
+			)
+		}
+
+		composable<NavigationRoute.SignUpScreen> {
+			SignUpScreen(
+				navController
 			)
 		}
 	}
