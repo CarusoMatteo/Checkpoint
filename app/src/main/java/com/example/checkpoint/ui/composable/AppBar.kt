@@ -3,7 +3,7 @@ package com.example.checkpoint.ui.composable
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,7 +33,7 @@ fun AppBar(
 			if (navController.previousBackStackEntry != null) {
 				IconButton(onClick = { navController.navigateUp() }) {
 					Icon(
-						imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+						imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
 						contentDescription = "Back"
 					)
 				}

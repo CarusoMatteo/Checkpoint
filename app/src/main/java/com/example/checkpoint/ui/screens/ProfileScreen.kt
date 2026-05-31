@@ -18,8 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -62,7 +62,7 @@ fun ProfileScreen(
 		selectedNavigationItem = NavigationItem.Profile,
 		appBarActions = {
 			IconButton(onClick = { /* TODO: Settings */ }) {
-				Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
 		}) { innerPadding ->
 		Column(

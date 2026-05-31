@@ -15,7 +15,9 @@ import com.example.checkpoint.ui.screens.AchievementsScreen
 import com.example.checkpoint.ui.screens.ExploreScreen
 import com.example.checkpoint.ui.screens.GameScreen
 import com.example.checkpoint.ui.screens.GamesGridScreen
+import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
+import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import kotlinx.serialization.Serializable
@@ -83,7 +85,7 @@ fun NavGraph(
 	navController: NavHostController,
 	startDestination: NavigationRoute = NavigationRoute.ExploreScreen,
 ) {
-	// Istanziato qui lo scope all'Activity, condiviso tra ProfileScreen e AchievementsScreen
+	// Instantiated here in the activity scope, shared between ProfileScreen e AchievementsScreen
 	val achievementsViewModel: AchievementsViewModel = viewModel()
 
 	NavHost(
@@ -102,7 +104,7 @@ fun NavGraph(
 			//ExploreScreen(navController)
 			ProfileScreen(navController, achievementsViewModel = achievementsViewModel)
 		}
-		//raggiungibile solo da ProfileScreen
+		// Only reachable from ProfileScreen
 		composable<NavigationRoute.AchievementsScreen> {
 			AchievementsScreen(
 				navController = navController,
