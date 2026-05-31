@@ -12,6 +12,10 @@ import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
+import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
+import com.example.checkpoint.ui.viewmodel.ExploreViewModel
+import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
+import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -23,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
@@ -107,5 +112,19 @@ val appModule = module {
 	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
 	single { AchievementRepository(achievementDao = get(), userAchievementDao = get()) }
 
+	// ── ViewModel
+
+	viewModel { AchievementsViewModel() }
+	viewModel { ExploreViewModel(gameRepository = get()) }
+	viewModel { ProfileViewModel(reviewRepository = get(), achievementRepository = get()) }
+	viewModel { (igdbId: Int, userId: Int) ->
+		GameScreenViewModel(
+			igdbId = igdbId,
+			userId = userId,
+			gameRepository = get(),
+			gameLogRepository = get(),
+			reviewRepository = get()
+		)
+	}
 
 }

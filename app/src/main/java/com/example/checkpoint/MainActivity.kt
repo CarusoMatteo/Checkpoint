@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.screens.AchievementsScreen
 import com.example.checkpoint.ui.screens.ExploreScreen
@@ -20,8 +21,11 @@ import com.example.checkpoint.ui.screens.ProfileScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
+import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
+import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import kotlinx.serialization.Serializable
-
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 class MainActivity : ComponentActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +57,7 @@ sealed interface NavigationRoute {
 
 	// Single items
 	@Serializable
-	data object GameScreen : NavigationRoute
+	data class GameScreen(val igdbId: Int) : NavigationRoute
 
 	@Serializable
 	data object UserScreen : NavigationRoute
@@ -63,6 +67,9 @@ sealed interface NavigationRoute {
 	data object LibraryScreen : NavigationRoute
 
 	// Account
+	@Serializable
+	data object AccountScreen : NavigationRoute
+
 	@Serializable
 	data object LoginScreen : NavigationRoute
 
@@ -93,15 +100,23 @@ fun NavGraph(
 		composable<NavigationRoute.ExploreScreen> {
 			ExploreScreen(navController)
 		}
+
 		// TODO: Implement these screens
 		composable<NavigationRoute.LibraryScreen> {
 			ExploreScreen(navController)
 			// LibraryScreen(navController)
 		}
+
 		composable<NavigationRoute.ProfileScreen> {
-			//ExploreScreen(navController)
-			ProfileScreen(navController, achievementsViewModel = achievementsViewModel)
+			// ProfileViewModel iniettato da Koin (legge DB)
+			val profileViewModel: ProfileViewModel = koinViewModel()
+			ProfileScreen(
+				navController = navController,
+				achievementsViewModel = achievementsViewModel,
+				profileViewModel = profileViewModel
+			)
 		}
+
 		// Only reachable from ProfileScreen
 		composable<NavigationRoute.AchievementsScreen> {
 			AchievementsScreen(
@@ -109,10 +124,11 @@ fun NavGraph(
 			)
 		}
 
-		// TODO: Remove, these are temporary for testing only
-		composable<NavigationRoute.GameScreen> {
+		composable<NavigationRoute.GameScreen> { backStackEntry ->
+			val route: NavigationRoute.GameScreen = backStackEntry.toRoute()
+			val vm: GameScreenViewModel = koinViewModel { parametersOf(route.igdbId, 1) }
 			GameScreen(
-				navController, game = sampleLocalGames.first()
+				navController = navController, viewModel = vm
 			)
 		}
 
