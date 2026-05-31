@@ -42,7 +42,7 @@ enum class ProfileMonogramFontSize(val size: TextUnit) {
 }
 
 @Composable
-private fun ProfileMonogram(
+fun ProfileMonogram(
 	letter: Char,
 	modifier: Modifier = Modifier,
 	fontSize: ProfileMonogramFontSize = ProfileMonogramFontSize.Review
