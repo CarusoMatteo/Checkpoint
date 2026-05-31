@@ -1,5 +1,6 @@
 package com.example.checkpoint.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,13 +21,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
-import com.example.checkpoint.data.Achievement
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.UserProfile
 import com.example.checkpoint.data.sampleUserProfile
@@ -44,17 +48,23 @@ import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
+import com.example.checkpoint.ui.viewmodel.AchievementUiModel
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
+import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
 	navController: NavHostController,
 	achievementsViewModel: AchievementsViewModel,
+	profileViewModel: ProfileViewModel,
 	modifier: Modifier = Modifier,
-	profile: UserProfile = sampleUserProfile
 ) {
-	val pinned = achievementsViewModel.pinnedAchievements
+	val pinnedIds by achievementsViewModel.pinnedIds.collectAsState()
+	val dbState by profileViewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
+
+	// Profilo anagrafico ancora da sample fino a implementazione login
+	val profile = sampleUserProfile
 
 	AppShell(
 		navController = navController,
@@ -64,18 +74,34 @@ fun ProfileScreen(
 			IconButton(onClick = { /* TODO: Settings */ }) {
 				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
-		}) { innerPadding ->
+		}
+	) { innerPadding ->
+
+		if (dbState.isLoading) {
+			Box(
+				modifier = Modifier
+					.fillMaxSize()
+					.padding(innerPadding),
+				contentAlignment = Alignment.Center
+			) { CircularProgressIndicator() }
+			return@AppShell
+		}
+
 		Column(
 			modifier = modifier
 				.padding(innerPadding)
 				.fillMaxSize()
 				.verticalScroll(scrollState)
 		) {
+			// ── Header ────────────────────────────────────────────────────
 			ProfileHeader(
-				profile = profile, modifier = Modifier
+				profile = profile,
+				modifier = Modifier
 					.fillMaxWidth()
 					.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
+
+			// ── Biografia ─────────────────────────────────────────────────
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Biography",
@@ -90,7 +116,7 @@ fun ProfileScreen(
 					.padding(bottom = 8.dp)
 			)
 
-
+			// ── Generi preferiti ──────────────────────────────────────────
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Favourite Genres",
@@ -105,9 +131,11 @@ fun ProfileScreen(
 				modifier = Modifier.padding(bottom = 8.dp)
 			)
 
+			// ── Achievement dal DB ─────────────────────────────────────────
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			AchievementsSection(
-				pinnedAchievements = pinned, onSeeAllClick = {
+				pinnedAchievements = dbState.achievements.filter { it.id in pinnedIds },
+				onSeeAllClick = {
 					navController.navigate(NavigationRoute.AchievementsScreen)
 				},
 				modifier = Modifier
@@ -115,6 +143,7 @@ fun ProfileScreen(
 					.padding(bottom = 8.dp)
 			)
 
+			// ── Recensioni dal DB ──────────────────────────────────────────
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
@@ -126,19 +155,20 @@ fun ProfileScreen(
 	}
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Componenti privati
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-		Box(
-			contentAlignment = Alignment.BottomEnd,
-			modifier = Modifier
-		) {
+		Box(contentAlignment = Alignment.BottomEnd) {
 			ProfilePicture(
 				user = profile.user,
 				modifier = Modifier
 					.size(80.dp)
 					.clip(CircleShape)
-					.clickable(onClick = { /* TODO: Edit profile picture */ }),
+					.clickable { /* TODO: Edit profile picture */ },
 				fontSize = ProfileMonogramFontSize.Profile
 			)
 			Icon(
@@ -148,9 +178,7 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 				modifier = Modifier.size(24.dp)
 			)
 		}
-
 		Spacer(Modifier.width(16.dp))
-
 		Column {
 			Text(
 				text = profile.user.name,
@@ -170,7 +198,7 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 private fun ProfileSection(
 	title: String,
 	onUpdateClick: () -> Unit,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
 ) {
 	Row(
 		modifier = modifier
@@ -198,9 +226,9 @@ private fun ProfileSection(
 
 @Composable
 private fun AchievementsSection(
-	pinnedAchievements: List<Achievement>,
+	pinnedAchievements: List<AchievementUiModel>,
 	onSeeAllClick: () -> Unit,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
 ) {
 	Column(modifier = modifier) {
 		Row(
@@ -234,21 +262,52 @@ private fun AchievementsSection(
 					Row(verticalAlignment = Alignment.CenterVertically) {
 						AchievementBadge(achievement)
 						Spacer(Modifier.width(12.dp))
-						Column {
+						Column(modifier = Modifier.weight(1f)) {
 							Text(
 								text = achievement.name,
 								style = MaterialTheme.typography.titleSmall,
 								fontWeight = FontWeight.SemiBold
 							)
 							Text(
-								text = achievement.description,
+								text = achievement.description ?: "",
 								style = MaterialTheme.typography.bodySmall,
 								color = MaterialTheme.colorScheme.onSurfaceVariant
+							)
+							Spacer(Modifier.height(4.dp))
+							LinearProgressIndicator(
+								progress = { achievement.progressFraction },
+								modifier = Modifier
+									.fillMaxWidth()
+									.height(4.dp)
+									.clip(MaterialTheme.shapes.small)
 							)
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+@Composable
+private fun AchievementBadge(achievement: AchievementUiModel) {
+	val bgColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primaryContainer
+	else MaterialTheme.colorScheme.surfaceVariant
+	val textColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primary
+	else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+
+	Box(
+		modifier = Modifier
+			.size(48.dp)
+			.clip(CircleShape),
+		contentAlignment = Alignment.Center
+	) {
+		Canvas(modifier = Modifier.fillMaxSize()) { drawCircle(color = bgColor) }
+		Text(
+			text = achievement.name.first().toString(),
+			style = MaterialTheme.typography.titleMedium,
+			color = textColor,
+			fontWeight = FontWeight.Bold
+		)
 	}
 }
