@@ -24,15 +24,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.checkpoint.data.LocalGame
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.sampleLocalGames
 
+/**
+ * Reusable layout skeleton providing a standardized header row with action items
+ * and a content slot for the underlying collection.
+ */
 @Composable
-fun LazyGamesCarousel(
+private fun CarouselShell(
 	title: String,
-	games: List<LocalGame>,
+	hasStartingDivider: Boolean,
+	hasDeleteAction: Boolean,
 	modifier: Modifier = Modifier,
-	hasStartingDivider: Boolean = false,
-	hasDeleteAction: Boolean = false
+	content: @Composable () -> Unit
 ) {
 	Column(modifier = modifier) {
 		if (hasStartingDivider) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -47,25 +52,19 @@ fun LazyGamesCarousel(
 			Text(
 				text = title,
 				style = MaterialTheme.typography.titleMedium,
-				// overflow = TextOverflow.Ellipsis,
 				maxLines = 1,
 				modifier = Modifier
 					.weight(1f)
 					.basicMarquee()
 			)
 			if (hasDeleteAction) {
-				IconButton(
-					onClick = { /* TODO: Delete List */ }
-				) {
+				IconButton(onClick = { /* TODO: Delete List */ }) {
 					Icon(
-						imageVector = Icons.Rounded.DeleteOutline,
-						contentDescription = "See all"
+						imageVector = Icons.Rounded.DeleteOutline, contentDescription = "Delete"
 					)
 				}
 			}
-			IconButton(
-				onClick = { /* TODO: Open vertical carousel list */ }
-			) {
+			IconButton(onClick = { /* TODO: Open vertical list */ }) {
 				Icon(
 					imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
 					contentDescription = "See all"
@@ -73,6 +72,28 @@ fun LazyGamesCarousel(
 			}
 		}
 
+		content()
+	}
+}
+
+/**
+ * Horizontal carousel displaying a collection of [LocalGame] items.
+ * Built for compatibility with existing preview components and static local states.
+ */
+@Composable
+fun LazyGamesCarousel(
+	title: String,
+	games: List<LocalGame>,
+	modifier: Modifier = Modifier,
+	hasStartingDivider: Boolean = false,
+	hasDeleteAction: Boolean = false
+) {
+	CarouselShell(
+		title = title,
+		hasStartingDivider = hasStartingDivider,
+		hasDeleteAction = hasDeleteAction,
+		modifier = modifier
+	) {
 		LazyRow(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -86,6 +107,44 @@ fun LazyGamesCarousel(
 					showInformationOverlay = true,
 					onClick = { /* TODO: Navigate to game details */ },
 					onLongClick = { /* TODO: Show game options */ },
+					modifier = Modifier.height(200.dp)
+				)
+			}
+		}
+	}
+}
+
+/**
+ * Horizontal carousel displaying a collection of domain [Game] entities fetched from the IGDB API.
+ */
+@Composable
+fun LazyGamesCarousel(
+	title: String,
+	games: List<Game>,
+	modifier: Modifier = Modifier,
+	hasStartingDivider: Boolean = false,
+	hasDeleteAction: Boolean = false,
+	onGameClick: (igdbId: Int) -> Unit = {}
+) {
+	CarouselShell(
+		title = title,
+		hasStartingDivider = hasStartingDivider,
+		hasDeleteAction = hasDeleteAction,
+		modifier = modifier
+	) {
+		LazyRow(
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(bottom = 8.dp),
+			contentPadding = PaddingValues(horizontal = 16.dp),
+			horizontalArrangement = Arrangement.spacedBy(8.dp)
+		) {
+			items(games, key = { it.igdbId }) { game ->
+				GameCover(
+					game = game,
+					showInformationOverlay = true,
+					onClick = { onGameClick(game.igdbId) },
+					onLongClick = { },
 					modifier = Modifier.height(200.dp)
 				)
 			}

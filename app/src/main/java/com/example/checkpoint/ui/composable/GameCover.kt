@@ -22,11 +22,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.checkpoint.data.LocalGame
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.sampleLocalGames
 
+/**
+ * Core game cover component that handles image rendering and text overlays.
+ *
+ * Accepts a generic [model] parameter (such as a local drawable resource ID or a remote URL string)
+ * allowing Coil to load different image sources seamlessly without duplicating layout logic.
+ */
 @Composable
 fun GameCover(
-	game: LocalGame,
+	model: Any?,
+	name: String,
+	publisher: String?,
 	showInformationOverlay: Boolean,
 	onClick: () -> Unit,
 	onLongClick: () -> Unit,
@@ -39,13 +48,12 @@ fun GameCover(
 			.aspectRatio(3f / 4f)
 			.clip(MaterialTheme.shapes.extraLarge)
 			.combinedClickable(
-				onClick = onClick,
-				onLongClick = onLongClick
+				onClick = onClick, onLongClick = onLongClick
 			)
 	) {
 		AsyncImage(
-			model = game.imageResourceId,
-			contentDescription = game.name,
+			model = model,
+			contentDescription = name,
 			contentScale = ContentScale.Crop,
 			modifier = Modifier
 				.fillMaxSize()
@@ -53,21 +61,15 @@ fun GameCover(
 					drawContent()
 					drawRect(
 						Brush.verticalGradient(
-							colors = if (showInformationOverlay)
-								listOf(
-									Color.Black.copy(alpha = 0.0f),
-									Color.Black.copy(alpha = 0.0f),
-									Color.Black.copy(alpha = 1.0f)
-								)
-							else
-								listOf(
-									Color.Transparent,
-									Color.Transparent
-								)
+							colors = if (showInformationOverlay) listOf(
+								Color.Black.copy(alpha = 0.0f),
+								Color.Black.copy(alpha = 0.0f),
+								Color.Black.copy(alpha = 1.0f)
+							)
+							else listOf(Color.Transparent, Color.Transparent)
 						)
 					)
-				}
-		)
+				})
 		if (showInformationOverlay) {
 			Column(
 				modifier = Modifier
@@ -75,23 +77,74 @@ fun GameCover(
 					.padding(horizontal = 12.dp, vertical = 8.dp)
 			) {
 				Text(
-					text = game.name,
+					text = name,
 					style = MaterialTheme.typography.titleSmall,
 					color = Color.White,
 					maxLines = nameMaxLines,
 					overflow = TextOverflow.Ellipsis
 				)
-				Text(
-					text = game.publisher,
-					style = MaterialTheme.typography.labelSmall,
-					color = Color.White,
-					maxLines = publisherMaxLines,
-					overflow = TextOverflow.Ellipsis
-				)
+				if (!publisher.isNullOrBlank()) {
+					Text(
+						text = publisher,
+						style = MaterialTheme.typography.labelSmall,
+						color = Color.White,
+						maxLines = publisherMaxLines,
+						overflow = TextOverflow.Ellipsis
+					)
+				}
 			}
 		}
 	}
 }
+
+/**
+ * Overload for [LocalGame] that uses a local drawable resource ID.
+ * Maintained for backward compatibility with existing features like GamesGridScreen.
+ */
+@Composable
+fun GameCover(
+	game: LocalGame,
+	showInformationOverlay: Boolean,
+	onClick: () -> Unit,
+	onLongClick: () -> Unit,
+	modifier: Modifier = Modifier,
+	nameMaxLines: Int = 2,
+	publisherMaxLines: Int = 1
+) = GameCover(
+	model = game.imageResourceId,
+	name = game.name,
+	publisher = game.publisher,
+	showInformationOverlay = showInformationOverlay,
+	onClick = onClick,
+	onLongClick = onLongClick,
+	modifier = modifier,
+	nameMaxLines = nameMaxLines,
+	publisherMaxLines = publisherMaxLines
+)
+
+/**
+ * Overload for domain [Game] entities that resolves to a remote cover URL from IGDB.
+ */
+@Composable
+fun GameCover(
+	game: Game,
+	showInformationOverlay: Boolean,
+	onClick: () -> Unit,
+	onLongClick: () -> Unit,
+	modifier: Modifier = Modifier,
+	nameMaxLines: Int = 2,
+	publisherMaxLines: Int = 1
+) = GameCover(
+	model = game.coverUrl,
+	name = game.name,
+	publisher = game.publisher ?: game.developer,
+	showInformationOverlay = showInformationOverlay,
+	onClick = onClick,
+	onLongClick = onLongClick,
+	modifier = modifier,
+	nameMaxLines = nameMaxLines,
+	publisherMaxLines = publisherMaxLines
+)
 
 @Preview
 @Composable

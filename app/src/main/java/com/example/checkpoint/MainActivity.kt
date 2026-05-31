@@ -31,8 +31,7 @@ class MainActivity : ComponentActivity() {
 			CheckpointTheme {
 				val navController = rememberNavController()
 				NavGraph(
-					navController = navController,
-					startDestination = NavigationRoute.ProfileScreen
+					navController = navController, startDestination = NavigationRoute.ProfileScreen
 				)
 			}
 		}
@@ -89,8 +88,7 @@ fun NavGraph(
 	val achievementsViewModel: AchievementsViewModel = viewModel()
 
 	NavHost(
-		navController = navController,
-		startDestination = startDestination
+		navController = navController, startDestination = startDestination
 	) {
 		composable<NavigationRoute.ExploreScreen> {
 			ExploreScreen(navController)
@@ -107,24 +105,20 @@ fun NavGraph(
 		// Only reachable from ProfileScreen
 		composable<NavigationRoute.AchievementsScreen> {
 			AchievementsScreen(
-				navController = navController,
-				achievementsViewModel = achievementsViewModel
+				navController = navController, achievementsViewModel = achievementsViewModel
 			)
 		}
 
 		// TODO: Remove, these are temporary for testing only
 		composable<NavigationRoute.GameScreen> {
 			GameScreen(
-				navController,
-				game = sampleLocalGames.first()
+				navController, game = sampleLocalGames.first()
 			)
 		}
 
 		composable<NavigationRoute.GamesGridScreen> {
 			GamesGridScreen(
-				navController,
-				title = "Popular games",
-				games = sampleLocalGames
+				navController, title = "Popular games", games = sampleLocalGames
 			)
 		}
 
