@@ -65,9 +65,6 @@ sealed interface NavigationRoute {
 
 	// Account
 	@Serializable
-	data object AccountScreen : NavigationRoute
-
-	@Serializable
 	data object LoginScreen : NavigationRoute
 
 	@Serializable
@@ -78,6 +75,9 @@ sealed interface NavigationRoute {
 
 	@Serializable
 	data object AchievementsScreen : NavigationRoute
+
+	@Serializable
+	data object SettingsScreen : NavigationRoute
 }
 
 @Composable
