@@ -9,14 +9,12 @@ import androidx.room.PrimaryKey
 // Lists and list entries
 
 @Entity(
-	tableName = "lists",
-	foreignKeys = [ForeignKey(
+	tableName = "lists", foreignKeys = [ForeignKey(
 		entity = UserEntity::class,
 		parentColumns = ["id"],
 		childColumns = ["user_id"],
 		onDelete = ForeignKey.CASCADE
-	)],
-	indices = [Index("user_id")]
+	)], indices = [Index("user_id")]
 )
 data class GameListEntity(
 	@PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") val id: Int = 0,
@@ -28,22 +26,17 @@ data class GameListEntity(
 )
 
 @Entity(
-	tableName = "list_entries",
-	foreignKeys = [
-		ForeignKey(
-			entity = GameListEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["list_id"],
-			onDelete = ForeignKey.CASCADE
-		),
-		ForeignKey(
-			entity = GameEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["game_id"],
-			onDelete = ForeignKey.CASCADE
-		)
-	],
-	indices = [Index(value = ["list_id", "game_id"], unique = true), Index("game_id")]
+	tableName = "list_entries", foreignKeys = [ForeignKey(
+		entity = GameListEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["list_id"],
+		onDelete = ForeignKey.CASCADE
+	), ForeignKey(
+		entity = GameEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["game_id"],
+		onDelete = ForeignKey.CASCADE
+	)], indices = [Index(value = ["list_id", "game_id"], unique = true), Index("game_id")]
 )
 data class ListEntryEntity(
 	@PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") val id: Int = 0,
@@ -64,14 +57,12 @@ data class AchievementCategoryEntity(
 )
 
 @Entity(
-	tableName = "achievements",
-	foreignKeys = [ForeignKey(
+	tableName = "achievements", foreignKeys = [ForeignKey(
 		entity = AchievementCategoryEntity::class,
 		parentColumns = ["id"],
 		childColumns = ["category_id"],
 		onDelete = ForeignKey.CASCADE
-	)],
-	indices = [Index("category_id")]
+	)], indices = [Index("category_id")]
 )
 data class AchievementEntity(
 	@PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") val id: Int = 0,
@@ -86,20 +77,17 @@ data class AchievementEntity(
 @Entity(
 	tableName = "user_achievements",
 	primaryKeys = ["user_id", "achievement_id"],
-	foreignKeys = [
-		ForeignKey(
-			entity = UserEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["user_id"],
-			onDelete = ForeignKey.CASCADE
-		),
-		ForeignKey(
-			entity = AchievementEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["achievement_id"],
-			onDelete = ForeignKey.CASCADE
-		)
-	],
+	foreignKeys = [ForeignKey(
+		entity = UserEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["user_id"],
+		onDelete = ForeignKey.CASCADE
+	), ForeignKey(
+		entity = AchievementEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["achievement_id"],
+		onDelete = ForeignKey.CASCADE
+	)],
 	indices = [Index("achievement_id")]
 )
 data class UserAchievementEntity(
@@ -114,20 +102,17 @@ data class UserAchievementEntity(
 @Entity(
 	tableName = "game_platforms",
 	primaryKeys = ["game_id", "platform_id"],
-	foreignKeys = [
-		ForeignKey(
-			entity = GameEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["game_id"],
-			onDelete = ForeignKey.CASCADE
-		),
-		ForeignKey(
-			entity = PlatformEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["platform_id"],
-			onDelete = ForeignKey.CASCADE
-		)
-	],
+	foreignKeys = [ForeignKey(
+		entity = GameEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["game_id"],
+		onDelete = ForeignKey.CASCADE
+	), ForeignKey(
+		entity = PlatformEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["platform_id"],
+		onDelete = ForeignKey.CASCADE
+	)],
 	indices = [Index("platform_id")]
 )
 data class GamePlatformEntity(
@@ -139,23 +124,19 @@ data class GamePlatformEntity(
 @Entity(
 	tableName = "user_preferred_genres",
 	primaryKeys = ["user_id", "genre_id"],
-	foreignKeys = [
-		ForeignKey(
-			entity = UserEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["user_id"],
-			onDelete = ForeignKey.CASCADE
-		),
-		ForeignKey(
-			entity = GenreEntity::class,
-			parentColumns = ["id"],
-			childColumns = ["genre_id"],
-			onDelete = ForeignKey.CASCADE
-		)
-	],
+	foreignKeys = [ForeignKey(
+		entity = UserEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["user_id"],
+		onDelete = ForeignKey.CASCADE
+	), ForeignKey(
+		entity = GenreEntity::class,
+		parentColumns = ["id"],
+		childColumns = ["genre_id"],
+		onDelete = ForeignKey.CASCADE
+	)],
 	indices = [Index("genre_id")]
 )
 data class UserPreferredGenreEntity(
-	@ColumnInfo(name = "user_id") val userId: Int,
-	@ColumnInfo(name = "genre_id") val genreId: Int
+	@ColumnInfo(name = "user_id") val userId: Int, @ColumnInfo(name = "genre_id") val genreId: Int
 )
