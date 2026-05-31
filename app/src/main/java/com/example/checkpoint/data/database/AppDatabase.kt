@@ -43,8 +43,7 @@ import com.example.checkpoint.data.database.entities.UserPreferredGenreEntity
 		AchievementCategoryEntity::class,
 		AchievementEntity::class,
 		UserAchievementEntity::class,
-	], version = 2,          // bump: rimossa tabella user_follows
-	exportSchema = false
+	], version = 2, exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 	abstract fun userDao(): UserDao

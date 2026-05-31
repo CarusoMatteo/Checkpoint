@@ -1,0 +1,197 @@
+package com.example.checkpoint.data.remote.igdb
+
+import com.example.checkpoint.data.remote.dto.IgdbGameDto
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+
+/**
+ * Utility to build IGDB image URLs from an imageId.
+ *
+ * Available sizes: cover_small, cover_big, screenshot_med,
+ * screenshot_big, screenshot_huge, thumb, micro, 720p, 1080p
+ */
+object IgdbImageUrl {
+	fun coverBig(imageId: String) =
+		"https://images.igdb.com/igdb/image/upload/t_cover_big/$imageId.jpg"
+
+	fun coverSmall(imageId: String) =
+		"https://images.igdb.com/igdb/image/upload/t_cover_small/$imageId.jpg"
+
+	fun screenshot(imageId: String) =
+		"https://images.igdb.com/igdb/image/upload/t_screenshot_big/$imageId.jpg"
+}
+
+/**
+ * Client for the IGDB API (v4) via Ktor.
+ *
+ * IGDB requires Twitch OAuth 2.0 authentication:
+ * - [clientId]: Client ID obtained from the Twitch Developer Console
+ * - [accessToken]: Bearer token obtained via client_credentials
+ *
+ * Both are injected via Koin (read from BuildConfig).
+ *
+ * Example of an IGDB query (Apicalypse language):
+ * ```
+ * fields name, cover.image_id, genres.name;
+ * where id = 1942;
+ * ```
+ */
+class IgdbClient(
+	private val httpClient: HttpClient,
+	private val clientId: String,
+	private val accessToken: String
+) {
+
+	private val baseUrl = "https://api.igdb.com/v4"
+
+	/**
+	 * Retrieves the full details of a game given its IGDB ID.
+	 */
+	suspend fun getGameById(igdbId: Int): IgdbGameDto? {
+		val results: List<IgdbGameDto> = query(
+			endpoint = "games", body = """
+                fields name, summary, storyline,
+                       cover.image_id,
+                       genres.id, genres.name,
+                       platforms.id, platforms.name, platforms.abbreviation,
+                       platforms.platform_logo.image_id,
+                       involved_companies.company.name,
+                       involved_companies.developer,
+                       involved_companies.publisher,
+                       first_release_date,
+                       total_rating, total_rating_count, aggregated_rating;
+                where id = $igdbId;
+                limit 1;
+            """.trimIndent()
+		)
+		return results.firstOrNull()
+	}
+
+	/**
+	 * Retrieves the details of multiple games in a single request.
+	 */
+	suspend fun getGamesByIds(igdbIds: List<Int>): List<IgdbGameDto> {
+		if (igdbIds.isEmpty()) return emptyList()
+		val idList = igdbIds.joinToString(",")
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.id, genres.name,
+                       platforms.id, platforms.name, platforms.abbreviation,
+                       first_release_date,
+                       total_rating;
+                where id = ($idList);
+                limit ${igdbIds.size};
+            """.trimIndent()
+		)
+	}
+
+	/**
+	 * Searches for games by name.
+	 * [limit] maximum 500 per request (IGDB limit).
+	 */
+	suspend fun searchGames(query: String, limit: Int = 20): List<IgdbGameDto> {
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.name,
+                       platforms.name,
+                       first_release_date,
+                       total_rating;
+                search "$query";
+                limit $limit;
+            """.trimIndent()
+		)
+	}
+
+	/**
+	 * Popular games (sorted by rating, with a minimum number of votes).
+	 */
+	suspend fun getPopularGames(limit: Int = 20, offset: Int = 0): List<IgdbGameDto> {
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.name,
+                       platforms.name,
+                       first_release_date,
+                       total_rating, total_rating_count;
+                where total_rating_count > 100 & cover != null;
+                sort total_rating desc;
+                limit $limit;
+                offset $offset;
+            """.trimIndent()
+		)
+	}
+
+	/**
+	 * Recent releases (last 3 months, sorted by date).
+	 */
+	suspend fun getRecentReleases(limit: Int = 20): List<IgdbGameDto> {
+		val threeMonthsAgo = System.currentTimeMillis() / 1000 - (90L * 24 * 60 * 60)
+		val now = System.currentTimeMillis() / 1000
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.name,
+                       platforms.name,
+                       first_release_date,
+                       total_rating;
+                where first_release_date >= $threeMonthsAgo
+                    & first_release_date <= $now
+                    & cover != null;
+                sort first_release_date desc;
+                limit $limit;
+            """.trimIndent()
+		)
+	}
+
+	/**
+	 * Games of a specific genre (by IGDB genre ID).
+	 */
+	suspend fun getGamesByGenre(genreIgdbId: Int, limit: Int = 20): List<IgdbGameDto> {
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.name,
+                       platforms.name,
+                       first_release_date,
+                       total_rating;
+                where genres = [$genreIgdbId] & cover != null & total_rating_count > 20;
+                sort total_rating desc;
+                limit $limit;
+            """.trimIndent()
+		)
+	}
+
+	/**
+	 * A generic internal helper to execute POST queries against the IGDB API endpoints.
+	 *
+	 * Automatically injects the required Twitch OAuth credentials ([clientId] and [accessToken])
+	 * into the headers, configures the content type to [ContentType.Text.Plain] (as expected by
+	 * the Apicalypse query language), and deserializes the response payload into the reified type [T].
+	 *
+	 * @param endpoint The target IGDB API endpoint (e.g., "games").
+	 * @param body The Apicalypse query string containing fields, filters, and limits.
+	 * @return The parsed response body of type [T].
+	 */
+	private suspend inline fun <reified T> query(
+		endpoint: String, body: String
+	): T {
+		return httpClient.post("$baseUrl/$endpoint") {
+			header("Client-ID", clientId)
+			header("Authorization", "Bearer $accessToken")
+			contentType(ContentType.Text.Plain)
+			setBody(body)
+		}.body()
+	}
+}
