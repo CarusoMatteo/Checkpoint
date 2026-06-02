@@ -16,10 +16,16 @@ import kotlinx.coroutines.launch
 data class ExploreState(
 	val popularGames: List<Game> = emptyList(),
 	val recentReleases: List<Game> = emptyList(),
+	val becauseYouPlayed: List<Game> = emptyList(),
+	val bestOnPlatform: List<Game> = emptyList(),
+	val sinceYouLikeGenre: List<Game> = emptyList(),
+	val comingSoonGames: List<Game> = emptyList(),
 	val searchResults: List<Game> = emptyList(),
-	val searchQuery: String = "",
+	val searchQuery: String = "", // test
 	val isLoadingPopular: Boolean = false,
 	val isLoadingRecent: Boolean = false,
+	val isLoadingComingSoon: Boolean = false,
+	val isLoadingRecommendations: Boolean = false,
 	val isSearching: Boolean = false,
 	val error: String? = null
 )
@@ -39,37 +45,53 @@ class ExploreViewModel(
 	private val _state = MutableStateFlow(ExploreState())
 	val state: StateFlow<ExploreState> = _state.asStateFlow()
 
-	private val _searchQuery = MutableStateFlow("")
+	// FIX: Sincronizziamo il flow interno con il valore iniziale dello stato
+	private val _searchQuery = MutableStateFlow(_state.value.searchQuery)
 
-	val actions = ExploreActions(onSearchQueryChange = { query ->
-		_state.update { it.copy(searchQuery = query) }
-		_searchQuery.value = query
-	}, onSearchSubmit = {
-		val query = _state.value.searchQuery
-		if (query.isNotBlank()) search(query)
-	}, onClearSearch = {
-		_state.update { it.copy(searchQuery = "", searchResults = emptyList()) }
-		_searchQuery.value = ""
-	}, onRefresh = { loadInitialData() })
+	val actions = ExploreActions(
+		onSearchQueryChange = { query ->
+			_state.update { it.copy(searchQuery = query) }
+			_searchQuery.value = query
+		},
+		onSearchSubmit = {
+			val query = _state.value.searchQuery
+			if (query.isNotBlank()) search(query)
+		},
+		onClearSearch = {
+			_state.update { it.copy(searchQuery = "", searchResults = emptyList()) }
+			_searchQuery.value = ""
+		},
+		onRefresh = { loadInitialData() }
+	)
 
 	init {
 		loadInitialData()
 
-		// Ricerca con debounce: aspetta 400ms dopo l'ultimo input prima di cercare
+		// Se c'è già una query di default (es. "final fantasy"), esegue subito la ricerca iniziale
+		if (_searchQuery.value.isNotBlank()) {
+			search(_searchQuery.value)
+		}
+
+		// Ricerca con debounce per i cambi di testo successivi
 		viewModelScope.launch {
-			_searchQuery.debounce(400).distinctUntilChanged().collect { query ->
-				if (query.isBlank()) {
-					_state.update { it.copy(searchResults = emptyList(), isSearching = false) }
-				} else {
-					search(query)
+			_searchQuery
+				.debounce(400)
+				.distinctUntilChanged()
+				.collect { query ->
+					if (query.isBlank()) {
+						_state.update { it.copy(searchResults = emptyList(), isSearching = false) }
+					} else {
+						search(query)
+					}
 				}
-			}
 		}
 	}
 
 	private fun loadInitialData() {
 		loadPopularGames()
 		loadRecentReleases()
+		loadRecommendations()
+		loadComingSoonGames()
 	}
 
 	private fun loadPopularGames() {
@@ -85,6 +107,34 @@ class ExploreViewModel(
 			_state.update { it.copy(isLoadingRecent = true) }
 			val games = gameRepository.getRecentReleases()
 			_state.update { it.copy(recentReleases = games, isLoadingRecent = false) }
+		}
+	}
+
+	private fun loadComingSoonGames() {
+		viewModelScope.launch {
+			_state.update { it.copy(isLoadingComingSoon = true) }
+			val games = gameRepository.getComingSoonGames()
+			_state.update { it.copy(comingSoonGames = games, isLoadingComingSoon = false) }
+		}
+	}
+
+	private fun loadRecommendations() {
+		viewModelScope.launch {
+			_state.update { it.copy(isLoadingRecommendations = true) }
+
+			// TODO: Sostituisci questi metodi fittizi con le reali implementazioni del tuo repository
+			val becausePlayed = gameRepository.getPopularGames().shuffled().take(5)
+			val bestPlatform = gameRepository.getRecentReleases().shuffled().take(5)
+			val sinceGenre = gameRepository.getPopularGames().take(5)
+
+			_state.update {
+				it.copy(
+					becauseYouPlayed = becausePlayed,
+					bestOnPlatform = bestPlatform,
+					sinceYouLikeGenre = sinceGenre,
+					isLoadingRecommendations = false
+				)
+			}
 		}
 	}
 

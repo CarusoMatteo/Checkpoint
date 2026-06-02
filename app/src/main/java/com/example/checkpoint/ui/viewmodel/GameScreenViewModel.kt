@@ -18,6 +18,8 @@ import java.time.LocalDate
 
 data class GameScreenState(
 	val game: Game? = null,
+	val similarGames: List<Game> = emptyList(),
+	val franchiseGames: List<Game> = emptyList(),
 	val userLog: GameLogEntity? = null,
 	val userReview: ReviewEntity? = null,
 	val reviews: List<ReviewEntity> = emptyList(),
@@ -72,17 +74,25 @@ class GameScreenViewModel(
 			val game = gameRepository.fetchGameDetails(igdbId)
 			if (game == null) {
 				_state.update {
-					it.copy(
-						isLoading = false, error = "Impossibile caricare il gioco"
-					)
+					it.copy(isLoading = false, error = "Impossibile caricare i dettagli del gioco")
 				}
 				return@launch
 			}
 
 			val isSaved = gameRepository.savedIgdbIds.first().contains(igdbId)
-			_state.update { it.copy(game = game, isLoading = false, isSaved = isSaved) }
+			val similar = gameRepository.getSimilarGames(igdbId)
+			val franchise = gameRepository.getFranchiseGames(igdbId)
 
-			// Se il gioco è già salvato localmente, osserva log e recensioni
+			_state.update {
+				it.copy(
+					game = game,
+					similarGames = similar,
+					franchiseGames = franchise,
+					isLoading = false,
+					isSaved = isSaved
+				)
+			}
+
 			if (isSaved && game.id != 0) observeUserData(game.id)
 		}
 	}
