@@ -74,8 +74,7 @@ fun ProfileScreen(
 			IconButton(onClick = { /* TODO: Settings */ }) {
 				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
-		}
-	) { innerPadding ->
+		}) { innerPadding ->
 
 		if (dbState.isLoading) {
 			Box(
@@ -198,7 +197,7 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 private fun ProfileSection(
 	title: String,
 	onUpdateClick: () -> Unit,
-	modifier: Modifier = Modifier,
+	modifier: Modifier = Modifier
 ) {
 	Row(
 		modifier = modifier
@@ -208,9 +207,7 @@ private fun ProfileSection(
 		verticalAlignment = Alignment.CenterVertically
 	) {
 		Text(
-			text = title,
-			style = MaterialTheme.typography.titleMedium,
-			fontWeight = FontWeight.Bold
+			text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold
 		)
 		FilledTonalButton(onClick = onUpdateClick) {
 			Icon(
@@ -299,8 +296,7 @@ private fun AchievementBadge(achievement: AchievementUiModel) {
 	Box(
 		modifier = Modifier
 			.size(48.dp)
-			.clip(CircleShape),
-		contentAlignment = Alignment.Center
+			.clip(CircleShape), contentAlignment = Alignment.Center
 	) {
 		Canvas(modifier = Modifier.fillMaxSize()) { drawCircle(color = bgColor) }
 		Text(
