@@ -83,18 +83,61 @@ class GameRepository(
 	}.getOrElse { emptyList() }
 
 	/**
+	 * Retrieve similar games from IGDB and convert them to the Game domain model.
+	 */
+	suspend fun getSimilarGames(igdbId: Int): List<Game> = runCatching {
+		val similarIds = igdbClient.getSimilarGamesIds(igdbId)
+		if (similarIds.isEmpty()) return emptyList()
+
+		val dtos = igdbClient.getGamesByIds(similarIds)
+		dtos.map { dto ->
+			val localGame = gameDao.getByIgdbId(dto.id)
+			dto.toDomain(localId = localGame?.id ?: 0)
+		}
+	}.getOrElse { emptyList() }
+
+	/**
+	 * Retrieve games from the same franchise from IGDB and convert them to the Game domain model.
+	 */
+	suspend fun getFranchiseGames(igdbId: Int): List<Game> {
+		return try {
+			val franchiseIds = igdbClient.getFranchiseGamesIds(igdbId)
+			if (franchiseIds.isEmpty()) return emptyList()
+
+			val dtos = igdbClient.getGamesByIds(franchiseIds)
+			dtos.map { dto ->
+				val localGame = gameDao.getByIgdbId(dto.id)
+				dto.toDomain(localId = localGame?.id ?: 0)
+			}
+		} catch (e: Exception) {
+			println("IGDB_DEBUG_ERROR in GameRepository.getFranchiseGames: ${e.message}")
+			emptyList()
+		}
+	}
+
+	/**
+	 * Retrieve incoming games from IGDB and map them to the Game domain model.
+	 */
+	suspend fun getComingSoonGames(limit: Int = 15): List<Game> = runCatching {
+		val dtos = igdbClient.getComingSoonGames(limit)
+		dtos.map { dto ->
+			val localGame = gameDao.getByIgdbId(dto.id)
+			dto.toDomain(localId = localGame?.id ?: 0)
+		}
+	}.getOrElse { emptyList() }
+
+	/**
 	 * Caches game metadata (platforms and genres) from the IGDB DTO into the local database.
-	 *
-	 * This helper method extracts and updates platform details, updates the many-to-many
-	 * cross-reference join table if the game already exists locally, and inserts or updates
-	 * the associated genre entries.
-	 *
-	 * @param dto The [IgdbGameDto] containing the game metadata to be cached.
 	 */
 	private suspend fun cacheGameData(dto: IgdbGameDto) {
 		dto.platforms?.let { platforms ->
 			val entities = platforms.map { p ->
+				// 1. Controlliamo se la piattaforma esiste già nel database locale
+				val existingPlatform = platformDao.getByIgdbId(p.id)
+
 				PlatformEntity(
+					id = existingPlatform?.id
+						?: 0,
 					igdbId = p.id,
 					name = p.name ?: "Unknown",
 					abbreviation = p.abbreviation,
@@ -118,11 +161,17 @@ class GameRepository(
 		}
 
 		dto.genres?.let { genres ->
-			genreDao.upsertAll(genres.map { g ->
+			val entities = genres.map { g ->
+				// 2. Facciamo lo stesso controllo per i generi
+				val existingGenre =
+					genreDao.getByIgdbId(g.id)
+
 				GenreEntity(
+					id = existingGenre?.id ?: 0,
 					igdbId = g.id, name = g.name ?: "Unknown"
 				)
-			})
+			}
+			genreDao.upsertAll(entities)
 		}
 	}
 }
