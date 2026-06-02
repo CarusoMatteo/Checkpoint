@@ -31,16 +31,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
+import com.example.checkpoint.ui.composable.LabeledTextWithAction
 import com.example.checkpoint.ui.composable.LazyGamesCarousel
 import com.example.checkpoint.ui.composable.NavigationItem
+import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.composable.ReviewRating
 import com.example.checkpoint.ui.composable.SmallSplitButtons
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
+import com.example.checkpoint.data.repositories.Game
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun GameScreen(
@@ -52,7 +60,7 @@ fun GameScreen(
 
 	AppShell(
 		navController = navController,
-		title = state.game?.name ?: "Game",
+		title = "Game",
 		selectedNavigationItem = NavigationItem.Explore,
 		appBarActions = {
 			IconButton(onClick = {
@@ -62,11 +70,10 @@ fun GameScreen(
 				Icon(
 					imageVector = if (state.isSaved) Icons.Rounded.Notifications
 					else Icons.Rounded.NotificationsNone,
-					contentDescription = if (state.isSaved) "Rimuovi dai salvati" else "Salva gioco"
+					contentDescription = if (state.isSaved) "Unfollow game" else "Follow game"
 				)
 			}
-		}
-	) { innerPadding ->
+		}) { innerPadding ->
 
 		when {
 			state.isLoading -> {
@@ -100,74 +107,58 @@ fun GameScreen(
 						.fillMaxSize()
 						.verticalScroll(scrollState)
 				) {
-					// ── Header ──────────────────────────────────────────────
-					Row(
+					GameHeader(
+						game = game,
+						isSaved = state.isSaved,
+						averageRating = state.averageRating,
+						onPrimaryClick = {
+							if (state.isSaved) viewModel.actions.onRemoveGame()
+							else viewModel.actions.onSaveGame()
+						},
 						modifier = Modifier
 							.fillMaxWidth()
-							.padding(horizontal = 16.dp, vertical = 8.dp)
-					) {
-						AsyncImage(
-							model = game.coverUrl,
-							contentDescription = game.name,
-							modifier = Modifier
-								.clip(MaterialTheme.shapes.extraLarge)
-								.width(100.dp),
-							contentScale = ContentScale.FillWidth,
-						)
-						Column(
-							modifier = Modifier.padding(start = 16.dp),
-							verticalArrangement = Arrangement.spacedBy(4.dp)
-						) {
-							Text(
-								text = game.name,
-								style = MaterialTheme.typography.headlineSmall,
-								modifier = Modifier.basicMarquee()
-							)
-							if (game.developer != null) {
-								Text(
-									text = game.developer,
-									style = MaterialTheme.typography.titleMedium
-								)
-							}
-							ReviewRating(
-								rating = (game.totalRating?.div(20))?.toFloat() ?: 0f,
-								modifier = Modifier.fillMaxWidth()
-							)
-							SmallSplitButtons(
-								onPrimaryClick = {
-									if (state.isSaved) viewModel.actions.onRemoveGame()
-									else viewModel.actions.onSaveGame()
-								},
-								onSecondaryClick = { /* TODO: dropdown opzioni log */ },
-								primaryIcon = {
-									Icon(
-										imageVector = Icons.Rounded.AddCircleOutline,
-										contentDescription = null
-									)
-								},
-								primaryLabel = if (state.isSaved) "Salvato" else "Aggiungi",
-								secondaryIcon = {
-									Icon(
-										imageVector = Icons.Rounded.KeyboardArrowDown,
-										contentDescription = null
-									)
-								}
-							)
-						}
-					}
+							.padding(horizontal = 16.dp)
+							.padding(bottom = 8.dp)
+					)
 
-					// ── Descrizione ─────────────────────────────────────────
 					if (!game.summary.isNullOrBlank()) {
 						LabeledText(
 							title = "Description",
 							contentText = game.summary,
 							modifier = Modifier
-								.padding(horizontal = 16.dp, vertical = 8.dp)
+								.padding(vertical = 8.dp, horizontal = 16.dp)
 								.fillMaxWidth()
 						)
 					}
 
-					// ── Generi ──────────────────────────────────────────────
+					// Formattazione della data e logica "Add to calendar"
+					game.firstReleaseDate?.let { epochSeconds ->
+						val releaseInstant = Instant.ofEpochSecond(epochSeconds)
+						val localDate = releaseInstant.atZone(ZoneId.systemDefault()).toLocalDate()
+						val formattedDate =
+							localDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+
+						val now = Instant.now()
+						if (releaseInstant.isAfter(now)) {
+							LabeledTextWithAction(
+								title = "Release date",
+								contentText = formattedDate,
+								actionText = "Add to calendar",
+								modifier = Modifier
+									.fillMaxWidth()
+									.padding(vertical = 8.dp, horizontal = 16.dp)
+							) { /* TODO: Add to calendar action */ }
+						} else {
+							LabeledText(
+								title = "Release date",
+								contentText = formattedDate,
+								modifier = Modifier
+									.fillMaxWidth()
+									.padding(vertical = 8.dp, horizontal = 16.dp)
+							)
+						}
+					}
+
 					if (game.genres.isNotEmpty()) {
 						LabeledChipRow(
 							title = "Genres",
@@ -176,26 +167,95 @@ fun GameScreen(
 						)
 					}
 
-					// ── Piattaforme ─────────────────────────────────────────
-					if (game.platforms.isNotEmpty()) {
-						LabeledChipRow(
-							title = "Platforms",
-							chips = game.platforms.map { ChipContent(it) },
-							modifier = Modifier.padding(vertical = 8.dp)
-						)
+					// Same Franchise Games
+					if (state.franchiseGames.isNotEmpty()) {
+						LazyGamesCarousel(
+							title = "From the series",
+							games = state.franchiseGames,
+							hasStartingDivider = true,
+							onGameClick = { clickedIgdbId ->
+								navController.navigate(NavigationRoute.GameScreen(clickedIgdbId))
+							})
 					}
 
-					// ── Giochi correlati (ancora sample) ────────────────────
-					LazyGamesCarousel(
-						title = "You might also like",
-						games = sampleLocalGames,
+					// Similar games
+					if (state.similarGames.isNotEmpty()) {
+						LazyGamesCarousel(
+							title = "Similar games",
+							games = state.similarGames,
+							hasStartingDivider = true,
+							onGameClick = { clickedIgdbId ->
+								navController.navigate(NavigationRoute.GameScreen(clickedIgdbId))
+							})
+					}
+
+					// Recensioni fittizie usate temporaneamente come da file di design
+					ReviewList(
+						title = "Reviews",
+						reviews = sampleLocalGames.first().reviews,
+						modifier = Modifier.padding(horizontal = 16.dp),
 						hasStartingDivider = true
 					)
-
-					// TODO: sostituire ReviewList con ReviewEntity dal ViewModel
-					// quando la schermata di scrittura recensione sarà implementata
 				}
 			}
+		}
+	}
+}
+
+@Composable
+private fun GameHeader(
+	game: Game,
+	isSaved: Boolean,
+	averageRating: Double?,
+	onPrimaryClick: () -> Unit,
+	modifier: Modifier = Modifier
+) {
+	Row(modifier = modifier) {
+		AsyncImage(
+			modifier = Modifier
+				.clip(MaterialTheme.shapes.extraLarge)
+				.width(width = 100.dp),
+			contentScale = ContentScale.FillWidth,
+			model = game.coverUrl,
+			contentDescription = game.name,
+		)
+
+		Column(
+			modifier = Modifier.padding(start = 16.dp),
+			verticalArrangement = Arrangement.spacedBy(2.dp)
+		) {
+			Text(
+				text = game.name,
+				style = MaterialTheme.typography.headlineSmall,
+				modifier = Modifier.basicMarquee()
+			)
+			if (game.developer != null) {
+				Text(
+					text = game.developer, style = MaterialTheme.typography.titleMedium
+				)
+			}
+
+			// Usa la media voti reale dal DB se disponibile, altrimenti fa il fallback su IGDB
+			val finalRating =
+				averageRating?.toFloat() ?: (game.totalRating?.div(20))?.toFloat() ?: 0f
+			ReviewRating(
+				rating = finalRating, modifier = Modifier.fillMaxWidth()
+			)
+
+			SmallSplitButtons(
+				onPrimaryClick = onPrimaryClick,
+				onSecondaryClick = { /* TODO: dropdown menu */ },
+				primaryIcon = {
+					Icon(
+						imageVector = Icons.Rounded.AddCircleOutline, contentDescription = null
+					)
+				},
+				primaryLabel = if (isSaved) "Saved" else "Add to Backlog",
+				secondaryIcon = {
+					Icon(
+						imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
+					)
+				})
 		}
 	}
 }
