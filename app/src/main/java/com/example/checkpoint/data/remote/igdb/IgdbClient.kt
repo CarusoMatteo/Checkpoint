@@ -1,5 +1,6 @@
 package com.example.checkpoint.data.remote.igdb
 
+import android.util.Log
 import com.example.checkpoint.data.remote.dto.IgdbGameDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -8,6 +9,9 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+
+
+private const val TAG = "IgdbClient"
 
 /**
  * Utility to build IGDB image URLs from an imageId.
@@ -89,40 +93,62 @@ class IgdbClient(
 	 */
 	suspend fun getFranchiseGamesIds(igdbId: Int): List<Int> {
 		return try {
-
-			val collectionResponse = query<List<IgdbGameDto>>(
+			// richiedo i franchise e le collection dove è presente il gioco
+			val response = query<List<IgdbGameDto>>(
 				endpoint = "games", body = """
-                    fields collection;
-                    where id = $igdbId;
-                """.trimIndent()
+                fields collections, franchises;
+                where id = $igdbId;
+            """.trimIndent()
 			)
 
-			val collectionId = collectionResponse.firstOrNull()?.collection
-			if (collectionId == null) {
-				println("IGDB_DEBUG: Il gioco con ID $igdbId non appartiene a nessuna collection.")
+			val gameDto = response.firstOrNull()
+			val relatedIds = mutableListOf<Int>()
+
+			gameDto?.collections?.let { relatedIds.addAll(it) }
+			gameDto?.franchises?.let { relatedIds.addAll(it) }
+
+			if (relatedIds.isEmpty()) {
+				Log.d(
+					TAG,
+					"getFranchiseGamesIds: igdbId=$igdbId non appartiene a nessuna collection o franchise"
+				)
 				return emptyList()
 			}
 
-			println("IGDB_DEBUG: Il gioco $igdbId appartiene alla collection ID: $collectionId")
-
-			// 2. Recuperiamo tutti i giochi di quella collection
-			val gamesResponse = query<List<IgdbGameDto>>(
-				endpoint = "games", body = """
-                    fields id;
-                    where collection = $collectionId;
-                    limit 15;
-                """.trimIndent()
+			Log.d(
+				TAG,
+				"getFranchiseGamesIds: igdbId=$igdbId appartiene alle collections/franchises: $relatedIds"
 			)
 
-			// escludiamo il gioco che l'utente sta già visualizzando
+			//faccio il build delle condition
+			// utilizzo sia franchise che collections per future-proofing (collection sta diventando deprecato)
+			val conditions = mutableListOf<String>()
+			if (!gameDto?.collections.isNullOrEmpty()) {
+				conditions.add("collections = (${gameDto!!.collections!!.joinToString(",")})")
+			}
+			if (!gameDto?.franchises.isNullOrEmpty()) {
+				conditions.add("franchises = (${gameDto!!.franchises!!.joinToString(",")})")
+			}
+
+			val whereClause = conditions.joinToString(" | ")
+
+			// recupero i giochi che matchano le condition
+			val gamesResponse = query<List<IgdbGameDto>>(
+				endpoint = "games", body = """
+                fields id;
+                where $whereClause;
+                limit 15;
+            """.trimIndent()
+			)
+
+			//Escludo il gioco corrente
 			val franchiseIds = gamesResponse.map { it.id }.filter { it != igdbId }
-			println("IGDB_DEBUG: Trovati ${franchiseIds.size} giochi correlati nella collection dopo il filtro.")
+
+			Log.d(TAG, "getFranchiseGamesIds: trovati ${franchiseIds.size} altri giochi correlati")
 
 			franchiseIds
 		} catch (e: Exception) {
-			// for debugg
-			println("IGDB_DEBUG_ERROR in getFranchiseGamesIds: ${e.message}")
-			e.printStackTrace()
+			Log.e(TAG, "getFranchiseGamesIds: errore per igdbId=$igdbId - ${e.message}", e)
 			emptyList()
 		}
 	}
