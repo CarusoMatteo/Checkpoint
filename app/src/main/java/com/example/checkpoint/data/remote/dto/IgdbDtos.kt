@@ -15,6 +15,7 @@ data class IgdbGameDto(
 	val cover: IgdbCoverDto? = null,
 	val genres: List<IgdbGenreDto>? = null,
 	val platforms: List<IgdbPlatformDto>? = null,
+	val collection: Int? = null,
 
 	@SerialName("first_release_date") val firstReleaseDate: Long? = null,   // Unix timestamp
 

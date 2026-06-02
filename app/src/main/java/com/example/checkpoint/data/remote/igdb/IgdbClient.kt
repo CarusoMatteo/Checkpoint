@@ -73,6 +73,83 @@ class IgdbClient(
 	}
 
 	/**
+	 * Retrieves the list of similar game IDs for a given game.
+	 */
+	suspend fun getSimilarGamesIds(igdbId: Int): List<Int> {
+		return runCatching {
+			val response = query<List<IgdbGameDto>>(
+				endpoint = "games", body = "fields similar_games; where id = $igdbId;"
+			)
+			response.firstOrNull()?.similarGames ?: emptyList()
+		}.getOrElse { emptyList() }
+	}
+
+	/**
+	 * Retrieve IDs of games belonging to the same franchise/collection.
+	 */
+	suspend fun getFranchiseGamesIds(igdbId: Int): List<Int> {
+		return try {
+
+			val collectionResponse = query<List<IgdbGameDto>>(
+				endpoint = "games", body = """
+                    fields collection;
+                    where id = $igdbId;
+                """.trimIndent()
+			)
+
+			val collectionId = collectionResponse.firstOrNull()?.collection
+			if (collectionId == null) {
+				println("IGDB_DEBUG: Il gioco con ID $igdbId non appartiene a nessuna collection.")
+				return emptyList()
+			}
+
+			println("IGDB_DEBUG: Il gioco $igdbId appartiene alla collection ID: $collectionId")
+
+			// 2. Recuperiamo tutti i giochi di quella collection
+			val gamesResponse = query<List<IgdbGameDto>>(
+				endpoint = "games", body = """
+                    fields id;
+                    where collection = $collectionId;
+                    limit 15;
+                """.trimIndent()
+			)
+
+			// escludiamo il gioco che l'utente sta già visualizzando
+			val franchiseIds = gamesResponse.map { it.id }.filter { it != igdbId }
+			println("IGDB_DEBUG: Trovati ${franchiseIds.size} giochi correlati nella collection dopo il filtro.")
+
+			franchiseIds
+		} catch (e: Exception) {
+			// for debugg
+			println("IGDB_DEBUG_ERROR in getFranchiseGamesIds: ${e.message}")
+			e.printStackTrace()
+			emptyList()
+		}
+	}
+
+	/**
+	 * Recover upcoming games (with future release date).
+	 */
+	suspend fun getComingSoonGames(limit: Int = 15): List<IgdbGameDto> {
+		//timestamp attuale
+		val currentTimestamp = System.currentTimeMillis() / 1000
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.name,
+                       platforms.name,
+                       first_release_date,
+                       total_rating,
+                       total_rating_count;
+                where first_release_date > $currentTimestamp & cover != null;
+                sort first_release_date asc;
+                limit $limit;
+            """.trimIndent()
+		)
+	}
+
+	/**
 	 * Retrieves the details of multiple games in a single request.
 	 */
 	suspend fun getGamesByIds(igdbIds: List<Int>): List<IgdbGameDto> {
