@@ -1,16 +1,13 @@
 package com.example.checkpoint.data.database
 
-import com.example.checkpoint.data.database.daos.AchievementDao
-import com.example.checkpoint.data.database.daos.GameDao
-import com.example.checkpoint.data.database.daos.ReviewDao
-import com.example.checkpoint.data.database.daos.UserDao
-import com.example.checkpoint.data.database.daos.UserAchievementDao
 import com.example.checkpoint.data.database.entities.AchievementCategoryEntity
 import com.example.checkpoint.data.database.entities.AchievementEntity
 import com.example.checkpoint.data.database.entities.GameEntity
+import com.example.checkpoint.data.database.entities.GenreEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserAchievementEntity
 import com.example.checkpoint.data.database.entities.UserEntity
+import com.example.checkpoint.data.database.entities.UserPreferredGenreEntity
 import java.time.Instant
 
 /**
@@ -49,7 +46,7 @@ object DatabaseSeeder {
 		),
 	)
 
-	//Giochi fittizzi al quale associare le reviews
+	// Giochi fittizi al quale associare le reviews
 	val sampleGames = listOf(
 		GameEntity(id = 1, igdbId = 1001),
 		GameEntity(id = 2, igdbId = 1002),
@@ -60,7 +57,7 @@ object DatabaseSeeder {
 	val sampleDbReviews = listOf(
 		ReviewEntity(
 			id = 1,
-			userId = 1,// john_doe
+			userId = 1,
 			gameId = 1,
 			rating = 9,
 			body = "Great game with an engaging story and fun gameplay! I completed everything and loved every minute of it.",
@@ -68,7 +65,7 @@ object DatabaseSeeder {
 			createdAt = Instant.now().toString()
 		), ReviewEntity(
 			id = 2,
-			userId = 1,// john_doe
+			userId = 1,
 			gameId = 2,
 			rating = 6,
 			body = "The game was enjoyable, but I found the controls a bit clunky.",
@@ -76,7 +73,7 @@ object DatabaseSeeder {
 			createdAt = Instant.now().toString()
 		), ReviewEntity(
 			id = 3,
-			userId = 2,// jane_smith
+			userId = 2,
 			gameId = 1,
 			rating = 10,
 			body = "Absolutely loved it! The graphics and soundtrack were amazing.",
@@ -84,7 +81,7 @@ object DatabaseSeeder {
 			createdAt = Instant.now().toString()
 		), ReviewEntity(
 			id = 4,
-			userId = 3,// alex_j
+			userId = 3,
 			gameId = 3,
 			rating = 5,
 			body = "The game had potential, but it was plagued with bugs and performance issues.",
@@ -166,37 +163,59 @@ object DatabaseSeeder {
 	)
 
 	val userAchievements = listOf(
-		UserAchievementEntity(userId = 1, achievementId = 1, progress = 5, unlockedAt = null),
 		UserAchievementEntity(
-			userId = 1, achievementId = 2, progress = 15, unlockedAt = Instant.now().toString()
+			userId = 1, achievementId = 1, progress = 5, unlockedAt = null, isPinned = false
 		),
-		UserAchievementEntity(userId = 1, achievementId = 3, progress = 0, unlockedAt = null),
-		UserAchievementEntity(userId = 1, achievementId = 4, progress = 7, unlockedAt = null),
-		UserAchievementEntity(userId = 1, achievementId = 5, progress = 2, unlockedAt = null),
-		UserAchievementEntity(userId = 1, achievementId = 6, progress = 3, unlockedAt = null),
+		UserAchievementEntity(
+			userId = 1,
+			achievementId = 2,
+			progress = 15,
+			unlockedAt = Instant.now().toString(),
+			isPinned = true
+		),
+		UserAchievementEntity(
+			userId = 1, achievementId = 3, progress = 0, unlockedAt = null, isPinned = false
+		),
+		UserAchievementEntity(
+			userId = 1, achievementId = 4, progress = 7, unlockedAt = null, isPinned = false
+		),
+		UserAchievementEntity(
+			userId = 1, achievementId = 5, progress = 2, unlockedAt = null, isPinned = false
+		),
+		UserAchievementEntity(
+			userId = 1, achievementId = 6, progress = 3, unlockedAt = null, isPinned = false
+		),
 	)
 
-	suspend fun seed(
-		userDao: UserDao,
-		gameDao: GameDao,
-		achievementDao: AchievementDao,
-		userAchievementDao: UserAchievementDao,
-		reviewDao: ReviewDao,
-	) {
-		// 1. Salva gli utenti
-		users.forEach { userDao.upsert(it) }
+	// Generi di gioco
+	val sampleGenres = listOf(
+		GenreEntity(id = 1, igdbId = 12, name = "RPG"),
+		GenreEntity(id = 2, igdbId = 5, name = "Shooter"),
+		GenreEntity(id = 3, igdbId = 31, name = "Adventure"),
+		GenreEntity(id = 4, igdbId = 15, name = "Strategy")
+	)
 
-		// 2. Salva i giochi
-		sampleGames.forEach { gameDao.upsert(it) }
+	// Generi preferiti dagli utenti
+	val preferredGenres = listOf(
+		UserPreferredGenreEntity(userId = 1, genreId = 1), // john_doe -> RPG
+		UserPreferredGenreEntity(userId = 1, genreId = 4), // john_doe -> Strategy
+		UserPreferredGenreEntity(userId = 2, genreId = 3)  // jane_smith -> Adventure
+	)
 
-		// 3. Grazie al punto 2 Ora Room accetterà le recensioni senza problemi
-		sampleDbReviews.forEach { reviewDao.upsert(it) }
+	suspend fun seed(db: AppDatabase) {
+		users.forEach { db.userDao().upsert(it) }
 
-		// 4. Salva gli Achievements
-		achievementCategories.forEach { achievementDao.upsertCategory(it) }
-		achievementDao.upsertAllAchievements(achievements)
+		sampleGames.forEach { db.gameDao().upsert(it) }
 
-		// 5. Salva i progressi degli Achievements
-		userAchievements.forEach { userAchievementDao.upsert(it) }
+		sampleGenres.forEach { db.genreDao().upsert(it) }
+
+		preferredGenres.forEach { db.userPreferredGenreDao().upsert(it) }
+
+		sampleDbReviews.forEach { db.reviewDao().upsert(it) }
+
+		achievementCategories.forEach { db.achievementDao().upsertCategory(it) }
+		db.achievementDao().upsertAllAchievements(achievements)
+
+		userAchievements.forEach { db.userAchievementDao().upsert(it) }
 	}
 }
