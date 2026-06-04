@@ -1,7 +1,9 @@
 package com.example.checkpoint
 
 import android.app.Application
+import android.util.Log
 import com.example.checkpoint.data.database.AppDatabase
+import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.di.appModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +14,8 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+
+private const val TAG = "Checkpoint"
 
 class CheckpointApplication : Application(), KoinComponent {
 
@@ -24,20 +28,23 @@ class CheckpointApplication : Application(), KoinComponent {
 			modules(appModule)
 		}
 
-		// Forza l'apertura del DB subito dopo che Koin è pronto.
-		//
-		// Senza questo, tutti i single{} di Koin restano lazy (eagerInstances=0
-		// nel debug): AppDatabase non viene mai costruito, il file .db non esiste
-		// su disco e App Inspection non vede nulla.
-		//
-		//10 ore per capirlo!!!!!
-		//
-		// inject() è disponibile grazie a KoinComponent implementato sopra.
-		// openHelper.writableDatabase apre fisicamente il file SQLite, triggera
-		// il Callback.onCreate() con il seed e rende il DB visibile ad App Inspection.
+		// Forza l'apertura del DB subito dopo che Koin è pronto
 		val db: AppDatabase by inject()
 		CoroutineScope(Dispatchers.IO).launch {
 			db.openHelper.writableDatabase
+		}
+
+		// Questo DEVE avvenire PRIMA che MainActivity controlla sessionState
+		// senno  MainActivity vede sempre LoggedOut
+		val sessionManager: SessionManager by inject()
+		CoroutineScope(Dispatchers.IO).launch {
+			try {
+				Log.d(TAG, "Restoring session from DataStore...")
+				sessionManager.restoreSession()
+				Log.d(TAG, "Session restored")
+			} catch (e: Exception) {
+				Log.e(TAG, "Error restoring session: ${e.message}", e)
+			}
 		}
 	}
 }
