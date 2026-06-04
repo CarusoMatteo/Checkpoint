@@ -2,15 +2,19 @@ package com.example.checkpoint.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.checkpoint.data.database.entities.AchievementCategoryEntity
-import com.example.checkpoint.data.database.entities.AchievementEntity
-import com.example.checkpoint.data.database.entities.ReviewEntity
+import com.example.checkpoint.data.database.daos.UserDao
+import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.database.entities.UserAchievementEntity
 import com.example.checkpoint.data.repositories.AchievementRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
+import com.example.checkpoint.data.session.SessionManager
+import com.example.checkpoint.data.session.SessionState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 data class AchievementUiModel(
@@ -27,55 +31,62 @@ data class AchievementUiModel(
 	val progressFraction: Float get() = (progress.toFloat() / threshold).coerceIn(0f, 1f)
 }
 
+// 1. Aggiorna lo stato includendo l'entità UserEntity dal DB
 data class ProfileState(
-	val reviews: List<ReviewEntity> = emptyList(),
+	val user: UserEntity? = null,
+	val reviews: List<com.example.checkpoint.data.database.entities.ReviewEntity> = emptyList(),
 	val achievements: List<AchievementUiModel> = emptyList(),
 	val isLoading: Boolean = true,
 )
 
-/**
- * ViewModel per ProfileScreen.
- *
- * [userId] = 1 è l'utente "logged-in" di default fin quando non è
- * implementato il login. Da sostituire con la sessione reale.
- */
 class ProfileViewModel(
+	private val sessionManager: SessionManager,
+	private val userDao: UserDao,
 	private val reviewRepository: ReviewRepository,
 	private val achievementRepository: AchievementRepository,
-	private val userId: Int = 1,
 ) : ViewModel() {
 
-	val state: StateFlow<ProfileState> = combine(
-		reviewRepository.getReviewsByUser(userId),
-		achievementRepository.getAllAchievements(),
-		achievementRepository.getAchievementsForUser(userId),
-	) { reviews, allAchievements, userProgress ->
+	// 2. Usiamo flatMapLatest per ricreare il flusso ogni volta che la sessione cambia
+	@OptIn(ExperimentalCoroutinesApi::class)
+	val state: StateFlow<ProfileState> = sessionManager.sessionState.flatMapLatest { session ->
+		if (session is SessionState.LoggedIn) {
+			// Uniamo i flussi provenienti dal database usando l'ID dell'utente loggato
+			combine(
+				userDao.getUserById(session.userId),
+				reviewRepository.getReviewsByUser(session.userId),
+				achievementRepository.getAllAchievements(),
+				achievementRepository.getAchievementsForUser(session.userId)
+			) { user, reviews, allAchievements, userProgress ->
 
-		val progressMap: Map<Int, UserAchievementEntity> =
-			userProgress.associateBy { it.achievementId }
+				val progressMap = userProgress.associateBy { it.achievementId }
+				val uiAchievements = allAchievements.map { ach ->
+					val prog = progressMap[ach.id]
+					AchievementUiModel(
+						id = ach.id,
+						code = ach.code,
+						name = ach.name,
+						description = ach.description,
+						iconUrl = ach.iconUrl,
+						threshold = ach.threshold,
+						progress = prog?.progress ?: 0,
+						unlockedAt = prog?.unlockedAt,
+					)
+				}
 
-		val uiAchievements = allAchievements.map { ach ->
-			val prog = progressMap[ach.id]
-			AchievementUiModel(
-				id = ach.id,
-				code = ach.code,
-				name = ach.name,
-				description = ach.description,
-				iconUrl = ach.iconUrl,
-				threshold = ach.threshold,
-				progress = prog?.progress ?: 0,
-				unlockedAt = prog?.unlockedAt,
-			)
+				ProfileState(
+					user = user,
+					reviews = reviews,
+					achievements = uiAchievements,
+					isLoading = false
+				)
+			}
+		} else {
+			// Se non è loggato, restituisce uno stato vuoto
+			flowOf(ProfileState(isLoading = false))
 		}
-
-		ProfileState(
-			reviews = reviews,
-			achievements = uiAchievements,
-			isLoading = false,
-		)
 	}.stateIn(
 		scope = viewModelScope,
-		started = SharingStarted.WhileSubscribed(5_000),
-		initialValue = ProfileState(isLoading = true),
+		started = SharingStarted.WhileSubscribed(5000),
+		initialValue = ProfileState(isLoading = true)
 	)
 }

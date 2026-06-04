@@ -31,7 +31,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,24 +44,34 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.DatePickerField
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.NotLoggedInShell
 import com.example.checkpoint.ui.composable.ProfileMonogram
 import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
+import com.example.checkpoint.ui.viewmodel.SignUpUiState
+import com.example.checkpoint.ui.viewmodel.SignUpViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
 	navController: NavHostController,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	viewModel: SignUpViewModel = koinViewModel()
 ) {
+	val uiState by viewModel.uiState.collectAsState()
+
+	LaunchedEffect(uiState.isSuccess) {
+		if (uiState.isSuccess) {
+			navController.navigate(NavigationRoute.ProfileScreen) {
+				popUpTo(NavigationRoute.SignUpScreen) { inclusive = true }
+			}
+		}
+	}
+
 	AppShell(
 		navController,
 		title = "Welcome back!",
@@ -77,18 +89,25 @@ fun SignUpScreen(
 				modifier = Modifier
 					.fillMaxWidth()
 					.padding(16.dp),
-				showProgressIndicator,
-				navController
+				showProgressIndicator = showProgressIndicator,
+				navController = navController,
+				uiState = uiState,
+				onSignUpClick = { username, email, password ->
+					viewModel.signUp(username, email, password, "")
+				}
 			)
 		}
 	}
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SignUpCard(
 	modifier: Modifier = Modifier,
 	showProgressIndicator: MutableState<Boolean>,
-	navController: NavHostController
+	navController: NavHostController,
+	uiState: SignUpUiState,
+	onSignUpClick: (String, String, String) -> Unit
 ) {
 	val email = rememberTextFieldState("")
 	val username = rememberTextFieldState("")
@@ -98,6 +117,13 @@ private fun SignUpCard(
 	var showRepeatPassword by remember { mutableStateOf(false) }
 	var showProgress by showProgressIndicator
 
+	// Ripristina il caricamento su falso in caso di errore
+	LaunchedEffect(uiState.isLoading) {
+		if (!uiState.isLoading) {
+			showProgress = false
+		}
+	}
+
 	OutlinedCard(
 		modifier = modifier
 	) {
@@ -106,6 +132,16 @@ private fun SignUpCard(
 			modifier = Modifier.padding(16.dp),
 			style = MaterialTheme.typography.titleLarge
 		)
+
+		if (uiState.error != null) {
+			Text(
+				text = uiState.error,
+				color = MaterialTheme.colorScheme.error,
+				style = MaterialTheme.typography.bodyMedium,
+				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+		}
+
 		OutlinedTextField(
 			state = email,
 			label = { Text("Email") },
@@ -115,13 +151,8 @@ private fun SignUpCard(
 				.padding(bottom = 16.dp),
 			trailingIcon = {
 				if (email.text.isNotEmpty()) {
-					IconButton(
-						onClick = { email.clearText() }
-					) {
-						Icon(
-							imageVector = Icons.Rounded.Clear,
-							contentDescription = "Clear email"
-						)
+					IconButton(onClick = { email.clearText() }) {
+						Icon(Icons.Rounded.Clear, contentDescription = "Clear email")
 					}
 				}
 			}
@@ -135,13 +166,8 @@ private fun SignUpCard(
 				.padding(bottom = 16.dp),
 			trailingIcon = {
 				if (username.text.isNotEmpty()) {
-					IconButton(
-						onClick = { username.clearText() }
-					) {
-						Icon(
-							imageVector = Icons.Rounded.Clear,
-							contentDescription = "Clear username"
-						)
+					IconButton(onClick = { username.clearText() }) {
+						Icon(Icons.Rounded.Clear, contentDescription = "Clear username")
 					}
 				}
 			}
@@ -149,10 +175,7 @@ private fun SignUpCard(
 		OutlinedSecureTextField(
 			state = password,
 			label = { Text("Password") },
-			textObfuscationMode = if (showPassword)
-				TextObfuscationMode.Visible
-			else
-				TextObfuscationMode.RevealLastTyped,
+			textObfuscationMode = if (showPassword) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
 			modifier = Modifier
 				.fillMaxWidth()
 				.padding(horizontal = 16.dp)
@@ -160,23 +183,13 @@ private fun SignUpCard(
 			trailingIcon = {
 				Row {
 					if (password.text.isNotEmpty()) {
-						IconButton(
-							onClick = { password.clearText() }
-						) {
-							Icon(
-								imageVector = Icons.Rounded.Clear,
-								contentDescription = "Clear password"
-							)
+						IconButton(onClick = { password.clearText() }) {
+							Icon(Icons.Rounded.Clear, contentDescription = "Clear password")
 						}
 					}
-					IconButton(
-						onClick = { showPassword = !showPassword }
-					) {
+					IconButton(onClick = { showPassword = !showPassword }) {
 						Icon(
-							imageVector = if (showPassword)
-								Icons.Rounded.Visibility
-							else
-								Icons.Rounded.VisibilityOff,
+							imageVector = if (showPassword) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
 							contentDescription = "Toggle password visibility"
 						)
 					}
@@ -186,34 +199,21 @@ private fun SignUpCard(
 		OutlinedSecureTextField(
 			state = repeatPassword,
 			label = { Text("Repeat password") },
-			textObfuscationMode = if (showRepeatPassword)
-				TextObfuscationMode.Visible
-			else
-				TextObfuscationMode.RevealLastTyped,
+			textObfuscationMode = if (showRepeatPassword) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
 			modifier = Modifier
 				.fillMaxWidth()
 				.padding(horizontal = 16.dp)
 				.padding(bottom = 16.dp),
 			trailingIcon = {
 				Row {
-					if (password.text.isNotEmpty()) {
-						IconButton(
-							onClick = { password.clearText() }
-						) {
-							Icon(
-								imageVector = Icons.Rounded.Clear,
-								contentDescription = "Clear repeat password"
-							)
+					if (repeatPassword.text.isNotEmpty()) {
+						IconButton(onClick = { repeatPassword.clearText() }) {
+							Icon(Icons.Rounded.Clear, contentDescription = "Clear repeat password")
 						}
 					}
-					IconButton(
-						onClick = { showRepeatPassword = !showRepeatPassword }
-					) {
+					IconButton(onClick = { showRepeatPassword = !showRepeatPassword }) {
 						Icon(
-							imageVector = if (showRepeatPassword)
-								Icons.Rounded.Visibility
-							else
-								Icons.Rounded.VisibilityOff,
+							imageVector = if (showRepeatPassword) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
 							contentDescription = "Toggle repeat password visibility"
 						)
 					}
@@ -245,13 +245,8 @@ private fun SignUpCard(
 			verticalAlignment = Alignment.CenterVertically,
 			horizontalArrangement = Arrangement.SpaceBetween
 		) {
-			Text(
-				"Already have an account?",
-				modifier = Modifier.weight(1f)
-			)
-			TextButton(
-				onClick = { navController.popBackStack() }
-			) {
+			Text("Already have an account?", modifier = Modifier.weight(1f))
+			TextButton(onClick = { navController.popBackStack() }) {
 				Text("Log in")
 			}
 		}
@@ -263,13 +258,13 @@ private fun SignUpCard(
 			horizontalArrangement = Arrangement.End
 		) {
 			Button(onClick = {
-				/* TODO: Attempt login */
 				if (!showProgress) {
 					showProgress = true
-					CoroutineScope(Dispatchers.Main).launch {
-						delay(5.seconds)
-						showProgress = false
-					}
+					onSignUpClick(
+						username.text.toString(),
+						email.text.toString(),
+						password.text.toString()
+					)
 				}
 			}) {
 				Text("Register")
@@ -348,6 +343,8 @@ fun PictureSelector(
 	}
 }
 
+private fun CharSequence.nullableFirst() = if (this.isNotEmpty()) this.first() else null
+
 @Preview
 @Composable
 private fun PictureSelectorPreview() {
@@ -366,9 +363,9 @@ private fun SignUpPreview() {
 		modifier = Modifier
 			.fillMaxWidth()
 			.padding(16.dp),
-		showProgressIndicator = remember { mutableStateOf(true) },
-		navController = rememberNavController()
+		showProgressIndicator = remember { mutableStateOf(false) },
+		navController = rememberNavController(),
+		uiState = SignUpUiState(),
+		onSignUpClick = { _, _, _ -> }
 	)
 }
-
-private fun CharSequence.nullableFirst() = if (this.isNotEmpty()) this.first() else null

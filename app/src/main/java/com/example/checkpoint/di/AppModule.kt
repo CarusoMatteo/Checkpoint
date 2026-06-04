@@ -16,6 +16,10 @@ import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.ExploreViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
+import com.example.checkpoint.data.repositories.AuthRepository
+import com.example.checkpoint.data.session.SessionManager
+import com.example.checkpoint.ui.viewmodel.LoginViewModel
+import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -32,6 +36,14 @@ import org.koin.dsl.module
 
 val appModule = module {
 
+	// Il SessionManager deve essere un singleton
+	single { SessionManager(context = androidContext()) }
+
+	single {
+		AuthRepository(
+			userDao = get(), sessionManager = get()
+		)
+	}
 	// ── Ktor
 
 	single {
@@ -62,23 +74,26 @@ val appModule = module {
 
 	single {
 		Room.databaseBuilder(
-			androidContext(), AppDatabase::class.java, "checkpoint-db"
-		).fallbackToDestructiveMigration()   // durante lo sviluppo; rimuovere in produzione
-			.addCallback(object : RoomDatabase.Callback() {
-				override fun onCreate(db: SupportSQLiteDatabase) {
-					super.onCreate(db)
-					// Eseguito solo alla prima creazione del DB
-					CoroutineScope(Dispatchers.IO).launch {
-						val database = get<AppDatabase>()
-						DatabaseSeeder.seed(
-							userDao = database.userDao(),
-							achievementDao = database.achievementDao(),
-							userAchievementDao = database.userAchievementDao(),
-							reviewDao = database.reviewDao(),
-						)
-					}
+			androidContext(),
+			AppDatabase::class.java,
+			"checkpoint.db"
+		).addCallback(object : RoomDatabase.Callback() {
+			override fun onCreate(db: SupportSQLiteDatabase) {
+				super.onCreate(db)
+				CoroutineScope(Dispatchers.IO).launch {
+					// Recupero il riferimento temporaneo ai DAO dall'istanza dell'AppDatabase
+					val database = get<AppDatabase>()
+
+					DatabaseSeeder.seed(
+						userDao = database.userDao(),
+						gameDao = database.gameDao(),
+						achievementDao = database.achievementDao(),
+						userAchievementDao = database.userAchievementDao(),
+						reviewDao = database.reviewDao()
+					)
 				}
-			}).build()
+			}
+		}).build()
 	}
 
 	// ── DAO
@@ -110,13 +125,36 @@ val appModule = module {
 	single { GameLogRepository(gameLogDao = get()) }
 	single { ReviewRepository(reviewDao = get()) }
 	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
+	single {
+		GameRepository(
+			gameDao = get(),
+			platformDao = get(),
+			genreDao = get(),
+			gamePlatformDao = get(),
+			igdbClient = get()
+		)
+	}
+	single { GameLogRepository(gameLogDao = get()) }
+	single { ReviewRepository(reviewDao = get()) }
+	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
 	single { AchievementRepository(achievementDao = get(), userAchievementDao = get()) }
 
 	// ── ViewModel
 
 	viewModel { AchievementsViewModel() }
 	viewModel { ExploreViewModel(gameRepository = get()) }
-	viewModel { ProfileViewModel(reviewRepository = get(), achievementRepository = get()) }
+	viewModel { LoginViewModel(authRepository = get()) }
+	viewModel { SignUpViewModel(authRepository = get()) }
+
+	viewModel {
+		ProfileViewModel(
+			sessionManager = get(),
+			userDao = get(),
+			reviewRepository = get(),
+			achievementRepository = get()
+		)
+	}
+
 	viewModel { (igdbId: Int, userId: Int) ->
 		GameScreenViewModel(
 			igdbId = igdbId,

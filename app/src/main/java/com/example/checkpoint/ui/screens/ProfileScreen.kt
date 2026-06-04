@@ -40,8 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
-import com.example.checkpoint.data.UserProfile
-import com.example.checkpoint.data.sampleUserProfile
+import com.example.checkpoint.data.Review
+import com.example.checkpoint.data.ReviewCompletion
+import com.example.checkpoint.data.User
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -60,23 +61,43 @@ fun ProfileScreen(
 	modifier: Modifier = Modifier,
 ) {
 	val pinnedIds by achievementsViewModel.pinnedIds.collectAsState()
-	val dbState by profileViewModel.state.collectAsState()
+	val uiState by profileViewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
 
-	// Profilo anagrafico ancora da sample fino a implementazione login
-	val profile = sampleUserProfile
+	// 1. Estraiamo in modo sicuro i dati reali dal database
+	val currentUser = uiState.user
+	val username = currentUser?.username ?: "Utente"
+	val email = currentUser?.email ?: ""
+	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "Nessuna biografia inserita."
+	val achievements = uiState.achievements.filter { it.id in pinnedIds }
+
+	// Creo l'oggetto di dominio (temporaneo fino a migliore soluzione)
+	val userDomain = User(
+		id = currentUser?.id ?: 0,
+		name = username
+	)
+
+
+	val reviews = uiState.reviews.map { entity ->
+		Review(
+			creator = userDomain,
+			rating = entity.rating.toFloat() / 2f,
+			comment = entity.body,
+			completion = ReviewCompletion.MAIN
+		)
+	}
 
 	AppShell(
 		navController = navController,
-		title = "Welcome back!",
+		title = "Welcome back, $username!",
 		selectedNavigationItem = NavigationItem.Profile,
 		appBarActions = {
-			IconButton(onClick = { /* TODO: Settings */ }) {
+			IconButton(onClick = { /* TODO: Settings / Logout */ }) {
 				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
 		}) { innerPadding ->
 
-		if (dbState.isLoading) {
+		if (uiState.isLoading) {
 			Box(
 				modifier = Modifier
 					.fillMaxSize()
@@ -92,15 +113,16 @@ fun ProfileScreen(
 				.fillMaxSize()
 				.verticalScroll(scrollState)
 		) {
-			// ── Header ────────────────────────────────────────────────────
+			// ── Header
 			ProfileHeader(
-				profile = profile,
+				domainUser = userDomain,
+				email = email,
 				modifier = Modifier
 					.fillMaxWidth()
 					.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
 
-			// ── Biografia ─────────────────────────────────────────────────
+			// ── Biografia
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Biography",
@@ -108,14 +130,14 @@ fun ProfileScreen(
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
 			Text(
-				text = profile.bio,
+				text = bio,
 				style = MaterialTheme.typography.bodyMedium,
 				modifier = Modifier
 					.padding(horizontal = 16.dp)
 					.padding(bottom = 8.dp)
 			)
 
-			// ── Generi preferiti ──────────────────────────────────────────
+			// ── Generi preferiti
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Favourite Genres",
@@ -124,29 +146,37 @@ fun ProfileScreen(
 					.padding(top = 16.dp)
 					.padding(horizontal = 16.dp)
 			)
-			ChipRow(
-				chips = profile.preferredGenres.map { ChipContent(label = it) },
-				padding = PaddingValues(horizontal = 16.dp),
-				modifier = Modifier.padding(bottom = 8.dp)
-			)
+			val preferredGenres = emptyList<String>()
+			if (preferredGenres.isEmpty()) {
+				Text(
+					text = "Nessun genere preferito selezionato.",
+					style = MaterialTheme.typography.bodyMedium,
+					color = MaterialTheme.colorScheme.onSurfaceVariant,
+					modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+				)
+			} else {
+				ChipRow(
+					chips = preferredGenres.map { ChipContent(label = it) },
+					padding = PaddingValues(horizontal = 16.dp),
+					modifier = Modifier.padding(bottom = 8.dp)
+				)
+			}
 
-			// ── Achievement dal DB ─────────────────────────────────────────
+			// ── Achievement dal DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			AchievementsSection(
-				pinnedAchievements = dbState.achievements.filter { it.id in pinnedIds },
-				onSeeAllClick = {
+				pinnedAchievements = achievements, onSeeAllClick = {
 					navController.navigate(NavigationRoute.AchievementsScreen)
-				},
-				modifier = Modifier
+				}, modifier = Modifier
 					.padding(horizontal = 16.dp)
 					.padding(bottom = 8.dp)
 			)
 
-			// ── Recensioni dal DB ──────────────────────────────────────────
+			// ── Recensioni dal DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
-				reviews = profile.reviews,
+				reviews = reviews,
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
 				hasWriteReviewButton = false
 			)
@@ -159,11 +189,11 @@ fun ProfileScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
+private fun ProfileHeader(domainUser: User, email: String, modifier: Modifier = Modifier) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
 		Box(contentAlignment = Alignment.BottomEnd) {
 			ProfilePicture(
-				user = profile.user,
+				user = domainUser,
 				modifier = Modifier
 					.size(80.dp)
 					.clip(CircleShape)
@@ -180,12 +210,12 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 		Spacer(Modifier.width(16.dp))
 		Column {
 			Text(
-				text = profile.user.name,
+				text = domainUser.name,
 				style = MaterialTheme.typography.headlineSmall,
 				fontWeight = FontWeight.Bold
 			)
 			Text(
-				text = profile.email,
+				text = email,
 				style = MaterialTheme.typography.bodyMedium,
 				color = MaterialTheme.colorScheme.onSurfaceVariant
 			)
@@ -195,9 +225,7 @@ private fun ProfileHeader(profile: UserProfile, modifier: Modifier = Modifier) {
 
 @Composable
 private fun ProfileSection(
-	title: String,
-	onUpdateClick: () -> Unit,
-	modifier: Modifier = Modifier
+	title: String, onUpdateClick: () -> Unit, modifier: Modifier = Modifier
 ) {
 	Row(
 		modifier = modifier

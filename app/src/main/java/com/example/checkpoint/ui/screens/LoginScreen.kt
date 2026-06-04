@@ -23,7 +23,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,18 +40,27 @@ import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.NotLoggedInShell
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
+import com.example.checkpoint.ui.viewmodel.LoginUiState
+import com.example.checkpoint.ui.viewmodel.LoginViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
 	navController: NavHostController,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	viewModel: LoginViewModel = koinViewModel()
 ) {
+	val uiState by viewModel.uiState.collectAsState()
+
+	LaunchedEffect(uiState.isSuccess) {
+		if (uiState.isSuccess) {
+			navController.navigate(NavigationRoute.ProfileScreen) {
+				popUpTo(NavigationRoute.LoginScreen) { inclusive = true }
+			}
+		}
+	}
+
 	AppShell(
 		navController = navController,
 		title = "Welcome back!",
@@ -58,8 +69,7 @@ fun LoginScreen(
 			IconButton(onClick = { /* TODO: Settings */ }) {
 				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
-		}
-	) { innerPadding ->
+		}) { innerPadding ->
 		NotLoggedInShell(
 			modifier = modifier.padding(innerPadding)
 		) { showProgressIndicator ->
@@ -68,22 +78,35 @@ fun LoginScreen(
 					.fillMaxWidth()
 					.padding(16.dp),
 				showProgressIndicator = showProgressIndicator,
-				navController
-			)
+				navController = navController,
+				uiState = uiState,
+				onLoginClick = { usernameOrEmail, password ->
+					viewModel.login(usernameOrEmail, password)
+				})
 		}
 	}
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginCard(
 	modifier: Modifier = Modifier,
 	showProgressIndicator: MutableState<Boolean>,
-	navController: NavHostController
+	navController: NavHostController,
+	uiState: LoginUiState,
+	onLoginClick: (String, String) -> Unit
 ) {
 	val username = rememberTextFieldState("")
 	val password = rememberTextFieldState("")
 	var showPassword by remember { mutableStateOf(false) }
 	var showProgress by showProgressIndicator
+
+	// Ripristina il caricamento su falso se il viewModel termina l'operazione (es. errore credenziali)
+	LaunchedEffect(uiState.isLoading) {
+		if (!uiState.isLoading) {
+			showProgress = false
+		}
+	}
 
 	OutlinedCard(
 		modifier = modifier
@@ -93,33 +116,34 @@ private fun LoginCard(
 			modifier = Modifier.padding(16.dp),
 			style = MaterialTheme.typography.titleLarge
 		)
+
+		if (uiState.error != null) {
+			Text(
+				text = uiState.error,
+				color = MaterialTheme.colorScheme.error,
+				style = MaterialTheme.typography.bodyMedium,
+				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+		}
+
 		OutlinedTextField(
 			state = username,
-			label = { Text("Username") },
+			label = { Text("Username or Email") },
 			modifier = Modifier
 				.fillMaxWidth()
 				.padding(horizontal = 16.dp)
 				.padding(bottom = 16.dp),
 			trailingIcon = {
 				if (username.text.isNotEmpty()) {
-					IconButton(
-						onClick = { username.clearText() }
-					) {
-						Icon(
-							imageVector = Icons.Rounded.Clear,
-							contentDescription = "Clear username"
-						)
+					IconButton(onClick = { username.clearText() }) {
+						Icon(Icons.Rounded.Clear, contentDescription = "Clear username")
 					}
 				}
-			}
-		)
+			})
 		OutlinedSecureTextField(
 			state = password,
 			label = { Text("Password") },
-			textObfuscationMode = if (showPassword)
-				TextObfuscationMode.Visible
-			else
-				TextObfuscationMode.RevealLastTyped,
+			textObfuscationMode = if (showPassword) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
 			modifier = Modifier
 				.fillMaxWidth()
 				.padding(horizontal = 16.dp)
@@ -127,29 +151,19 @@ private fun LoginCard(
 			trailingIcon = {
 				Row {
 					if (password.text.isNotEmpty()) {
-						IconButton(
-							onClick = { password.clearText() }
-						) {
-							Icon(
-								imageVector = Icons.Rounded.Clear,
-								contentDescription = "Clear password"
-							)
+						IconButton(onClick = { password.clearText() }) {
+							Icon(Icons.Rounded.Clear, contentDescription = "Clear password")
 						}
 					}
 					IconButton(
-						onClick = { showPassword = !showPassword }
-					) {
+						onClick = { showPassword = !showPassword }) {
 						Icon(
-							imageVector = if (showPassword)
-								Icons.Rounded.Visibility
-							else
-								Icons.Rounded.VisibilityOff,
-							contentDescription = "Clear password"
+							imageVector = if (showPassword) Icons.Rounded.Visibility
+							else Icons.Rounded.VisibilityOff, contentDescription = "Clear password"
 						)
 					}
 				}
-			}
-		)
+			})
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -158,13 +172,9 @@ private fun LoginCard(
 			verticalAlignment = Alignment.CenterVertically,
 			horizontalArrangement = Arrangement.SpaceBetween
 		) {
-			Text(
-				"Don't have an account yet?",
-				modifier = Modifier.weight(1f)
-			)
+			Text("Don't have an account yet?", modifier = Modifier.weight(1f))
 			TextButton(
-				onClick = { navController.navigate(NavigationRoute.SignUpScreen) }
-			) {
+				onClick = { navController.navigate(NavigationRoute.SignUpScreen) }) {
 				Text("Sign up")
 			}
 		}
@@ -176,13 +186,9 @@ private fun LoginCard(
 			horizontalArrangement = Arrangement.End
 		) {
 			Button(onClick = {
-				/* TODO: Attempt login */
 				if (!showProgress) {
 					showProgress = true
-					CoroutineScope(Dispatchers.Main).launch {
-						delay(5.seconds)
-						showProgress = false
-					}
+					onLoginClick(username.text.toString(), password.text.toString())
 				}
 			}) {
 				Text("Login")
@@ -198,7 +204,8 @@ private fun LoginCardPreview() {
 		modifier = Modifier
 			.fillMaxWidth()
 			.padding(16.dp),
-		showProgressIndicator = remember { mutableStateOf(true) },
-		navController = rememberNavController()
-	)
+		showProgressIndicator = remember { mutableStateOf(false) },
+		navController = rememberNavController(),
+		uiState = LoginUiState(),
+		onLoginClick = { _, _ -> })
 }
