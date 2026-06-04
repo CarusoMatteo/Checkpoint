@@ -1,11 +1,13 @@
 package com.example.checkpoint.data.database
 
 import com.example.checkpoint.data.database.daos.AchievementDao
+import com.example.checkpoint.data.database.daos.GameDao
 import com.example.checkpoint.data.database.daos.ReviewDao
 import com.example.checkpoint.data.database.daos.UserDao
 import com.example.checkpoint.data.database.daos.UserAchievementDao
 import com.example.checkpoint.data.database.entities.AchievementCategoryEntity
 import com.example.checkpoint.data.database.entities.AchievementEntity
+import com.example.checkpoint.data.database.entities.GameEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserAchievementEntity
 import com.example.checkpoint.data.database.entities.UserEntity
@@ -45,6 +47,50 @@ object DatabaseSeeder {
 			publicProfile = false,
 			createdAt = "2024-03-05T15:00:00Z"
 		),
+	)
+
+	//Giochi fittizzi al quale associare le reviews
+	val sampleGames = listOf(
+		GameEntity(id = 1, igdbId = 1001),
+		GameEntity(id = 2, igdbId = 1002),
+		GameEntity(id = 3, igdbId = 1003)
+	)
+
+	// Recensioni agganciate agli utenti e ai giochi sopra definiti
+	val sampleDbReviews = listOf(
+		ReviewEntity(
+			id = 1,
+			userId = 1,// john_doe
+			gameId = 1,
+			rating = 9,
+			body = "Great game with an engaging story and fun gameplay! I completed everything and loved every minute of it.",
+			containsSpoilers = false,
+			createdAt = Instant.now().toString()
+		), ReviewEntity(
+			id = 2,
+			userId = 1,// john_doe
+			gameId = 2,
+			rating = 6,
+			body = "The game was enjoyable, but I found the controls a bit clunky.",
+			containsSpoilers = false,
+			createdAt = Instant.now().toString()
+		), ReviewEntity(
+			id = 3,
+			userId = 2,// jane_smith
+			gameId = 1,
+			rating = 10,
+			body = "Absolutely loved it! The graphics and soundtrack were amazing.",
+			containsSpoilers = false,
+			createdAt = Instant.now().toString()
+		), ReviewEntity(
+			id = 4,
+			userId = 3,// alex_j
+			gameId = 3,
+			rating = 5,
+			body = "The game had potential, but it was plagued with bugs and performance issues.",
+			containsSpoilers = false,
+			createdAt = Instant.now().toString()
+		)
 	)
 
 	val achievementCategories = listOf(
@@ -119,7 +165,6 @@ object DatabaseSeeder {
 		),
 	)
 
-	// Achievement progress for user 1 (reflects sampleAchievements)
 	val userAchievements = listOf(
 		UserAchievementEntity(userId = 1, achievementId = 1, progress = 5, unlockedAt = null),
 		UserAchievementEntity(
@@ -131,29 +176,27 @@ object DatabaseSeeder {
 		UserAchievementEntity(userId = 1, achievementId = 6, progress = 3, unlockedAt = null),
 	)
 
-	/**
-	 * Seeds the main data tables.
-	 */
 	suspend fun seed(
 		userDao: UserDao,
+		gameDao: GameDao,
 		achievementDao: AchievementDao,
 		userAchievementDao: UserAchievementDao,
 		reviewDao: ReviewDao,
 	) {
-		// Users
+		// 1. Salva gli utenti
 		users.forEach { userDao.upsert(it) }
 
-		// Achievements
+		// 2. Salva i giochi
+		sampleGames.forEach { gameDao.upsert(it) }
+
+		// 3. Grazie al punto 2 Ora Room accetterà le recensioni senza problemi
+		sampleDbReviews.forEach { reviewDao.upsert(it) }
+
+		// 4. Salva gli Achievements
 		achievementCategories.forEach { achievementDao.upsertCategory(it) }
 		achievementDao.upsertAllAchievements(achievements)
 
-		// Achievement progress for user 1
+		// 5. Salva i progressi degli Achievements
 		userAchievements.forEach { userAchievementDao.upsert(it) }
-
-		// Alcune recensioni campione (referenziano giochi con igdb_id noti)
-		// Le inseriamo solo DOPO che i giochi vengono salvati tramite IGDB,
-		// quindi qui seediamo solo utenti e achievement.
-		// Le reviews di sample vengono caricate a schermo dalla ProfileScreen
-		// usando i dati statici (sampleReviews) fino a implementazione login.
 	}
 }
