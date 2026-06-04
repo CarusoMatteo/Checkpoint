@@ -21,7 +21,7 @@ data class ExploreState(
 	val sinceYouLikeGenre: List<Game> = emptyList(),
 	val comingSoonGames: List<Game> = emptyList(),
 	val searchResults: List<Game> = emptyList(),
-	val searchQuery: String = "", // test
+	val searchQuery: String = "final fantasy", // test
 	val isLoadingPopular: Boolean = false,
 	val isLoadingRecent: Boolean = false,
 	val isLoadingComingSoon: Boolean = false,
