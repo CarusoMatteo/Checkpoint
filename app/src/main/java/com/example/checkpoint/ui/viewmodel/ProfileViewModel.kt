@@ -2,6 +2,7 @@ package com.example.checkpoint.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.checkpoint.data.database.daos.GenreDao
 import com.example.checkpoint.data.database.daos.UserDao
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.database.entities.UserAchievementEntity
@@ -26,16 +27,17 @@ data class AchievementUiModel(
 	val threshold: Int,
 	val progress: Int,
 	val unlockedAt: String?,
+	val isPinned: Boolean = false
 ) {
 	val isUnlocked: Boolean get() = progress >= threshold
 	val progressFraction: Float get() = (progress.toFloat() / threshold).coerceIn(0f, 1f)
 }
 
-// 1. Aggiorna lo stato includendo l'entità UserEntity dal DB
 data class ProfileState(
 	val user: UserEntity? = null,
 	val reviews: List<com.example.checkpoint.data.database.entities.ReviewEntity> = emptyList(),
 	val achievements: List<AchievementUiModel> = emptyList(),
+	val preferredGenres: List<String> = emptyList(),
 	val isLoading: Boolean = true,
 )
 
@@ -44,19 +46,20 @@ class ProfileViewModel(
 	private val userDao: UserDao,
 	private val reviewRepository: ReviewRepository,
 	private val achievementRepository: AchievementRepository,
+	private val genreDao: GenreDao
 ) : ViewModel() {
 
-	// 2. Usiamo flatMapLatest per ricreare il flusso ogni volta che la sessione cambia
 	@OptIn(ExperimentalCoroutinesApi::class)
 	val state: StateFlow<ProfileState> = sessionManager.sessionState.flatMapLatest { session ->
 		if (session is SessionState.LoggedIn) {
-			// Uniamo i flussi provenienti dal database usando l'ID dell'utente loggato
+			// unisco i flussi provenienti dal database usando l'ID dell'utente loggato
 			combine(
 				userDao.getUserById(session.userId),
 				reviewRepository.getReviewsByUser(session.userId),
 				achievementRepository.getAllAchievements(),
-				achievementRepository.getAchievementsForUser(session.userId)
-			) { user, reviews, allAchievements, userProgress ->
+				achievementRepository.getAchievementsForUser(session.userId),
+				genreDao.getPreferredGenresForUser(session.userId)
+			) { user, reviews, allAchievements, userProgress, genres ->
 
 				val progressMap = userProgress.associateBy { it.achievementId }
 				val uiAchievements = allAchievements.map { ach ->
@@ -70,6 +73,7 @@ class ProfileViewModel(
 						threshold = ach.threshold,
 						progress = prog?.progress ?: 0,
 						unlockedAt = prog?.unlockedAt,
+						isPinned = prog?.isPinned ?: false
 					)
 				}
 
@@ -77,6 +81,7 @@ class ProfileViewModel(
 					user = user,
 					reviews = reviews,
 					achievements = uiAchievements,
+					preferredGenres = genres.map { it.name },
 					isLoading = false
 				)
 			}

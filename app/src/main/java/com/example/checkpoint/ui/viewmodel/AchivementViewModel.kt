@@ -1,34 +1,82 @@
 package com.example.checkpoint.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.example.checkpoint.data.Achievement
-import com.example.checkpoint.data.sampleAchievements
-import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.lifecycle.viewModelScope
+import com.example.checkpoint.data.repositories.AchievementRepository
+import com.example.checkpoint.data.session.SessionManager
+import com.example.checkpoint.data.session.SessionState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class AchievementsViewModel : ViewModel() {
+data class AchievementsUiState(
+	val achievements: List<AchievementUiModel> = emptyList(), val isLoading: Boolean = true
+)
 
-	val allAchievements: List<Achievement> = sampleAchievements
+class AchievementsViewModel(
+	private val sessionManager: SessionManager,
+	private val achievementRepository: AchievementRepository,
+) : ViewModel() {
 
-	private val _pinnedIds = MutableStateFlow<Set<Int>>(emptySet())
-	val pinnedIds: StateFlow<Set<Int>> = _pinnedIds.asStateFlow()
+	@OptIn(ExperimentalCoroutinesApi::class)
+	val uiState: StateFlow<AchievementsUiState> =
+		sessionManager.sessionState.flatMapLatest { session ->
+			if (session is SessionState.LoggedIn) {
+				combine(
+					achievementRepository.getAllAchievements(),
+					achievementRepository.getAchievementsForUser(session.userId)
+				) { allAchievements, userProgress ->
+					val progressMap = userProgress.associateBy { it.achievementId }
 
-	val pinnedAchievements: List<Achievement>
-		get() = allAchievements.filter { it.id in _pinnedIds.value }
+					val uiAchievements = allAchievements.map { ach ->
+						val prog = progressMap[ach.id]
+						AchievementUiModel(
+							id = ach.id,
+							code = ach.code,
+							name = ach.name,
+							description = ach.description,
+							iconUrl = ach.iconUrl,
+							threshold = ach.threshold,
+							progress = prog?.progress ?: 0,
+							unlockedAt = prog?.unlockedAt,
+							isPinned = prog?.isPinned ?: false // Legge lo stato dal DB
+						)
+					}
+					AchievementsUiState(achievements = uiAchievements, isLoading = false)
+				}
+			} else {
+				flowOf(AchievementsUiState(isLoading = false))
+			}
+		}.stateIn(
+			scope = viewModelScope,
+			started = SharingStarted.WhileSubscribed(5000),
+			initialValue = AchievementsUiState()
+		)
 
-	fun togglePin(achievementId: Int) {
-		val current = _pinnedIds.value
-		_pinnedIds.value = if (current.contains(achievementId)) {
-			current - achievementId
-		} else if (current.size < 3) {
-			current + achievementId
-		} else {
-			current
+	fun togglePin(achievement: AchievementUiModel) {
+		val session = sessionManager.sessionState.value
+		if (session !is SessionState.LoggedIn) return
+
+		val currentPinnedCount = uiState.value.achievements.count { it.isPinned }
+
+		if (!achievement.isPinned && currentPinnedCount >= 3) return
+
+		// Può essere pinnato solo se è effettivamente sbloccato
+		if (!achievement.isPinned && !achievement.isUnlocked) return
+
+		viewModelScope.launch {
+			achievementRepository.updatePin(
+				userId = session.userId,
+				achievementId = achievement.id,
+				isPinned = !achievement.isPinned,
+				progress = achievement.progress,
+				unlockedAt = achievement.unlockedAt
+			)
 		}
 	}
-
-	fun isPinned(achievementId: Int): Boolean = achievementId in _pinnedIds.value
-	fun canPin(achievement: Achievement): Boolean =
-		achievement.isUnlocked && (isPinned(achievement.id) || _pinnedIds.value.size < 3)
 }
