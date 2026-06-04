@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,9 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.checkpoint.data.Achievement
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.NavigationItem
+import com.example.checkpoint.ui.viewmodel.AchievementUiModel
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 
 @Composable
@@ -46,13 +47,31 @@ fun AchievementsScreen(
 	achievementsViewModel: AchievementsViewModel,
 	modifier: Modifier = Modifier
 ) {
-	val pinnedIds by achievementsViewModel.pinnedIds.collectAsState()
+	// Raccogliamo lo stato globale della UI dal ViewModel
+	val uiState by achievementsViewModel.uiState.collectAsState()
+
+	// Calcoliamo il numero di achievement pinnati direttamente dalla lista reale
+	val currentPinnedCount = uiState.achievements.count { it.isPinned }
 
 	AppShell(
 		navController = navController,
 		title = "Achievements",
 		selectedNavigationItem = NavigationItem.Profile
 	) { innerPadding ->
+
+		// Gestione del caricamento iniziale dal DB
+		if (uiState.isLoading) {
+			Box(
+				modifier = Modifier
+					.fillMaxSize()
+					.padding(innerPadding),
+				contentAlignment = Alignment.Center
+			) {
+				CircularProgressIndicator()
+			}
+			return@AppShell
+		}
+
 		Column(
 			modifier = modifier
 				.padding(innerPadding)
@@ -65,10 +84,10 @@ fun AchievementsScreen(
 				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
 			)
 			Text(
-				text = "Pinned: ${pinnedIds.size} / 3",
+				text = "Pinned: $currentPinnedCount / 3",
 				style = MaterialTheme.typography.labelMedium,
 				fontWeight = FontWeight.SemiBold,
-				color = if (pinnedIds.size == 3) MaterialTheme.colorScheme.primary
+				color = if (currentPinnedCount == 3) MaterialTheme.colorScheme.primary
 				else MaterialTheme.colorScheme.onSurfaceVariant,
 				modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
 			)
@@ -76,12 +95,16 @@ fun AchievementsScreen(
 			HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
 			LazyColumn {
-				items(achievementsViewModel.allAchievements, key = { it.id }) { achievement ->
+				items(uiState.achievements, key = { it.id }) { achievement ->
+					// Può essere rimosso dai pin se è già pinnato, oppure aggiunto solo se siamo sotto la soglia dei 3
+					val canPin =
+						achievement.isUnlocked && (achievement.isPinned || currentPinnedCount < 3)
+
 					AchievementRow(
 						achievement = achievement,
-						isPinned = achievement.id in pinnedIds,
-						canPin = achievement.isUnlocked && (achievement.id in pinnedIds || pinnedIds.size < 3),
-						onTogglePin = { achievementsViewModel.togglePin(achievement.id) })
+						isPinned = achievement.isPinned,
+						canPin = canPin,
+						onTogglePin = { achievementsViewModel.togglePin(achievement) })
 					HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 				}
 			}
@@ -91,7 +114,7 @@ fun AchievementsScreen(
 
 @Composable
 private fun AchievementRow(
-	achievement: Achievement, isPinned: Boolean, canPin: Boolean, onTogglePin: () -> Unit
+	achievement: AchievementUiModel, isPinned: Boolean, canPin: Boolean, onTogglePin: () -> Unit
 ) {
 	val pinBg by animateColorAsState(
 		targetValue = if (isPinned) MaterialTheme.colorScheme.primary else Color.Transparent,
@@ -121,7 +144,7 @@ private fun AchievementRow(
 				fontWeight = FontWeight.SemiBold
 			)
 			Text(
-				text = achievement.description,
+				text = achievement.description ?: "",
 				style = MaterialTheme.typography.bodySmall,
 				color = MaterialTheme.colorScheme.onSurfaceVariant
 			)
@@ -181,11 +204,11 @@ private fun AchievementRow(
 }
 
 @Composable
-fun AchievementBadge(achievement: Achievement) {
+private fun AchievementBadge(achievement: AchievementUiModel) { // Aggiornato al nuovo tipo UiModel
 	val bgColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primaryContainer
 	else MaterialTheme.colorScheme.surfaceVariant
 
-	val iconTint = if (achievement.isUnlocked) MaterialTheme.colorScheme.primary
+	val textColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primary
 	else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
 
 	Box(
@@ -195,11 +218,12 @@ fun AchievementBadge(achievement: Achievement) {
 			.background(bgColor),
 		contentAlignment = Alignment.Center
 	) {
-		Icon(
-			imageVector = achievement.icon,
-			contentDescription = null,
-			tint = iconTint,
-			modifier = Modifier.size(26.dp)
+
+		Text(
+			text = achievement.name.firstOrNull()?.toString() ?: "",
+			style = MaterialTheme.typography.titleMedium,
+			color = textColor,
+			fontWeight = FontWeight.Bold
 		)
 	}
 }

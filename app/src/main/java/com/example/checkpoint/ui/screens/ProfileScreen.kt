@@ -56,27 +56,27 @@ import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 @Composable
 fun ProfileScreen(
 	navController: NavHostController,
-	achievementsViewModel: AchievementsViewModel,
+	achievementsViewModel: AchievementsViewModel, // andrà rimosso :<(
 	profileViewModel: ProfileViewModel,
 	modifier: Modifier = Modifier,
 ) {
-	val pinnedIds by achievementsViewModel.pinnedIds.collectAsState()
 	val uiState by profileViewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
 
-	// 1. Estraiamo in modo sicuro i dati reali dal database
+	// estraggo i dati dal db
 	val currentUser = uiState.user
 	val username = currentUser?.username ?: "Utente"
 	val email = currentUser?.email ?: ""
 	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "Nessuna biografia inserita."
-	val achievements = uiState.achievements.filter { it.id in pinnedIds }
+
+	// filtro
+	val achievements = uiState.achievements.filter { it.isPinned }
 
 	// Creo l'oggetto di dominio (temporaneo fino a migliore soluzione)
 	val userDomain = User(
 		id = currentUser?.id ?: 0,
 		name = username
 	)
-
 
 	val reviews = uiState.reviews.map { entity ->
 		Review(
@@ -146,7 +146,7 @@ fun ProfileScreen(
 					.padding(top = 16.dp)
 					.padding(horizontal = 16.dp)
 			)
-			val preferredGenres = emptyList<String>()
+			val preferredGenres = uiState.preferredGenres
 			if (preferredGenres.isEmpty()) {
 				Text(
 					text = "Nessun genere preferito selezionato.",
