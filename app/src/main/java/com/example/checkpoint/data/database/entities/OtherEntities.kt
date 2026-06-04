@@ -94,7 +94,8 @@ data class UserAchievementEntity(
 	@ColumnInfo(name = "user_id") val userId: Int,
 	@ColumnInfo(name = "achievement_id") val achievementId: Int,
 	@ColumnInfo(name = "progress") val progress: Int = 0,
-	@ColumnInfo(name = "unlocked_at") val unlockedAt: String? = null
+	@ColumnInfo(name = "unlocked_at") val unlockedAt: String? = null,
+	@ColumnInfo(name = "is_pinned") val isPinned: Boolean = false
 )
 
 // Many-to-many relationships

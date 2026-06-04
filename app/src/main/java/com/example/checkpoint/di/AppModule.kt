@@ -74,9 +74,7 @@ val appModule = module {
 
 	single {
 		Room.databaseBuilder(
-			androidContext(),
-			AppDatabase::class.java,
-			"checkpoint.db"
+			androidContext(), AppDatabase::class.java, "checkpoint.db"
 		).addCallback(object : RoomDatabase.Callback() {
 			override fun onCreate(db: SupportSQLiteDatabase) {
 				super.onCreate(db)
@@ -84,13 +82,7 @@ val appModule = module {
 					// Recupero il riferimento temporaneo ai DAO dall'istanza dell'AppDatabase
 					val database = get<AppDatabase>()
 
-					DatabaseSeeder.seed(
-						userDao = database.userDao(),
-						gameDao = database.gameDao(),
-						achievementDao = database.achievementDao(),
-						userAchievementDao = database.userAchievementDao(),
-						reviewDao = database.reviewDao()
-					)
+					DatabaseSeeder.seed(db = database)
 				}
 			}
 		}).build()
@@ -141,17 +133,23 @@ val appModule = module {
 
 	// ── ViewModel
 
-	viewModel { AchievementsViewModel() }
+
 	viewModel { ExploreViewModel(gameRepository = get()) }
 	viewModel { LoginViewModel(authRepository = get()) }
 	viewModel { SignUpViewModel(authRepository = get()) }
 
 	viewModel {
+		AchievementsViewModel(
+			achievementRepository = get(), sessionManager = get()
+		)
+	}
+	viewModel {
 		ProfileViewModel(
 			sessionManager = get(),
 			userDao = get(),
 			reviewRepository = get(),
-			achievementRepository = get()
+			achievementRepository = get(),
+			genreDao = get()
 		)
 	}
 

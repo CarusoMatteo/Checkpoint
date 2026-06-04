@@ -67,22 +67,19 @@ data class AchievementWithProgress(
 	val iconUrl: String?,
 	val threshold: Int,
 	val categoryId: Int,
-	val progress: Int = 0, // User progress (0 if not started)
-	val unlockedAt: String? = null
+	val progress: Int,
+	val unlockedAt: String?,
+	val isPinned: Boolean = false
 ) {
 	val isUnlocked: Boolean get() = progress >= threshold
 	val progressFraction: Float get() = (progress.toFloat() / threshold).coerceIn(0f, 1f)
 }
 
-/**
- * Repository for achievements and user progress.
- */
 class AchievementRepository(
-	private val achievementDao: AchievementDao, private val userAchievementDao: UserAchievementDao
+	private val achievementDao: AchievementDao,
+	private val userAchievementDao: UserAchievementDao
 ) {
-
 	fun getAllAchievements(): Flow<List<AchievementEntity>> = achievementDao.getAllAchievements()
-
 	fun getAllCategories(): Flow<List<AchievementCategoryEntity>> =
 		achievementDao.getAllCategories()
 
@@ -92,27 +89,59 @@ class AchievementRepository(
 	fun getUnlockedAchievements(userId: Int): Flow<List<UserAchievementEntity>> =
 		userAchievementDao.getUnlockedAchievements(userId)
 
-	/**
-	 * Updates the progress of an achievement for a user.
-	 * If progress reaches the threshold, automatically sets [unlockedAt].
-	 */
-	suspend fun updateProgress(
-		userId: Int, achievementId: Int, newProgress: Int, threshold: Int
-	) {
+	suspend fun updateProgress(userId: Int, achievementId: Int, newProgress: Int, threshold: Int) {
+		val current = userAchievementDao.getUserAchievement(userId, achievementId)
 		val unlockedAt = if (newProgress >= threshold) Instant.now().toString() else null
 		userAchievementDao.upsert(
 			UserAchievementEntity(
 				userId = userId,
 				achievementId = achievementId,
 				progress = newProgress,
-				unlockedAt = unlockedAt
+				unlockedAt = unlockedAt,
+				isPinned = current?.isPinned ?: false
 			)
 		)
 	}
 
-	/** Seeds the database with the initial achievement data. */
+	/**
+	 * Gestisce il pinning direttamente sul database locale Room.
+	 */
+	suspend fun togglePin(userId: Int, achievementId: Int) {
+		val userAch = userAchievementDao.getUserAchievement(userId, achievementId)
+		// Controllo se è già sbloccato
+		if (userAch != null && userAch.unlockedAt != null) {
+			val currentPinnedCount = userAchievementDao.getPinnedCount(userId)
+			if (userAch.isPinned) {
+				// Se è già pinnato, lo togliamo sempre
+				userAchievementDao.upsert(userAch.copy(isPinned = false))
+			} else if (currentPinnedCount < 3) {
+				// Se non è pinnato, lo aggiungiamo solo se non ha superato il limite di 3
+				userAchievementDao.upsert(userAch.copy(isPinned = true))
+			}
+		}
+	}
+
+	suspend fun updatePin(
+		userId: Int,
+		achievementId: Int,
+		isPinned: Boolean,
+		progress: Int,
+		unlockedAt: String?
+	) {
+		userAchievementDao.upsert(
+			UserAchievementEntity(
+				userId = userId,
+				achievementId = achievementId,
+				progress = progress,
+				unlockedAt = unlockedAt,
+				isPinned = isPinned
+			)
+		)
+	}
+
 	suspend fun seedAchievements(
-		categories: List<AchievementCategoryEntity>, achievements: List<AchievementEntity>
+		categories: List<AchievementCategoryEntity>,
+		achievements: List<AchievementEntity>
 	) {
 		categories.forEach { achievementDao.upsertCategory(it) }
 		achievementDao.upsertAllAchievements(achievements)

@@ -69,6 +69,16 @@ interface GenreDao {
 	@Query("SELECT * FROM genres WHERE igdb_id = :igdbId LIMIT 1")
 	suspend fun getByIgdbId(igdbId: Int): GenreEntity?
 
+	@Query(
+		"""
+        SELECT g.* FROM genres g
+        INNER JOIN user_preferred_genres upg ON g.id = upg.genre_id
+        WHERE upg.user_id = :userId
+        ORDER BY g.name ASC
+    """
+	)
+	fun getPreferredGenresForUser(userId: Int): Flow<List<GenreEntity>>
+
 	@Upsert
 	suspend fun upsertAll(genres: List<GenreEntity>)
 
@@ -137,6 +147,12 @@ interface UserAchievementDao {
 
 	@Query("SELECT * FROM user_achievements WHERE user_id = :userId AND unlocked_at IS NOT NULL")
 	fun getUnlockedAchievements(userId: Int): Flow<List<UserAchievementEntity>>
+
+	@Query("SELECT * FROM user_achievements WHERE user_id = :userId AND achievement_id = :achievementId LIMIT 1")
+	suspend fun getUserAchievement(userId: Int, achievementId: Int): UserAchievementEntity?
+
+	@Query("SELECT COUNT(*) FROM user_achievements WHERE user_id = :userId AND is_pinned = 1")
+	suspend fun getPinnedCount(userId: Int): Int
 
 	@Upsert
 	suspend fun upsert(userAchievement: UserAchievementEntity)
