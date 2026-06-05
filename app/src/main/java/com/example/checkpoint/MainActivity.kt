@@ -11,13 +11,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.screens.AchievementsScreen
 import com.example.checkpoint.ui.screens.ExploreScreen
 import com.example.checkpoint.ui.screens.GameScreen
 import com.example.checkpoint.ui.screens.GamesGridScreen
 import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
+import com.example.checkpoint.ui.screens.SearchScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 			CheckpointTheme {
 				val navController = rememberNavController()
 				NavGraph(
-					navController = navController, startDestination = NavigationRoute.ProfileScreen
+					navController = navController, startDestination = NavigationRoute.SearchScreen
 				)
 			}
 		}
@@ -101,6 +101,10 @@ fun NavGraph(
 			ExploreScreen(navController)
 		}
 
+		composable<NavigationRoute.SearchScreen> {
+			SearchScreen(navController)
+		}
+
 		// TODO: Implement these screens
 		composable<NavigationRoute.LibraryScreen> {
 			ExploreScreen(navController)
@@ -134,7 +138,7 @@ fun NavGraph(
 
 		composable<NavigationRoute.GamesGridScreen> {
 			GamesGridScreen(
-				navController, title = "Popular games", games = sampleLocalGames
+				navController, title = "Popular games", games = listOf()
 			)
 		}
 
