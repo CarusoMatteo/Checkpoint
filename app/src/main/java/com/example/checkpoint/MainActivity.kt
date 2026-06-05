@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.data.session.SessionState
@@ -79,7 +80,7 @@ sealed interface NavigationRoute {
 	data object ExploreScreen : NavigationRoute
 
 	@Serializable
-	data object GamesGridScreen : NavigationRoute
+	data class GamesGridScreen(val title: String) : NavigationRoute
 
 	@Serializable
 	data object SearchScreen : NavigationRoute
@@ -154,9 +155,16 @@ fun NavGraph(
 			)
 		}
 
-		composable<NavigationRoute.GamesGridScreen> {
+		composable<NavigationRoute.GamesGridScreen> { backStackEntry ->
+			val route: NavigationRoute.GamesGridScreen = backStackEntry.toRoute()
+
+			// Retrieve the list of games passed
+			val games =
+				navController.previousBackStackEntry?.savedStateHandle?.get<List<Game>>("grid_games")
+					?: emptyList()
+
 			GamesGridScreen(
-				navController, title = "Popular games", games = sampleLocalGames
+				navController = navController, title = route.title, games = games
 			)
 		}
 

@@ -37,6 +37,7 @@ private fun CarouselShell(
 	hasStartingDivider: Boolean,
 	hasDeleteAction: Boolean,
 	modifier: Modifier = Modifier,
+	onSeeAllClick: () -> Unit = {},
 	content: @Composable () -> Unit
 ) {
 	Column(modifier = modifier) {
@@ -64,7 +65,7 @@ private fun CarouselShell(
 					)
 				}
 			}
-			IconButton(onClick = { /* TODO: Open vertical list */ }) {
+			IconButton(onClick = onSeeAllClick) {
 				Icon(
 					imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
 					contentDescription = "See all"
@@ -86,12 +87,14 @@ fun LazyGamesCarousel(
 	games: List<LocalGame>,
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
-	hasDeleteAction: Boolean = false
+	hasDeleteAction: Boolean = false,
+	onSeeAllClick: () -> Unit = {}
 ) {
 	CarouselShell(
 		title = title,
 		hasStartingDivider = hasStartingDivider,
 		hasDeleteAction = hasDeleteAction,
+		onSeeAllClick = onSeeAllClick,
 		modifier = modifier
 	) {
 		LazyRow(
@@ -124,12 +127,14 @@ fun LazyGamesCarousel(
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
 	hasDeleteAction: Boolean = false,
-	onGameClick: (igdbId: Int) -> Unit = {}
+	onGameClick: (igdbId: Int) -> Unit = {},
+	onSeeAllClick: () -> Unit = {}
 ) {
 	CarouselShell(
 		title = title,
 		hasStartingDivider = hasStartingDivider,
 		hasDeleteAction = hasDeleteAction,
+		onSeeAllClick = onSeeAllClick,
 		modifier = modifier
 	) {
 		LazyRow(

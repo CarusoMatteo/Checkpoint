@@ -12,7 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.checkpoint.data.LocalGame
+import com.example.checkpoint.NavigationRoute
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.GameCover
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -21,15 +22,12 @@ import com.example.checkpoint.ui.composable.NavigationItem
 fun GamesGridScreen(
 	navController: NavHostController,
 	title: String,
-	games: List<LocalGame>,
+	games: List<Game>,
 	modifier: Modifier = Modifier
 ) {
 	AppShell(
-		navController,
-		title = title,
-		selectedNavigationItem = NavigationItem.Explore
-	)
-	{ innerPadding ->
+		navController, title = title, selectedNavigationItem = NavigationItem.Explore
+	) { innerPadding ->
 		LazyVerticalGrid(
 			columns = GridCells.Fixed(2),
 			contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
@@ -39,11 +37,13 @@ fun GamesGridScreen(
 				.padding(innerPadding)
 				.fillMaxSize()
 		) {
-			items(games) { game ->
+			items(games, key = { it.igdbId }) { game ->
 				GameCover(
 					game = game,
 					showInformationOverlay = true,
-					onClick = { /* TODO: Game details redirect */ },
+					onClick = {
+						navController.navigate(NavigationRoute.GameScreen(game.igdbId))
+					},
 					onLongClick = { /* TODO: May open up Multiple choice window */ },
 					modifier = Modifier.fillMaxWidth()
 				)

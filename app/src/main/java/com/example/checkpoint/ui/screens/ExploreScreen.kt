@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LazyGamesCarousel
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -44,6 +45,10 @@ fun ExploreScreen(
 		}
 
 		val scrollState = rememberScrollState()
+		val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
+			navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
+			navController.navigate(NavigationRoute.GamesGridScreen(title)) // This will now work!
+		}
 
 		Column(
 			modifier = Modifier
@@ -59,7 +64,8 @@ fun ExploreScreen(
 					games = state.popularGames,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
-					})
+					},
+					onSeeAllClick = { navigateToGrid("Popular right now", state.popularGames) })
 			}
 
 			// 2. Coming Soon
@@ -70,7 +76,8 @@ fun ExploreScreen(
 					hasStartingDivider = true,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
-					})
+					},
+					onSeeAllClick = { navigateToGrid("Coming soon", state.comingSoonGames) })
 			}
 
 			// 3. Recent releases
@@ -81,7 +88,8 @@ fun ExploreScreen(
 					hasStartingDivider = true,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
-					})
+					},
+					onSeeAllClick = { navigateToGrid("Recent releases", state.recentReleases) })
 			}
 
 			// 4. Because you played...
@@ -92,6 +100,11 @@ fun ExploreScreen(
 					hasStartingDivider = true,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
+					},
+					onSeeAllClick = {
+						navigateToGrid(
+							"Because you played", state.becauseYouPlayed
+						)
 					})
 			}
 
@@ -103,7 +116,8 @@ fun ExploreScreen(
 					hasStartingDivider = true,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
-					})
+					},
+					onSeeAllClick = { navigateToGrid("The best on PC", state.bestOnPlatform) })
 			}
 
 			// 6. Since you like "Genre"
@@ -114,6 +128,11 @@ fun ExploreScreen(
 					hasStartingDivider = true,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
+					},
+					onSeeAllClick = {
+						navigateToGrid(
+							"Since you like RPG", state.sinceYouLikeGenre
+						)
 					})
 			}
 			//7 Since you searched
@@ -123,7 +142,8 @@ fun ExploreScreen(
 					games = state.searchResults,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
-					})
+					},
+					onSeeAllClick = { navigateToGrid("Since you searched", state.searchResults) })
 			}
 		}
 	}
