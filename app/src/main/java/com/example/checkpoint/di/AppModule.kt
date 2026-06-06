@@ -18,6 +18,7 @@ import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.data.repositories.AuthRepository
 import com.example.checkpoint.data.session.SessionManager
+import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.LoginViewModel
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import io.ktor.client.HttpClient
@@ -149,10 +150,20 @@ val appModule = module {
 			userDao = get(),
 			reviewRepository = get(),
 			achievementRepository = get(),
-			genreDao = get()
+			genreDao = get(),
+			gameListRepository = get(),
+			gameLogRepository = get(),
+			igdbClient = get()
 		)
 	}
 
+	viewModel {
+		LibraryViewModel(
+			sessionManager = get(),
+			gameListRepository = get(),
+			igdbClient = get()
+		)
+	}
 	viewModel { (igdbId: Int, userId: Int) ->
 		GameScreenViewModel(
 			igdbId = igdbId,
