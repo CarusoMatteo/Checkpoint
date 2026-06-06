@@ -2,6 +2,8 @@ package com.example.checkpoint.data.remote.igdb
 
 import android.util.Log
 import com.example.checkpoint.data.remote.dto.IgdbGameDto
+import com.example.checkpoint.data.remote.dto.IgdbGenreDto
+import com.example.checkpoint.data.remote.dto.IgdbPlatformDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -195,6 +197,7 @@ class IgdbClient(
 		)
 	}
 
+
 	/**
 	 * Searches for games by name.
 	 * [limit] maximum 500 per request (IGDB limit).
@@ -274,6 +277,42 @@ class IgdbClient(
                 limit $limit;
             """.trimIndent()
 		)
+	}
+
+	/**
+	 * Retrieves the full list of genres from IGDB.
+	 * Max 500 per request.
+	 */
+	suspend fun getAllGenres(): List<IgdbGenreDto> {
+		return runCatching {
+			query<List<IgdbGenreDto>>(
+				endpoint = "genres", body = """
+					fields name;
+					limit 500;
+				""".trimIndent()
+			)
+		}.getOrElse {
+			Log.e(TAG, "Errore nel recupero dei generi: ${it.message}")
+			emptyList()
+		}
+	}
+
+	/**
+	 * Retrieves the full list of platforms from IGDB.
+	 * Max 500 per request.
+	 */
+	suspend fun getAllPlatforms(): List<IgdbPlatformDto> {
+		return runCatching {
+			query<List<IgdbPlatformDto>>(
+				endpoint = "platforms", body = """
+					fields name, abbreviation;
+					limit 500;
+				""".trimIndent()
+			)
+		}.getOrElse {
+			Log.e(TAG, "Errore nel recupero delle piattaforme: ${it.message}")
+			emptyList()
+		}
 	}
 
 	/**
