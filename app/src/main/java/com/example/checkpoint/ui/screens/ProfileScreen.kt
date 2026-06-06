@@ -20,7 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -74,8 +76,7 @@ fun ProfileScreen(
 
 	// Creo l'oggetto di dominio (temporaneo fino a migliore soluzione)
 	val userDomain = User(
-		id = currentUser?.id ?: 0,
-		name = username
+		id = currentUser?.id ?: 0, name = username
 	)
 
 	val reviews = uiState.reviews.map { entity ->
@@ -162,6 +163,15 @@ fun ProfileScreen(
 				)
 			}
 
+			// ── My Collections
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			MyCollectionsSection(
+				lists = uiState.userLists,
+				modifier = Modifier
+					.padding(horizontal = 16.dp)
+					.padding(vertical = 8.dp)
+			)
+
 			// ── Achievement dal DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			AchievementsSection(
@@ -169,7 +179,7 @@ fun ProfileScreen(
 					navController.navigate(NavigationRoute.AchievementsScreen)
 				}, modifier = Modifier
 					.padding(horizontal = 16.dp)
-					.padding(bottom = 8.dp)
+					.padding(vertical = 8.dp)
 			)
 
 			// ── Recensioni dal DB
@@ -245,6 +255,63 @@ private fun ProfileSection(
 			)
 			Spacer(Modifier.width(4.dp))
 			Text("Update")
+		}
+	}
+}
+
+@Composable
+private fun MyCollectionsSection(
+	lists: List<com.example.checkpoint.data.database.entities.GameListEntity>,
+	modifier: Modifier = Modifier,
+) {
+	Column(modifier = modifier) {
+		Text(
+			text = "My Collections",
+			style = MaterialTheme.typography.titleMedium,
+			fontWeight = FontWeight.Bold,
+			modifier = Modifier.padding(bottom = 8.dp)
+		)
+
+		if (lists.isEmpty()) {
+			Text(
+				text = "Nessuna lista creata.",
+				style = MaterialTheme.typography.bodyMedium,
+				color = MaterialTheme.colorScheme.onSurfaceVariant
+			)
+		} else {
+			lists.chunked(2).forEach { row ->
+				androidx.compose.foundation.layout.Row(
+					horizontalArrangement = Arrangement.spacedBy(8.dp),
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(bottom = 8.dp)
+				) {
+					row.forEach { list ->
+						val isPrimary = list.type == "BACKLOG" || list.type == "SAVED"
+						Card(
+							onClick = { /* TODO: naviga nel dettaglio lista */ },
+							modifier = Modifier.weight(1f)
+						) {
+							Column(modifier = Modifier.padding(16.dp)) {
+								Icon(
+									imageVector = Icons.Rounded.Folder,
+									contentDescription = null,
+									tint = if (isPrimary) MaterialTheme.colorScheme.primary
+									else MaterialTheme.colorScheme.outline
+								)
+								Spacer(modifier = Modifier.height(12.dp))
+								Text(
+									text = list.name, style = MaterialTheme.typography.titleMedium
+								)
+							}
+						}
+					}
+					// riempi lo spazio vuoto, se è 1 sola
+					if (row.size == 1) {
+						Spacer(modifier = Modifier.weight(1f))
+					}
+				}
+			}
 		}
 	}
 }
