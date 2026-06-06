@@ -3,7 +3,10 @@ package com.example.checkpoint.data.database
 import com.example.checkpoint.data.database.entities.AchievementCategoryEntity
 import com.example.checkpoint.data.database.entities.AchievementEntity
 import com.example.checkpoint.data.database.entities.GameEntity
+import com.example.checkpoint.data.database.entities.GameListEntity
+import com.example.checkpoint.data.database.entities.GameLogEntity
 import com.example.checkpoint.data.database.entities.GenreEntity
+import com.example.checkpoint.data.database.entities.ListEntryEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserAchievementEntity
 import com.example.checkpoint.data.database.entities.UserEntity
@@ -48,9 +51,12 @@ object DatabaseSeeder {
 
 	// Giochi fittizi al quale associare le reviews
 	val sampleGames = listOf(
-		GameEntity(id = 1, igdbId = 1001),
+		GameEntity(id = 1, igdbId = 22439),
 		GameEntity(id = 2, igdbId = 1002),
-		GameEntity(id = 3, igdbId = 1003)
+		GameEntity(id = 3, igdbId = 1003),
+		GameEntity(id = 4, igdbId = 42931),
+		GameEntity(id = 5, igdbId = 1026),
+		GameEntity(id = 6, igdbId = 6036)
 	)
 
 	// Recensioni agganciate agli utenti e ai giochi sopra definiti
@@ -187,6 +193,50 @@ object DatabaseSeeder {
 		),
 	)
 
+	val sampleLists = listOf(
+		GameListEntity(id = 1, userId = 1, name = "Backlog", type = "BACKLOG", isPublic = true),
+		GameListEntity(id = 2, userId = 1, name = "Saved", type = "SAVED", isPublic = true),
+		GameListEntity(id = 3, userId = 1, name = "Favorites", type = "CUSTOM", isPublic = true)
+	)
+
+	val sampleListEntries = listOf(
+		ListEntryEntity(listId = 1, gameId = 1, addedAt = "2026-05-01T12:00:00Z"), // BackLog
+		ListEntryEntity(listId = 1, gameId = 2, addedAt = "2026-05-02T14:30:00Z"), // BackLog
+		ListEntryEntity(listId = 2, gameId = 3, addedAt = "2026-05-03T09:15:00Z"), // Saved
+		ListEntryEntity(listId = 1, gameId = 4, addedAt = "2026-06-04T10:00:00Z"), // Backlog
+		ListEntryEntity(listId = 2, gameId = 5, addedAt = "2026-06-05T11:00:00Z"), // Saved
+		ListEntryEntity(
+			listId = 3, gameId = 6, addedAt = "2026-06-06T12:00:00Z"
+		)  // Favorites (Custom)
+	)
+
+	val sampleGameLogs = listOf(
+		GameLogEntity(
+			id = 1,
+			userId = 1,
+			gameId = 1,
+			rating = 9,
+			hoursPlayed = 42.5,
+			completionType = "COMPLETED",
+			finishedAt = "2026-04-10"
+		), GameLogEntity(
+			id = 2,
+			userId = 1,
+			gameId = 2,
+			rating = 8,
+			hoursPlayed = 18.0,
+			completionType = "MAIN",
+			finishedAt = "2026-05-20"
+		), GameLogEntity(
+			id = 3,
+			userId = 1,
+			gameId = 3,
+			hoursPlayed = 5.5,
+			completionType = null,
+			finishedAt = null
+		)
+	)
+
 	// Generi di gioco
 	val sampleGenres = listOf(
 		GenreEntity(id = 1, igdbId = 12, name = "RPG"),
@@ -217,5 +267,11 @@ object DatabaseSeeder {
 		db.achievementDao().upsertAllAchievements(achievements)
 
 		userAchievements.forEach { db.userAchievementDao().upsert(it) }
+
+		sampleLists.forEach { db.gameListDao().upsert(it) }
+
+		sampleListEntries.forEach { db.listEntryDao().upsert(it) }
+
+		sampleGameLogs.forEach { db.gameLogDao().upsert(it) }
 	}
 }
