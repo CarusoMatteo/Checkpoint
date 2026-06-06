@@ -2,10 +2,12 @@ package com.example.checkpoint.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.database.entities.GameLogEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.repositories.CompletionType
 import com.example.checkpoint.data.repositories.Game
+import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
@@ -27,6 +29,8 @@ data class GameScreenState(
 	val reviewCount: Int = 0,
 	val isLoading: Boolean = true,
 	val isSaved: Boolean = false,
+	val userLists: List<GameListEntity> = emptyList(),
+	val listsContainingGame: Set<Int> = emptySet(),
 	val error: String? = null,
 )
 
@@ -42,6 +46,9 @@ data class GameScreenActions(
 	) -> Unit,
 	val onWriteReview: (rating: Int, body: String, containsSpoilers: Boolean) -> Unit,
 	val onDeleteReview: () -> Unit,
+	val onAddGameToBacklog: () -> Unit,
+	val onSynchronizeLists: (listIds: List<Int>) -> Unit,
+	val onCreateNewList: (name: String) -> Unit,
 )
 
 class GameScreenViewModel(
@@ -50,6 +57,7 @@ class GameScreenViewModel(
 	private val gameRepository: GameRepository,
 	private val gameLogRepository: GameLogRepository,
 	private val reviewRepository: ReviewRepository,
+	private val gameListRepository: GameListRepository,
 ) : ViewModel() {
 
 	private val _state = MutableStateFlow(GameScreenState())
@@ -61,10 +69,13 @@ class GameScreenViewModel(
 		onLogGame = { r, h, c, s, f -> logGame(r, h, c, s, f) },
 		onWriteReview = { r, b, sp -> writeReview(r, b, sp) },
 		onDeleteReview = { deleteReview() },
-	)
+		onAddGameToBacklog = { addGameToBacklog() },
+		onSynchronizeLists = { listIds -> synchronizeGameLists(listIds) },
+		onCreateNewList = { name -> createList(name) })
 
 	init {
 		loadGame()
+		observeUserLists()
 	}
 
 	private fun loadGame() {
@@ -74,7 +85,7 @@ class GameScreenViewModel(
 			val game = gameRepository.fetchGameDetails(igdbId)
 			if (game == null) {
 				_state.update {
-					it.copy(isLoading = false, error = "Impossibile caricare i dettagli del gioco")
+					it.copy(isLoading = false, error = "Unable to load game details")
 				}
 				return@launch
 			}
@@ -93,7 +104,9 @@ class GameScreenViewModel(
 				)
 			}
 
-			if (isSaved && game.id != 0) observeUserData(game.id)
+			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
+			val gameId = localEntity?.id ?: game.id
+			if (gameId != 0) observeUserData(gameId)
 		}
 	}
 
@@ -118,8 +131,60 @@ class GameScreenViewModel(
 			reviewRepository.getReviewCount(gameId)
 				.collect { count -> _state.update { it.copy(reviewCount = count) } }
 		}
+
+		viewModelScope.launch {
+			gameListRepository.getListsContainingGame(gameId)
+				.collect { listIds -> _state.update { it.copy(listsContainingGame = listIds.toSet()) } }
+		}
 	}
 
+	private fun observeUserLists() {
+		viewModelScope.launch {
+			gameListRepository.getListsForUser(userId).collect { lists ->
+				_state.update { it.copy(userLists = lists) }
+			}
+		}
+	}
+
+	private fun addGameToBacklog() {
+		val backlogList = _state.value.userLists.firstOrNull {
+			it.type == "BACKLOG" || it.name.equals("Backlog", ignoreCase = true)
+		}
+		if (backlogList != null) {
+			synchronizeGameLists(listOf(backlogList.id))
+		} else {
+			saveGame()
+		}
+	}
+
+	private fun synchronizeGameLists(selectedListIds: List<Int>) {
+		viewModelScope.launch {
+			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
+			val gameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
+
+			val currentLists = _state.value.listsContainingGame
+			val toAdd = selectedListIds.filter { it !in currentLists }
+			val toRemove = currentLists.filter { it !in selectedListIds }
+
+			// Add to selected Lists
+			toAdd.forEach { listId ->
+				gameListRepository.addGameToList(listId, gameId)
+			}
+			// Remove from deselected Lists
+			toRemove.forEach { listId ->
+				gameListRepository.removeGameFromList(listId, gameId)
+			}
+
+			_state.update { it.copy(isSaved = true) }
+			observeUserData(gameId)
+		}
+	}
+
+	private fun createList(name: String) {
+		viewModelScope.launch {
+			gameListRepository.createList(userId = userId, name = name)
+		}
+	}
 
 	private fun saveGame() {
 		viewModelScope.launch {
@@ -135,13 +200,15 @@ class GameScreenViewModel(
 			gameRepository.deleteGame(entity)
 			_state.update {
 				it.copy(
-					isSaved = false, userLog = null, userReview = null, reviews = emptyList()
+					isSaved = false,
+					userLog = null,
+					userReview = null,
+					reviews = emptyList(),
+					listsContainingGame = emptySet()
 				)
 			}
 		}
 	}
-
-	// ── Log
 
 	private fun logGame(
 		rating: Int?,

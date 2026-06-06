@@ -37,7 +37,7 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-	// Il SessionManager deve essere un singleton
+	// The SessionManager must be a singleton
 	single { SessionManager(context = androidContext()) }
 
 	single {
@@ -80,7 +80,7 @@ val appModule = module {
 			override fun onCreate(db: SupportSQLiteDatabase) {
 				super.onCreate(db)
 				CoroutineScope(Dispatchers.IO).launch {
-					// Recupero il riferimento temporaneo ai DAO dall'istanza dell'AppDatabase
+
 					val database = get<AppDatabase>()
 
 					DatabaseSeeder.seed(db = database)
@@ -159,9 +159,7 @@ val appModule = module {
 
 	viewModel {
 		LibraryViewModel(
-			sessionManager = get(),
-			gameListRepository = get(),
-			igdbClient = get()
+			sessionManager = get(), gameListRepository = get(), igdbClient = get()
 		)
 	}
 	viewModel { (igdbId: Int, userId: Int) ->
@@ -170,7 +168,8 @@ val appModule = module {
 			userId = userId,
 			gameRepository = get(),
 			gameLogRepository = get(),
-			reviewRepository = get()
+			reviewRepository = get(),
+			gameListRepository = get()
 		)
 	}
 
