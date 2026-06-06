@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -54,6 +55,9 @@ import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.viewmodel.AchievementUiModel
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
+import com.example.checkpoint.data.database.entities.GameListEntity
 
 @Composable
 fun ProfileScreen(
@@ -166,10 +170,7 @@ fun ProfileScreen(
 			// ── My Collections
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			MyCollectionsSection(
-				lists = uiState.userLists,
-				modifier = Modifier
-					.padding(horizontal = 16.dp)
-					.padding(vertical = 8.dp)
+				lists = uiState.userLists, modifier = Modifier.padding(vertical = 8.dp)
 			)
 
 			// ── Achievement dal DB
@@ -261,54 +262,58 @@ private fun ProfileSection(
 
 @Composable
 private fun MyCollectionsSection(
-	lists: List<com.example.checkpoint.data.database.entities.GameListEntity>,
-	modifier: Modifier = Modifier,
+	lists: List<GameListEntity>, modifier: Modifier = Modifier, onListClick: (Int) -> Unit = {}
 ) {
 	Column(modifier = modifier) {
 		Text(
 			text = "My Collections",
 			style = MaterialTheme.typography.titleMedium,
 			fontWeight = FontWeight.Bold,
-			modifier = Modifier.padding(bottom = 8.dp)
+			modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
 		)
 
 		if (lists.isEmpty()) {
 			Text(
 				text = "Nessuna lista creata.",
 				style = MaterialTheme.typography.bodyMedium,
-				color = MaterialTheme.colorScheme.onSurfaceVariant
+				color = MaterialTheme.colorScheme.onSurfaceVariant,
+				modifier = Modifier.padding(horizontal = 16.dp)
 			)
 		} else {
-			lists.chunked(2).forEach { row ->
-				androidx.compose.foundation.layout.Row(
-					horizontalArrangement = Arrangement.spacedBy(8.dp),
-					modifier = Modifier
-						.fillMaxWidth()
-						.padding(bottom = 8.dp)
-				) {
-					row.forEach { list ->
-						val isPrimary = list.type == "BACKLOG" || list.type == "SAVED"
-						Card(
-							onClick = { /* TODO: naviga nel dettaglio lista */ },
-							modifier = Modifier.weight(1f)
+			LazyRow(
+				horizontalArrangement = Arrangement.spacedBy(12.dp),
+				contentPadding = PaddingValues(horizontal = 16.dp),
+				modifier = Modifier.fillMaxWidth()
+			) {
+				items(lists) { list ->
+					val isPrimary = list.type == "BACKLOG" || list.type == "SAVED"
+
+					Card(
+						onClick = { onListClick(list.id) },
+						modifier = Modifier
+							.width(160.dp)
+							.height(100.dp)
+					) {
+						Column(
+							modifier = Modifier
+								.fillMaxSize()
+								.padding(16.dp),
+							verticalArrangement = Arrangement.Center
 						) {
-							Column(modifier = Modifier.padding(16.dp)) {
-								Icon(
-									imageVector = Icons.Rounded.Folder,
-									contentDescription = null,
-									tint = if (isPrimary) MaterialTheme.colorScheme.primary
-									else MaterialTheme.colorScheme.outline
-								)
-								Spacer(modifier = Modifier.height(12.dp))
-								Text(
-									text = list.name, style = MaterialTheme.typography.titleMedium
-								)
-							}
+							Icon(
+								imageVector = Icons.Rounded.Folder,
+								contentDescription = null,
+								tint = if (isPrimary) MaterialTheme.colorScheme.primary
+								else MaterialTheme.colorScheme.outline
+							)
+							Spacer(modifier = Modifier.height(12.dp))
+							Text(
+								text = list.name,
+								style = MaterialTheme.typography.titleMedium,
+								maxLines = 1,
+								overflow = Ellipsis
+							)
 						}
-					}
-					// riempi lo spazio vuoto, se è 1 sola
-					if (row.size == 1) {
-						Spacer(modifier = Modifier.weight(1f))
 					}
 				}
 			}
