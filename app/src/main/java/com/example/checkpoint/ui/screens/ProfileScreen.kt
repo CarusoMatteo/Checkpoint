@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
@@ -46,6 +48,7 @@ import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.Review
 import com.example.checkpoint.data.ReviewCompletion
 import com.example.checkpoint.data.User
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -54,10 +57,8 @@ import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.viewmodel.AchievementUiModel
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
+import com.example.checkpoint.ui.viewmodel.LibraryListUiModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
-import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
-import com.example.checkpoint.data.database.entities.GameListEntity
 
 @Composable
 fun ProfileScreen(
@@ -90,6 +91,12 @@ fun ProfileScreen(
 			comment = entity.body,
 			completion = ReviewCompletion.MAIN
 		)
+	}
+
+	// Funzione per navigare alla griglia della lista
+	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
+		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
+		navController.navigate(NavigationRoute.GamesGridScreen(title))
 	}
 
 	AppShell(
@@ -170,7 +177,11 @@ fun ProfileScreen(
 			// ── My Collections
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			MyCollectionsSection(
-				lists = uiState.userLists, modifier = Modifier.padding(vertical = 8.dp)
+				carousels = uiState.carousels,
+				modifier = Modifier.padding(vertical = 8.dp),
+				onCollectionClick = { carousel ->
+					navigateToGrid(carousel.listEntity.name, carousel.games)
+				}
 			)
 
 			// ── Achievement dal DB
@@ -262,7 +273,9 @@ private fun ProfileSection(
 
 @Composable
 private fun MyCollectionsSection(
-	lists: List<GameListEntity>, modifier: Modifier = Modifier, onListClick: (Int) -> Unit = {}
+	carousels: List<LibraryListUiModel>,
+	modifier: Modifier = Modifier,
+	onCollectionClick: (LibraryListUiModel) -> Unit = {}
 ) {
 	Column(modifier = modifier) {
 		Text(
@@ -272,7 +285,7 @@ private fun MyCollectionsSection(
 			modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
 		)
 
-		if (lists.isEmpty()) {
+		if (carousels.isEmpty()) {
 			Text(
 				text = "Nessuna lista creata.",
 				style = MaterialTheme.typography.bodyMedium,
@@ -285,14 +298,15 @@ private fun MyCollectionsSection(
 				contentPadding = PaddingValues(horizontal = 16.dp),
 				modifier = Modifier.fillMaxWidth()
 			) {
-				items(lists) { list ->
+				items(carousels) { carousel ->
+					val list = carousel.listEntity
 					val isPrimary = list.type == "BACKLOG" || list.type == "SAVED"
 
 					Card(
-						onClick = { onListClick(list.id) },
+						onClick = { onCollectionClick(carousel) },
 						modifier = Modifier
 							.width(160.dp)
-							.height(100.dp)
+							.height(115.dp)
 					) {
 						Column(
 							modifier = Modifier
@@ -312,6 +326,11 @@ private fun MyCollectionsSection(
 								style = MaterialTheme.typography.titleMedium,
 								maxLines = 1,
 								overflow = Ellipsis
+							)
+							Text(
+								text = if (carousel.games.size == 1) "1 gioco" else "${carousel.games.size} giochi",
+								style = MaterialTheme.typography.labelSmall,
+								color = MaterialTheme.colorScheme.onSurfaceVariant
 							)
 						}
 					}

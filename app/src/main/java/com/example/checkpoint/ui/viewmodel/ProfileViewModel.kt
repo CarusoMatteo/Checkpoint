@@ -7,7 +7,9 @@ import com.example.checkpoint.data.database.daos.UserDao
 import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.remote.igdb.IgdbClient
+import com.example.checkpoint.data.remote.igdb.IgdbImageUrl.coverBig
 import com.example.checkpoint.data.repositories.AchievementRepository
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
@@ -19,6 +21,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 data class AchievementUiModel(
@@ -42,8 +46,8 @@ data class ProfileState(
 	val achievements: List<AchievementUiModel> = emptyList(),
 	val preferredGenres: List<String> = emptyList(),
 	val userLists: List<GameListEntity> = emptyList(),
-	val totalHours: Double = 0.0, //may implement
-	val completedGamesCount: Int = 0, //may implement
+	val totalHours: Double = 0.0,
+	val completedGamesCount: Int = 0,
 	val carousels: List<LibraryListUiModel> = emptyList(),
 	val isLoading: Boolean = true,
 )
@@ -74,14 +78,45 @@ class ProfileViewModel(
 				achievementRepository.getAchievementsForUser(session.userId)
 			) { allAch, userAch -> Pair(allAch, userAch) }
 
-			val listsAndLogsFlow = combine(
-				gameListRepository.getListsForUser(session.userId),
+			// Unisce il caricamento delle liste, la fetch da IGDB per i giochi, e i log
+			val carouselsAndLogsFlow = combine(
+				gameListRepository.getListsForUser(session.userId).map { rawLists ->
+					val defaultLists = ensureDefaultLists(rawLists, session.userId)
+					defaultLists.map { list ->
+						val gameEntities = gameListRepository.getGamesInList(list.id).first()
+						val igdbIds = gameEntities.map { it.igdbId }
+						val games = if (igdbIds.isNotEmpty()) {
+							igdbClient.getGamesByIds(igdbIds).map { dto ->
+								Game(
+									id = 0,
+									igdbId = dto.id,
+									name = dto.name ?: "Unknown",
+									summary = dto.summary,
+									coverUrl = dto.cover?.imageId?.let {
+										coverBig(it)
+									},
+									genres = dto.genres?.mapNotNull { it.name } ?: emptyList(),
+									platforms = dto.platforms?.mapNotNull { it.name }
+										?: emptyList(),
+									developer = dto.involvedCompanies?.firstOrNull { it.developer == true }?.company?.name,
+									publisher = dto.involvedCompanies?.firstOrNull { it.publisher == true }?.company?.name,
+									firstReleaseDate = dto.firstReleaseDate,
+									totalRating = dto.totalRating,
+									totalRatingCount = dto.totalRatingCount ?: 0
+								)
+							}
+						} else {
+							emptyList()
+						}
+						LibraryListUiModel(list, games)
+					}
+				},
 				gameLogRepository.getLogsForUser(session.userId)
-			) { lists, logs -> Pair(lists, logs) }
+			) { carousels, logs -> Pair(carousels, logs) }
 
 			combine(
-				userReviewGenreFlow, achievementsFlow, listsAndLogsFlow
-			) { (user, reviews, genres), (allAchievements, userProgress), (lists, logs) ->
+				userReviewGenreFlow, achievementsFlow, carouselsAndLogsFlow
+			) { (user, reviews, genres), (allAchievements, userProgress), (carousels, logs) ->
 
 				val progressMap = userProgress.associateBy { it.achievementId }
 				val uiAchievements = allAchievements.map { ach ->
@@ -102,15 +137,13 @@ class ProfileViewModel(
 				val totalHours = logs.sumOf { it.hoursPlayed ?: 0.0 }
 				val completedCount = logs.count { it.finishedAt != null }
 
-				// Mantiene le liste ordinate nel database
-				val defaultLists = ensureDefaultLists(lists, session.userId)
-
 				ProfileState(
 					user = user,
 					reviews = reviews,
 					achievements = uiAchievements,
 					preferredGenres = genres.map { it.name },
-					userLists = defaultLists,
+					userLists = carousels.map { it.listEntity },
+					carousels = carousels,
 					totalHours = totalHours,
 					completedGamesCount = completedCount,
 					isLoading = false
@@ -125,7 +158,6 @@ class ProfileViewModel(
 		initialValue = ProfileState(isLoading = true)
 	)
 
-	// Assicura che Backlog e Saved appaiano e mantiene in ordine
 	private fun ensureDefaultLists(lists: List<GameListEntity>, userId: Int): List<GameListEntity> {
 		val hasBacklog =
 			lists.any { it.type == "BACKLOG" || it.name.equals("Backlog", ignoreCase = true) }
@@ -149,6 +181,4 @@ class ProfileViewModel(
 			}
 		}.thenBy { it.id })
 	}
-
-
 }
