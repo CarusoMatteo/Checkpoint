@@ -18,7 +18,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.checkpoint.data.repositories.Game
-import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.data.session.SessionState
 import com.example.checkpoint.ui.screens.AchievementsScreen
@@ -27,6 +26,7 @@ import com.example.checkpoint.ui.screens.GameScreen
 import com.example.checkpoint.ui.screens.GamesGridScreen
 import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
+import com.example.checkpoint.ui.screens.SearchScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
@@ -174,6 +174,10 @@ fun NavGraph(
 
 		composable<NavigationRoute.SignUpScreen> {
 			SignUpScreen(navController)
+		}
+
+		composable<NavigationRoute.SearchScreen> {
+			SearchScreen(navController)
 		}
 	}
 }
