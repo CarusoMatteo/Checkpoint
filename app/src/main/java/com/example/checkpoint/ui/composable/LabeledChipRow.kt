@@ -2,12 +2,16 @@ package com.example.checkpoint.ui.composable
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,6 +65,55 @@ fun ChipRow(
 	}
 }
 
+@Composable
+fun LabeledChipGrid(
+	title: String,
+	chips: List<ChipContent>,
+	modifier: Modifier = Modifier
+) {
+	Column(modifier = modifier) {
+		Text(
+			text = title,
+			style = MaterialTheme.typography.labelSmall,
+			modifier = Modifier
+				.padding(bottom = 8.dp)
+		)
+		ChipGrid(
+			chips = chips,
+			modifier = Modifier
+				.fillMaxWidth()
+		)
+	}
+}
+
+@Composable
+fun ChipGrid(
+	chips: List<ChipContent>,
+	modifier: Modifier = Modifier
+) {
+	FlowRow(
+		horizontalArrangement = Arrangement.spacedBy(8.dp),
+		modifier = modifier
+	) {
+		chips.forEach { chip ->
+			FilterChip(
+				label = { Text(chip.label) },
+				onClick = chip.action,
+				selected = chip.selected,
+				leadingIcon = {
+					if (chip.selected) {
+						Icon(
+							imageVector = Icons.Rounded.Check,
+							contentDescription = "Selected"
+						)
+					}
+				}
+			)
+		}
+	}
+
+}
+
 @Preview
 @Composable
 private fun LabeledChipRowPreview() {
@@ -77,5 +130,28 @@ private fun ChipRowPreview() {
 	ChipRow(
 		chips = sampleChipContents,
 		modifier = Modifier.fillMaxWidth()
+	)
+}
+
+@Preview
+@Composable
+private fun LabeledChipGridPreview() {
+	LabeledChipGrid(
+		title = "Genres",
+		chips = sampleChipContents,
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(horizontal = 16.dp)
+	)
+}
+
+@Preview
+@Composable
+private fun ChipGridPreview() {
+	ChipGrid(
+		chips = sampleChipContents,
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(horizontal = 16.dp)
 	)
 }

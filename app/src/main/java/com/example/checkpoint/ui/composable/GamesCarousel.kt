@@ -108,8 +108,10 @@ fun LazyGamesCarousel(
 				GameCover(
 					game = game,
 					showInformationOverlay = true,
-					onClick = { /* TODO: Navigate to game details */ },
-					onLongClick = { /* TODO: Show game options */ },
+					clickActions = ClickActions(
+						onClick = { /* TODO: Navigate to game details */ },
+						onLongClick = { /* TODO: Show game options */ }
+					),
 					modifier = Modifier.height(200.dp)
 				)
 			}
@@ -148,8 +150,9 @@ fun LazyGamesCarousel(
 				GameCover(
 					game = game,
 					showInformationOverlay = true,
-					onClick = { onGameClick(game.igdbId) },
-					onLongClick = { },
+					clickActions = ClickActions(
+						onClick = { onGameClick(game.igdbId) },
+						onLongClick = { }),
 					modifier = Modifier.height(200.dp)
 				)
 			}

@@ -124,10 +124,10 @@ class IgdbClient(
 			// utilizzo sia franchise che collections per future-proofing (collection sta diventando deprecato)
 			val conditions = mutableListOf<String>()
 			if (!gameDto?.collections.isNullOrEmpty()) {
-				conditions.add("collections = (${gameDto!!.collections!!.joinToString(",")})")
+				conditions.add("collections = (${gameDto.collections.joinToString(",")})")
 			}
 			if (!gameDto?.franchises.isNullOrEmpty()) {
-				conditions.add("franchises = (${gameDto!!.franchises!!.joinToString(",")})")
+				conditions.add("franchises = (${gameDto.franchises.joinToString(",")})")
 			}
 
 			val whereClause = conditions.joinToString(" | ")

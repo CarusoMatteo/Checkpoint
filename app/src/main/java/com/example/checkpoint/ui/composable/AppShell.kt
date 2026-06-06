@@ -18,6 +18,7 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 
@@ -59,6 +60,7 @@ fun SearchAppShell(
 	navController: NavHostController,
 	title: String,
 	selectedNavigationItem: NavigationItem,
+	isFiltersDrawerOpen: MutableState<Boolean>,
 	mainContent: @Composable () -> Unit,
 	searchContent: @Composable ColumnScope.() -> Unit,
 	actions: @Composable () -> Unit,
@@ -113,6 +115,9 @@ fun SearchAppShell(
 				.fillMaxSize()
 		) {
 			mainContent()
+		}
+		if (isFiltersDrawerOpen.value) {
+			FiltersDrawer(showBottomSheet = isFiltersDrawerOpen)
 		}
 	}
 }

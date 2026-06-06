@@ -25,6 +25,11 @@ import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.sampleLocalGames
 
+data class ClickActions(
+	val onClick: () -> Unit,
+	val onLongClick: () -> Unit
+)
+
 /**
  * Core game cover component that handles image rendering and text overlays.
  *
@@ -37,19 +42,21 @@ fun GameCover(
 	name: String,
 	publisher: String?,
 	showInformationOverlay: Boolean,
-	onClick: () -> Unit,
-	onLongClick: () -> Unit,
+	clickActions: ClickActions?,
 	modifier: Modifier = Modifier,
 	nameMaxLines: Int = 2,
 	publisherMaxLines: Int = 1
 ) {
 	Box(
-		modifier = modifier
+		modifier = if (clickActions != null) modifier
 			.aspectRatio(3f / 4f)
 			.clip(MaterialTheme.shapes.extraLarge)
 			.combinedClickable(
-				onClick = onClick, onLongClick = onLongClick
+				onClick = clickActions.onClick, onLongClick = clickActions.onLongClick
 			)
+		else modifier
+			.aspectRatio(3f / 4f)
+			.clip(MaterialTheme.shapes.extraLarge)
 	) {
 		AsyncImage(
 			model = model,
@@ -105,8 +112,7 @@ fun GameCover(
 fun GameCover(
 	game: LocalGame,
 	showInformationOverlay: Boolean,
-	onClick: () -> Unit,
-	onLongClick: () -> Unit,
+	clickActions: ClickActions?,
 	modifier: Modifier = Modifier,
 	nameMaxLines: Int = 2,
 	publisherMaxLines: Int = 1
@@ -115,8 +121,7 @@ fun GameCover(
 	name = game.name,
 	publisher = game.publisher,
 	showInformationOverlay = showInformationOverlay,
-	onClick = onClick,
-	onLongClick = onLongClick,
+	clickActions = clickActions,
 	modifier = modifier,
 	nameMaxLines = nameMaxLines,
 	publisherMaxLines = publisherMaxLines
@@ -129,8 +134,7 @@ fun GameCover(
 fun GameCover(
 	game: Game,
 	showInformationOverlay: Boolean,
-	onClick: () -> Unit,
-	onLongClick: () -> Unit,
+	clickActions: ClickActions?,
 	modifier: Modifier = Modifier,
 	nameMaxLines: Int = 2,
 	publisherMaxLines: Int = 1
@@ -139,8 +143,7 @@ fun GameCover(
 	name = game.name,
 	publisher = game.publisher ?: game.developer,
 	showInformationOverlay = showInformationOverlay,
-	onClick = onClick,
-	onLongClick = onLongClick,
+	clickActions = clickActions,
 	modifier = modifier,
 	nameMaxLines = nameMaxLines,
 	publisherMaxLines = publisherMaxLines
@@ -152,8 +155,7 @@ private fun GameCoverPreview() {
 	GameCover(
 		game = sampleLocalGames[0],
 		showInformationOverlay = true,
-		onClick = { },
-		onLongClick = { },
+		clickActions = ClickActions({}, {}),
 		modifier = Modifier.height(200.dp)
 	)
 }

@@ -15,6 +15,7 @@ import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.ClickActions
 import com.example.checkpoint.ui.composable.GameCover
 import com.example.checkpoint.ui.composable.NavigationItem
 
@@ -41,10 +42,11 @@ fun GamesGridScreen(
 				GameCover(
 					game = game,
 					showInformationOverlay = true,
-					onClick = {
-						navController.navigate(NavigationRoute.GameScreen(game.igdbId))
-					},
-					onLongClick = { /* TODO: May open up Multiple choice window */ },
+					clickActions = ClickActions(
+						onClick = {
+							navController.navigate(NavigationRoute.GameScreen(game.igdbId))
+						},
+						onLongClick = { /* TODO: May open up Multiple choice window */ }),
 					modifier = Modifier.fillMaxWidth()
 				)
 			}

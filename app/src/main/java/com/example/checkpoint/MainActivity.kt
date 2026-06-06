@@ -26,7 +26,6 @@ import com.example.checkpoint.ui.screens.GameScreen
 import com.example.checkpoint.ui.screens.GamesGridScreen
 import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
-import com.example.checkpoint.ui.screens.SearchScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
@@ -81,9 +80,6 @@ sealed interface NavigationRoute {
 
 	@Serializable
 	data class GamesGridScreen(val title: String) : NavigationRoute
-
-	@Serializable
-	data object SearchScreen : NavigationRoute
 
 	@Serializable
 	data class GameScreen(val igdbId: Int) : NavigationRoute
@@ -174,10 +170,6 @@ fun NavGraph(
 
 		composable<NavigationRoute.SignUpScreen> {
 			SignUpScreen(navController)
-		}
-
-		composable<NavigationRoute.SearchScreen> {
-			SearchScreen(navController)
 		}
 	}
 }

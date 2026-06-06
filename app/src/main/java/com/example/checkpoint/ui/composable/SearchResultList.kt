@@ -62,8 +62,9 @@ fun SearchResultItem(
 		GameCover(
 			game = game,
 			showInformationOverlay = false,
-			onClick = { /* TODO: Navigate to game */ },
-			onLongClick = { },
+			clickActions = ClickActions(
+				onClick = { /* TODO: Navigate to game */ },
+				onLongClick = { }),
 			modifier = Modifier.height(60.dp)
 		)
 		Column(

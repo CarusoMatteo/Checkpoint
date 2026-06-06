@@ -14,6 +14,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,6 +34,7 @@ fun ExploreScreen(
 	navController: NavHostController, vm: ExploreViewModel = koinViewModel()
 ) {
 	val state by vm.state.collectAsStateWithLifecycle()
+	val isFiltersDrawerOpen = remember { mutableStateOf(false) }
 
 	val sampleSearchResults = listOf(
 		Game(
@@ -67,6 +70,7 @@ fun ExploreScreen(
 		navController,
 		title = "Explore",
 		selectedNavigationItem = NavigationItem.Explore,
+		isFiltersDrawerOpen = isFiltersDrawerOpen,
 		mainContent = {
 			// Mostra lo spinner se tutte le sezioni principali sono ancora in caricamento continuo
 			if (state.isLoadingPopular && state.isLoadingRecent && state.isLoadingRecommendations) {
@@ -193,7 +197,7 @@ fun ExploreScreen(
 		actions = {
 			Row {
 				IconButton(
-					onClick = { /* TODO: Open filter dialog */ }
+					onClick = { isFiltersDrawerOpen.value = true }
 				) {
 					Icon(
 						imageVector = Icons.Rounded.FilterAlt,
