@@ -27,6 +27,9 @@ class GameListRepository(
 
 	fun getGamesInList(listId: Int): Flow<List<GameEntity>> = listEntryDao.getGamesInList(listId)
 
+	fun getListsContainingGame(gameId: Int): Flow<List<Int>> =
+		listEntryDao.getListsContainingGame(gameId)
+
 	/** Creates a new list. Returns the generated ID. */
 	suspend fun createList(
 		userId: Int, name: String, type: String = "CUSTOM", isPublic: Boolean = true
@@ -76,8 +79,7 @@ data class AchievementWithProgress(
 }
 
 class AchievementRepository(
-	private val achievementDao: AchievementDao,
-	private val userAchievementDao: UserAchievementDao
+	private val achievementDao: AchievementDao, private val userAchievementDao: UserAchievementDao
 ) {
 	fun getAllAchievements(): Flow<List<AchievementEntity>> = achievementDao.getAllAchievements()
 	fun getAllCategories(): Flow<List<AchievementCategoryEntity>> =
@@ -104,29 +106,22 @@ class AchievementRepository(
 	}
 
 	/**
-	 * Gestisce il pinning direttamente sul database locale Room.
+	 * Handles pinning directly to the local Room database.
 	 */
 	suspend fun togglePin(userId: Int, achievementId: Int) {
 		val userAch = userAchievementDao.getUserAchievement(userId, achievementId)
-		// Controllo se è già sbloccato
 		if (userAch != null && userAch.unlockedAt != null) {
 			val currentPinnedCount = userAchievementDao.getPinnedCount(userId)
 			if (userAch.isPinned) {
-				// Se è già pinnato, lo togliamo sempre
 				userAchievementDao.upsert(userAch.copy(isPinned = false))
 			} else if (currentPinnedCount < 3) {
-				// Se non è pinnato, lo aggiungiamo solo se non ha superato il limite di 3
 				userAchievementDao.upsert(userAch.copy(isPinned = true))
 			}
 		}
 	}
 
 	suspend fun updatePin(
-		userId: Int,
-		achievementId: Int,
-		isPinned: Boolean,
-		progress: Int,
-		unlockedAt: String?
+		userId: Int, achievementId: Int, isPinned: Boolean, progress: Int, unlockedAt: String?
 	) {
 		userAchievementDao.upsert(
 			UserAchievementEntity(
@@ -140,8 +135,7 @@ class AchievementRepository(
 	}
 
 	suspend fun seedAchievements(
-		categories: List<AchievementCategoryEntity>,
-		achievements: List<AchievementEntity>
+		categories: List<AchievementCategoryEntity>, achievements: List<AchievementEntity>
 	) {
 		categories.forEach { achievementDao.upsertCategory(it) }
 		achievementDao.upsertAllAchievements(achievements)

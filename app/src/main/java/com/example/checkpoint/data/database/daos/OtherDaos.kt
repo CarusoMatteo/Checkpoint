@@ -112,6 +112,9 @@ interface ListEntryDao {
 	)
 	fun getGamesInList(listId: Int): Flow<List<GameEntity>>
 
+	@Query("SELECT list_id FROM list_entries WHERE game_id = :gameId")
+	fun getListsContainingGame(gameId: Int): Flow<List<Int>>
+
 	@Upsert
 	suspend fun upsert(entry: ListEntryEntity)
 

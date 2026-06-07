@@ -66,12 +66,10 @@ fun ExploreScreen(
 		selectedNavigationItem = NavigationItem.Explore,
 		isFiltersDrawerOpen = isFiltersDrawerOpen,
 		mainContent = {
-			// Mostra lo spinner se tutte le sezioni principali sono ancora in caricamento continuo
+			// Show the spinner if all major sections are still in continuous loading
 			if (state.isLoadingPopular && state.isLoadingRecent && state.isLoadingRecommendations) {
 				Box(
-					modifier = Modifier
-						.fillMaxSize(),
-					contentAlignment = Alignment.Center
+					modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
 				) {
 					CircularProgressIndicator()
 				}
@@ -85,8 +83,7 @@ fun ExploreScreen(
 			}
 
 			Column(
-				modifier = Modifier
-					.verticalScroll(scrollState)
+				modifier = Modifier.verticalScroll(scrollState)
 			) {
 				// 1. Popular games
 				if (state.popularGames.isNotEmpty()) {
@@ -176,8 +173,7 @@ fun ExploreScreen(
 						},
 						onSeeAllClick = {
 							navigateToGrid(
-								"Since you searched",
-								state.searchResults
+								"Since you searched", state.searchResults
 							)
 						})
 				}
@@ -189,6 +185,5 @@ fun ExploreScreen(
 				navController = navController
 			)
 		},
-		onSearch = { /* TODO: Implement search feature to update displayed games */ }
-	)
+		onSearch = { /* TODO: Implement search feature to update displayed games */ })
 }

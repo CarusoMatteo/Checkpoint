@@ -18,7 +18,7 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
 	fun login(usernameOrEmail: String, password: String) {
 		if (usernameOrEmail.isBlank() || password.isBlank()) {
-			_uiState.update { it.copy(error = "Compila tutti i campi richiesti") }
+			_uiState.update { it.copy(error = "Fill in all required fields") }
 			return
 		}
 

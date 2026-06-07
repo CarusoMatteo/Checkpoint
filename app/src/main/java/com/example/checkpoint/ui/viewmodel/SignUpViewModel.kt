@@ -18,7 +18,7 @@ class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() 
 
 	fun signUp(username: String, email: String, password: String, bio: String) {
 		if (username.isBlank() || email.isBlank() || password.isBlank()) {
-			_uiState.update { it.copy(error = "Compila tutti i campi obbligatori") }
+			_uiState.update { it.copy(error = "Fill in all required fields") }
 			return
 		}
 

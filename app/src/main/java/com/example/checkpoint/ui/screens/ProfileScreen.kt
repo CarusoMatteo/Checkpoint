@@ -14,13 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
@@ -43,6 +48,7 @@ import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.Review
 import com.example.checkpoint.data.ReviewCompletion
 import com.example.checkpoint.data.User
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -51,31 +57,31 @@ import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.viewmodel.AchievementUiModel
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
+import com.example.checkpoint.ui.viewmodel.LibraryListUiModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
 	navController: NavHostController,
-	achievementsViewModel: AchievementsViewModel, // andrà rimosso :<(
+	achievementsViewModel: AchievementsViewModel, // it will be removed :<(
 	profileViewModel: ProfileViewModel,
 	modifier: Modifier = Modifier,
 ) {
 	val uiState by profileViewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
 
-	// estraggo i dati dal db
+	// I extract the data from the DB
 	val currentUser = uiState.user
-	val username = currentUser?.username ?: "Utente"
+	val username = currentUser?.username ?: "User"
 	val email = currentUser?.email ?: ""
-	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "Nessuna biografia inserita."
+	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "No biography included."
 
-	// filtro
+	// Filter
 	val achievements = uiState.achievements.filter { it.isPinned }
 
-	// Creo l'oggetto di dominio (temporaneo fino a migliore soluzione)
+	// I create the domain object (temporary until best solution)
 	val userDomain = User(
-		id = currentUser?.id ?: 0,
-		name = username
+		id = currentUser?.id ?: 0, name = username
 	)
 
 	val reviews = uiState.reviews.map { entity ->
@@ -85,6 +91,12 @@ fun ProfileScreen(
 			comment = entity.body,
 			completion = ReviewCompletion.MAIN
 		)
+	}
+
+	// Function to navigate to the list grid
+	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
+		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
+		navController.navigate(NavigationRoute.GamesGridScreen(title))
 	}
 
 	AppShell(
@@ -122,7 +134,7 @@ fun ProfileScreen(
 					.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
 
-			// ── Biografia
+			// ── Biography
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Biography",
@@ -137,7 +149,7 @@ fun ProfileScreen(
 					.padding(bottom = 8.dp)
 			)
 
-			// ── Generi preferiti
+			// ── Favorite genres
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Favourite Genres",
@@ -149,7 +161,7 @@ fun ProfileScreen(
 			val preferredGenres = uiState.preferredGenres
 			if (preferredGenres.isEmpty()) {
 				Text(
-					text = "Nessun genere preferito selezionato.",
+					text = "No favorite genre selected.",
 					style = MaterialTheme.typography.bodyMedium,
 					color = MaterialTheme.colorScheme.onSurfaceVariant,
 					modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -162,6 +174,16 @@ fun ProfileScreen(
 				)
 			}
 
+			// ── My Collections
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			MyCollectionsSection(
+				carousels = uiState.carousels,
+				modifier = Modifier.padding(vertical = 8.dp),
+				onCollectionClick = { carousel ->
+					navigateToGrid(carousel.listEntity.name, carousel.games)
+				}
+			)
+
 			// ── Achievement dal DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			AchievementsSection(
@@ -169,10 +191,10 @@ fun ProfileScreen(
 					navController.navigate(NavigationRoute.AchievementsScreen)
 				}, modifier = Modifier
 					.padding(horizontal = 16.dp)
-					.padding(bottom = 8.dp)
+					.padding(vertical = 8.dp)
 			)
 
-			// ── Recensioni dal DB
+			// ── Reviews from the DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
@@ -185,7 +207,7 @@ fun ProfileScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componenti privati
+// Private components
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -245,6 +267,75 @@ private fun ProfileSection(
 			)
 			Spacer(Modifier.width(4.dp))
 			Text("Update")
+		}
+	}
+}
+
+@Composable
+private fun MyCollectionsSection(
+	carousels: List<LibraryListUiModel>,
+	modifier: Modifier = Modifier,
+	onCollectionClick: (LibraryListUiModel) -> Unit = {}
+) {
+	Column(modifier = modifier) {
+		Text(
+			text = "My Collections",
+			style = MaterialTheme.typography.titleMedium,
+			fontWeight = FontWeight.Bold,
+			modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+		)
+
+		if (carousels.isEmpty()) {
+			Text(
+				text = "No list created.",
+				style = MaterialTheme.typography.bodyMedium,
+				color = MaterialTheme.colorScheme.onSurfaceVariant,
+				modifier = Modifier.padding(horizontal = 16.dp)
+			)
+		} else {
+			LazyRow(
+				horizontalArrangement = Arrangement.spacedBy(12.dp),
+				contentPadding = PaddingValues(horizontal = 16.dp),
+				modifier = Modifier.fillMaxWidth()
+			) {
+				items(carousels) { carousel ->
+					val list = carousel.listEntity
+					val isPrimary = list.type == "BACKLOG" || list.type == "SAVED"
+
+					Card(
+						onClick = { onCollectionClick(carousel) },
+						modifier = Modifier
+							.width(160.dp)
+							.height(115.dp)
+					) {
+						Column(
+							modifier = Modifier
+								.fillMaxSize()
+								.padding(16.dp),
+							verticalArrangement = Arrangement.Center
+						) {
+							Icon(
+								imageVector = Icons.Rounded.Folder,
+								contentDescription = null,
+								tint = if (isPrimary) MaterialTheme.colorScheme.primary
+								else MaterialTheme.colorScheme.outline
+							)
+							Spacer(modifier = Modifier.height(12.dp))
+							Text(
+								text = list.name,
+								style = MaterialTheme.typography.titleMedium,
+								maxLines = 1,
+								overflow = Ellipsis
+							)
+							Text(
+								text = if (carousel.games.size == 1) "1 game" else "${carousel.games.size} games",
+								style = MaterialTheme.typography.labelSmall,
+								color = MaterialTheme.colorScheme.onSurfaceVariant
+							)
+						}
+					}
+				}
+			}
 		}
 	}
 }

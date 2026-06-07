@@ -117,7 +117,7 @@ private fun SignUpCard(
 	var showRepeatPassword by remember { mutableStateOf(false) }
 	var showProgress by showProgressIndicator
 
-	// Ripristina il caricamento su falso in caso di errore
+	// Revert upload to false on error
 	LaunchedEffect(uiState.isLoading) {
 		if (!uiState.isLoading) {
 			showProgress = false

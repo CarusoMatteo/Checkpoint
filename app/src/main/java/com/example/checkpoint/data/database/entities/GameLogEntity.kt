@@ -45,7 +45,7 @@ data class GameLogEntity(
 	/** Rating da 1 a 10 */
 	@ColumnInfo(name = "rating") val rating: Int? = null,
 
-	/** Ore giocate, es. 12.50 */
+	/** hours played, es. 12.50 */
 	@ColumnInfo(name = "hours_played") val hoursPlayed: Double? = null,
 
 	/** "MAIN", "MAIN_AND_EXTRA", "COMPLETED" o null */

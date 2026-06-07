@@ -24,12 +24,14 @@ import com.example.checkpoint.ui.screens.AchievementsScreen
 import com.example.checkpoint.ui.screens.ExploreScreen
 import com.example.checkpoint.ui.screens.GameScreen
 import com.example.checkpoint.ui.screens.GamesGridScreen
+import com.example.checkpoint.ui.screens.LibraryScreen
 import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
+import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import kotlinx.serialization.Serializable
 import org.koin.android.ext.android.inject
@@ -38,7 +40,7 @@ import org.koin.core.parameter.parametersOf
 
 class MainActivity : ComponentActivity() {
 
-	// Inietto il SessionManager
+	// I inject the SessionManager
 	private val sessionManager: SessionManager by inject()
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +48,7 @@ class MainActivity : ComponentActivity() {
 		enableEdgeToEdge()
 		setContent {
 			CheckpointTheme {
-				// Controllo lo stato della sessione
+				// Check session status
 				val sessionState by sessionManager.sessionState.collectAsState()
 
 				if (sessionState is SessionState.Loading) {
@@ -54,7 +56,7 @@ class MainActivity : ComponentActivity() {
 						CircularProgressIndicator()
 					}
 				} else {
-					//Calcolo la destinazione iniziale in base alla sessione
+					//Calculate the initial destination based on the session
 					val startDestination = if (sessionState is SessionState.LoggedIn) {
 						NavigationRoute.ProfileScreen
 					} else {
@@ -125,15 +127,17 @@ fun NavGraph(
 		}
 
 		composable<NavigationRoute.LibraryScreen> {
-			ExploreScreen(navController)
+			val libraryViewModel = koinViewModel<LibraryViewModel>()
+			LibraryScreen(
+				navController = navController, vm = libraryViewModel
+			)
 		}
 
 		composable<NavigationRoute.ProfileScreen> {
-			val profileViewModel: ProfileViewModel = koinViewModel()
+			val profileViewModel = koinViewModel<ProfileViewModel>()
 			ProfileScreen(
-				navController = navController,
-				achievementsViewModel = achievementsViewModel,
-				profileViewModel = profileViewModel
+				navController = navController, profileViewModel = profileViewModel,
+				achievementsViewModel = achievementsViewModel
 			)
 		}
 

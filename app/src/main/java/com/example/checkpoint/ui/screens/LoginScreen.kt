@@ -101,7 +101,7 @@ private fun LoginCard(
 	var showPassword by remember { mutableStateOf(false) }
 	var showProgress by showProgressIndicator
 
-	// Ripristina il caricamento su falso se il viewModel termina l'operazione (es. errore credenziali)
+	// Reset upload to false if viewModel finishes the operation (e.g. credential error)
 	LaunchedEffect(uiState.isLoading) {
 		if (!uiState.isLoading) {
 			showProgress = false

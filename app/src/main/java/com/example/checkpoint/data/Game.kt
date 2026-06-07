@@ -21,9 +21,7 @@ fun LocalDate.toLocalFormat(
 	dateStyle: FormatStyle = FormatStyle.MEDIUM
 ): String {
 	return this.format(
-		DateTimeFormatter
-			.ofLocalizedDate(dateStyle)
-			.withLocale(Locale.getDefault())
+		DateTimeFormatter.ofLocalizedDate(dateStyle).withLocale(Locale.getDefault())
 	)
 }
 

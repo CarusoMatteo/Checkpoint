@@ -18,6 +18,7 @@ import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.data.repositories.AuthRepository
 import com.example.checkpoint.data.session.SessionManager
+import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.LoginViewModel
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import io.ktor.client.HttpClient
@@ -36,7 +37,7 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-	// Il SessionManager deve essere un singleton
+	// The SessionManager must be a singleton
 	single { SessionManager(context = androidContext()) }
 
 	single {
@@ -79,7 +80,7 @@ val appModule = module {
 			override fun onCreate(db: SupportSQLiteDatabase) {
 				super.onCreate(db)
 				CoroutineScope(Dispatchers.IO).launch {
-					// Recupero il riferimento temporaneo ai DAO dall'istanza dell'AppDatabase
+
 					val database = get<AppDatabase>()
 
 					DatabaseSeeder.seed(db = database)
@@ -149,17 +150,26 @@ val appModule = module {
 			userDao = get(),
 			reviewRepository = get(),
 			achievementRepository = get(),
-			genreDao = get()
+			genreDao = get(),
+			gameListRepository = get(),
+			gameLogRepository = get(),
+			igdbClient = get()
 		)
 	}
 
+	viewModel {
+		LibraryViewModel(
+			sessionManager = get(), gameListRepository = get(), igdbClient = get()
+		)
+	}
 	viewModel { (igdbId: Int, userId: Int) ->
 		GameScreenViewModel(
 			igdbId = igdbId,
 			userId = userId,
 			gameRepository = get(),
 			gameLogRepository = get(),
-			reviewRepository = get()
+			reviewRepository = get(),
+			gameListRepository = get()
 		)
 	}
 

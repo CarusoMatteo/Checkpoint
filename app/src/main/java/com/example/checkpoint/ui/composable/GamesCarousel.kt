@@ -37,6 +37,7 @@ private fun CarouselShell(
 	hasStartingDivider: Boolean,
 	hasDeleteAction: Boolean,
 	modifier: Modifier = Modifier,
+	onDeleteClick: () -> Unit = {},
 	onSeeAllClick: () -> Unit = {},
 	content: @Composable () -> Unit
 ) {
@@ -59,7 +60,7 @@ private fun CarouselShell(
 					.basicMarquee()
 			)
 			if (hasDeleteAction) {
-				IconButton(onClick = { /* TODO: Delete List */ }) {
+				IconButton(onClick = onDeleteClick) {
 					Icon(
 						imageVector = Icons.Rounded.DeleteOutline, contentDescription = "Delete"
 					)
@@ -88,12 +89,14 @@ fun LazyGamesCarousel(
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
 	hasDeleteAction: Boolean = false,
+	onDeleteClick: () -> Unit = {},
 	onSeeAllClick: () -> Unit = {}
 ) {
 	CarouselShell(
 		title = title,
 		hasStartingDivider = hasStartingDivider,
 		hasDeleteAction = hasDeleteAction,
+		onDeleteClick = onDeleteClick,
 		onSeeAllClick = onSeeAllClick,
 		modifier = modifier
 	) {
@@ -110,10 +113,8 @@ fun LazyGamesCarousel(
 					showInformationOverlay = true,
 					clickActions = ClickActions(
 						onClick = { /* TODO: Navigate to game details */ },
-						onLongClick = { /* TODO: Show game options */ }
-					),
-					modifier = Modifier.height(200.dp)
-				)
+						onLongClick = { /* TODO: Show game options */ }),
+					modifier = Modifier.height(200.dp))
 			}
 		}
 	}
@@ -129,13 +130,16 @@ fun LazyGamesCarousel(
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
 	hasDeleteAction: Boolean = false,
+	onDeleteClick: () -> Unit = {},
 	onGameClick: (igdbId: Int) -> Unit = {},
+	onGameLongClick: (Game) -> Unit = {},
 	onSeeAllClick: () -> Unit = {}
 ) {
 	CarouselShell(
 		title = title,
 		hasStartingDivider = hasStartingDivider,
 		hasDeleteAction = hasDeleteAction,
+		onDeleteClick = onDeleteClick,
 		onSeeAllClick = onSeeAllClick,
 		modifier = modifier
 	) {
@@ -152,7 +156,7 @@ fun LazyGamesCarousel(
 					showInformationOverlay = true,
 					clickActions = ClickActions(
 						onClick = { onGameClick(game.igdbId) },
-						onLongClick = { }),
+						onLongClick = { onGameLongClick(game) }),
 					modifier = Modifier.height(200.dp)
 				)
 			}

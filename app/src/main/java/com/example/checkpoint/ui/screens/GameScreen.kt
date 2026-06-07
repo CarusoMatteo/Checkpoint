@@ -1,38 +1,58 @@
 package com.example.checkpoint.ui.screens
 
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
+import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LabeledChipRow
@@ -93,7 +113,7 @@ fun GameScreen(
 					contentAlignment = Alignment.Center
 				) {
 					Text(
-						text = state.error ?: "Errore sconosciuto",
+						text = state.error ?: "Error",
 						color = MaterialTheme.colorScheme.error
 					)
 				}
@@ -111,10 +131,15 @@ fun GameScreen(
 						game = game,
 						isSaved = state.isSaved,
 						averageRating = state.averageRating,
-						onPrimaryClick = {
-							if (state.isSaved) viewModel.actions.onRemoveGame()
-							else viewModel.actions.onSaveGame()
+						userLists = state.userLists,
+						listsContainingGame = state.listsContainingGame,
+						onPrimaryClick = { viewModel.actions.onAddGameToBacklog() },
+						onConfirmListsClick = { listIds ->
+							viewModel.actions.onSynchronizeLists(
+								listIds
+							)
 						},
+						onCreateListClick = { name -> viewModel.actions.onCreateNewList(name) },
 						modifier = Modifier
 							.fillMaxWidth()
 							.padding(horizontal = 16.dp)
@@ -131,7 +156,6 @@ fun GameScreen(
 						)
 					}
 
-					// Formattazione della data e logica "Add to calendar"
 					game.firstReleaseDate?.let { epochSeconds ->
 						val releaseInstant = Instant.ofEpochSecond(epochSeconds)
 						val localDate = releaseInstant.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -167,7 +191,6 @@ fun GameScreen(
 						)
 					}
 
-					// Same Franchise Games
 					if (state.franchiseGames.isNotEmpty()) {
 						LazyGamesCarousel(
 							title = "From the series",
@@ -178,7 +201,6 @@ fun GameScreen(
 							})
 					}
 
-					// Similar games
 					if (state.similarGames.isNotEmpty()) {
 						LazyGamesCarousel(
 							title = "Similar games",
@@ -189,7 +211,6 @@ fun GameScreen(
 							})
 					}
 
-					// Recensioni fittizie usate temporaneamente come da file di design
 					ReviewList(
 						title = "Reviews",
 						reviews = sampleLocalGames.first().reviews,
@@ -207,9 +228,15 @@ private fun GameHeader(
 	game: Game,
 	isSaved: Boolean,
 	averageRating: Double?,
+	userLists: List<GameListEntity>,
+	listsContainingGame: Set<Int>,
 	onPrimaryClick: () -> Unit,
+	onConfirmListsClick: (List<Int>) -> Unit,
+	onCreateListClick: (String) -> Unit,
 	modifier: Modifier = Modifier
 ) {
+	var showDialog by remember { mutableStateOf(false) }
+
 	Row(modifier = modifier) {
 		AsyncImage(
 			modifier = Modifier
@@ -235,7 +262,6 @@ private fun GameHeader(
 				)
 			}
 
-			// Usa la media voti reale dal DB se disponibile, altrimenti fa il fallback su IGDB
 			val finalRating =
 				averageRating?.toFloat() ?: (game.totalRating?.div(20))?.toFloat() ?: 0f
 			ReviewRating(
@@ -244,7 +270,7 @@ private fun GameHeader(
 
 			SmallSplitButtons(
 				onPrimaryClick = onPrimaryClick,
-				onSecondaryClick = { /* TODO: dropdown menu */ },
+				onSecondaryClick = { showDialog = true },
 				primaryIcon = {
 					Icon(
 						imageVector = Icons.Rounded.AddCircleOutline, contentDescription = null
@@ -255,7 +281,193 @@ private fun GameHeader(
 					Icon(
 						imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
 					)
-				})
+				}
+			)
 		}
+	}
+
+	// window
+	if (showDialog) {
+		SaveToListsDialog(
+			userLists = userLists,
+			listsContainingGame = listsContainingGame,
+			onDismissRequest = { showDialog = false },
+			onConfirm = { selectedListIds ->
+				onConfirmListsClick(selectedListIds)
+				showDialog = false
+			},
+			onCreateListClick = onCreateListClick
+		)
+	}
+}
+
+@Composable
+private fun SaveToListsDialog(
+	userLists: List<GameListEntity>,
+	listsContainingGame: Set<Int>,
+	onDismissRequest: () -> Unit,
+	onConfirm: (List<Int>) -> Unit,
+	onCreateListClick: (String) -> Unit
+) {
+	var searchQuery by remember { mutableStateOf("") }
+
+	// Synchronize status with db
+	var selectedIds by remember { mutableStateOf(setOf<Int>()) }
+	LaunchedEffect(listsContainingGame) {
+		selectedIds = listsContainingGame
+	}
+
+	var showCreateListDialog by remember { mutableStateOf(false) }
+	var newListName by remember { mutableStateOf("") }
+
+	val filteredLists = userLists.filter { it.name.contains(searchQuery, ignoreCase = true) }
+
+	Dialog(onDismissRequest = onDismissRequest) {
+		Card(
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(16.dp),
+			shape = MaterialTheme.shapes.extraLarge
+		) {
+			Column(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(16.dp)
+			) {
+				Text(
+					text = "Save to...",
+					style = MaterialTheme.typography.titleLarge,
+					fontWeight = FontWeight.Bold,
+					modifier = Modifier.padding(bottom = 12.dp)
+				)
+
+				// Search
+				OutlinedTextField(
+					value = searchQuery,
+					onValueChange = { searchQuery = it },
+					modifier = Modifier.fillMaxWidth(),
+					placeholder = { Text("Search list") },
+					leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Search") },
+					singleLine = true,
+					shape = MaterialTheme.shapes.extraLarge
+				)
+
+				Spacer(modifier = Modifier.height(12.dp))
+
+				// LazyColumn Lists with Checkbox
+				LazyColumn(
+					modifier = Modifier
+						.fillMaxWidth()
+						.heightIn(max = 240.dp)
+				) {
+					if (filteredLists.isEmpty()) {
+						item {
+							Text(
+								text = "No lists found",
+								style = MaterialTheme.typography.bodyMedium,
+								color = MaterialTheme.colorScheme.onSurfaceVariant,
+								modifier = Modifier.padding(vertical = 8.dp)
+							)
+						}
+					} else {
+						items(filteredLists) { list ->
+							val isChecked = selectedIds.contains(list.id)
+							Row(
+								modifier = Modifier
+									.fillMaxWidth()
+									.clickable {
+										selectedIds = if (isChecked) {
+											selectedIds - list.id
+										} else {
+											selectedIds + list.id
+										}
+									}
+									.padding(vertical = 4.dp),
+								verticalAlignment = Alignment.CenterVertically
+							) {
+								Checkbox(
+									checked = isChecked,
+									onCheckedChange = { checked ->
+										selectedIds = if (checked == true) {
+											selectedIds + list.id
+										} else {
+											selectedIds - list.id
+										}
+									}
+								)
+								Spacer(modifier = Modifier.width(8.dp))
+								Text(
+									text = list.name,
+									style = MaterialTheme.typography.bodyLarge
+								)
+							}
+						}
+					}
+				}
+
+				Spacer(modifier = Modifier.height(8.dp))
+
+
+				TextButton(
+					onClick = { showCreateListDialog = true },
+					modifier = Modifier.fillMaxWidth()
+				) {
+					Icon(imageVector = Icons.Rounded.Add, contentDescription = "Add List")
+					Spacer(modifier = Modifier.width(8.dp))
+					Text("Add list")
+					Spacer(modifier = Modifier.weight(1f))
+				}
+
+				Spacer(modifier = Modifier.height(16.dp))
+
+				// actions
+				Row(
+					modifier = Modifier.fillMaxWidth(),
+					horizontalArrangement = Arrangement.End,
+					verticalAlignment = Alignment.CenterVertically
+				) {
+					TextButton(onClick = onDismissRequest) {
+						Text("Cancel")
+					}
+					Spacer(modifier = Modifier.width(8.dp))
+					TextButton(
+						onClick = { onConfirm(selectedIds.toList()) }
+					) {
+						Text("OK")
+					}
+				}
+			}
+		}
+	}
+
+	// Second window for List creation
+	if (showCreateListDialog) {
+		AlertDialog(
+			onDismissRequest = { showCreateListDialog = false },
+			title = { Text("Create New List") },
+			text = {
+				OutlinedTextField(
+					value = newListName,
+					onValueChange = { newListName = it },
+					label = { Text("List Name") },
+					singleLine = true,
+					shape = MaterialTheme.shapes.medium
+				)
+			},
+			confirmButton = {
+				TextButton(
+					onClick = {
+						if (newListName.isNotBlank()) {
+							onCreateListClick(newListName)
+							newListName = ""
+							showCreateListDialog = false
+						}
+					}
+				) { Text("Create") }
+			},
+			dismissButton = {
+				TextButton(onClick = { showCreateListDialog = false }) { Text("Cancel") }
+			}
+		)
 	}
 }

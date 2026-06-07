@@ -44,7 +44,7 @@ class AchievementsViewModel(
 							threshold = ach.threshold,
 							progress = prog?.progress ?: 0,
 							unlockedAt = prog?.unlockedAt,
-							isPinned = prog?.isPinned ?: false // Legge lo stato dal DB
+							isPinned = prog?.isPinned ?: false
 						)
 					}
 					AchievementsUiState(achievements = uiAchievements, isLoading = false)
@@ -66,7 +66,7 @@ class AchievementsViewModel(
 
 		if (!achievement.isPinned && currentPinnedCount >= 3) return
 
-		// Può essere pinnato solo se è effettivamente sbloccato
+		// Can only be pinned if it is actually unlocked
 		if (!achievement.isPinned && !achievement.isUnlocked) return
 
 		viewModelScope.launch {
