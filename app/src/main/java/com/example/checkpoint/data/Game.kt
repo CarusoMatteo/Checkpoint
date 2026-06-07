@@ -1,6 +1,7 @@
 package com.example.checkpoint.data
 
 import com.example.checkpoint.R
+import com.example.checkpoint.data.database.entities.ReviewEntity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -13,7 +14,7 @@ data class LocalGame(
 	val description: String = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur.",
 	val releaseDate: LocalDate = LocalDate.now(),
 	val genres: List<ChipContent> = sampleChipContents,
-	val reviews: List<Review> = emptyList(),
+	val reviews: List<ReviewEntity> = emptyList(),
 	val notificationsEnabled: Boolean = false
 )
 

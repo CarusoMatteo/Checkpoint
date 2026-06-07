@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.database.entities.GameLogEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
+import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.repositories.CompletionType
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
+import com.example.checkpoint.data.repositories.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -25,6 +27,7 @@ data class GameScreenState(
 	val userLog: GameLogEntity? = null,
 	val userReview: ReviewEntity? = null,
 	val reviews: List<ReviewEntity> = emptyList(),
+	val reviewUsers: Map<Int, UserEntity> = emptyMap(),
 	val averageRating: Double? = null,
 	val reviewCount: Int = 0,
 	val isLoading: Boolean = true,
@@ -44,7 +47,7 @@ data class GameScreenActions(
 		startedAt: LocalDate?,
 		finishedAt: LocalDate?,
 	) -> Unit,
-	val onWriteReview: (rating: Int, body: String, containsSpoilers: Boolean) -> Unit,
+	val onWriteReview: (rating: Float, body: String, completion: CompletionType) -> Unit,
 	val onDeleteReview: () -> Unit,
 	val onAddGameToBacklog: () -> Unit,
 	val onSynchronizeLists: (listIds: List<Int>) -> Unit,
@@ -58,6 +61,7 @@ class GameScreenViewModel(
 	private val gameLogRepository: GameLogRepository,
 	private val reviewRepository: ReviewRepository,
 	private val gameListRepository: GameListRepository,
+	private val userRepository: UserRepository
 ) : ViewModel() {
 
 	private val _state = MutableStateFlow(GameScreenState())
@@ -67,7 +71,7 @@ class GameScreenViewModel(
 		onSaveGame = { saveGame() },
 		onRemoveGame = { removeGame() },
 		onLogGame = { r, h, c, s, f -> logGame(r, h, c, s, f) },
-		onWriteReview = { r, b, sp -> writeReview(r, b, sp) },
+		onWriteReview = { r, b, c -> writeReview(r, b, c) },
 		onDeleteReview = { deleteReview() },
 		onAddGameToBacklog = { addGameToBacklog() },
 		onSynchronizeLists = { listIds -> synchronizeGameLists(listIds) },
@@ -120,10 +124,6 @@ class GameScreenViewModel(
 				.collect { review -> _state.update { it.copy(userReview = review) } }
 		}
 		viewModelScope.launch {
-			reviewRepository.getReviewsForGame(gameId)
-				.collect { reviews -> _state.update { it.copy(reviews = reviews) } }
-		}
-		viewModelScope.launch {
 			reviewRepository.getAverageRating(gameId)
 				.collect { avg -> _state.update { it.copy(averageRating = avg) } }
 		}
@@ -135,6 +135,22 @@ class GameScreenViewModel(
 		viewModelScope.launch {
 			gameListRepository.getListsContainingGame(gameId)
 				.collect { listIds -> _state.update { it.copy(listsContainingGame = listIds.toSet()) } }
+		}
+
+		// I retrieve reviews and users
+		viewModelScope.launch {
+			reviewRepository.getReviewsForGame(gameId).collect { reviews ->
+
+				_state.update { it.copy(reviews = reviews) }
+
+				// I extract the unique IDs and ask the database who they are
+				val authorIds = reviews.map { it.userId }.distinct()
+				if (authorIds.isNotEmpty()) {
+					val users = userRepository.getUsersByIds(authorIds)
+					val usersMap = users.associateBy { it.id }
+					_state.update { it.copy(reviewUsers = usersMap) }
+				}
+			}
 		}
 	}
 
@@ -166,11 +182,9 @@ class GameScreenViewModel(
 			val toAdd = selectedListIds.filter { it !in currentLists }
 			val toRemove = currentLists.filter { it !in selectedListIds }
 
-			// Add to selected Lists
 			toAdd.forEach { listId ->
 				gameListRepository.addGameToList(listId, gameId)
 			}
-			// Remove from deselected Lists
 			toRemove.forEach { listId ->
 				gameListRepository.removeGameFromList(listId, gameId)
 			}
@@ -233,7 +247,7 @@ class GameScreenViewModel(
 		}
 	}
 
-	private fun writeReview(rating: Int, body: String, containsSpoilers: Boolean) {
+	private fun writeReview(rating: Float, body: String, completion: CompletionType) {
 		val gameId = _state.value.game?.id ?: return
 		val existingId = _state.value.userReview?.id ?: 0
 		viewModelScope.launch {
@@ -242,7 +256,7 @@ class GameScreenViewModel(
 				gameId = gameId,
 				rating = rating,
 				body = body,
-				containsSpoilers = containsSpoilers,
+				completion = completion,
 				existingId = existingId,
 			)
 		}

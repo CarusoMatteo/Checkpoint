@@ -14,28 +14,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.checkpoint.data.Review
-import com.example.checkpoint.data.sampleReviews
+import com.example.checkpoint.data.database.DatabaseSeeder
+// Importiamo le Entity corrette del database
+import com.example.checkpoint.data.database.entities.ReviewEntity
+import com.example.checkpoint.data.database.entities.UserEntity
 
 @Composable
 fun Review(
-	review: Review,
+	review: ReviewEntity,
+	user: UserEntity,
 	modifier: Modifier = Modifier
 ) {
-	OutlinedCard(
-		modifier = modifier
-	) {
-		Column(
-			modifier = Modifier.padding(horizontal = 16.dp)
-		) {
+	OutlinedCard(modifier = modifier) {
+		Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 			ReviewHeader(
-				review,
+				review = review,
+				user = user,
 				modifier = Modifier
 					.fillMaxWidth()
 					.padding(vertical = 12.dp)
 			)
 			Text(
-				text = review.comment,
+				text = review.body,
 				modifier = Modifier.padding(bottom = 16.dp)
 			)
 		}
@@ -44,7 +44,8 @@ fun Review(
 
 @Composable
 fun ReviewHeader(
-	review: Review,
+	review: ReviewEntity,
+	user: UserEntity,
 	modifier: Modifier = Modifier
 ) {
 	Row(
@@ -57,7 +58,7 @@ fun ReviewHeader(
 			verticalAlignment = Alignment.CenterVertically
 		) {
 			ProfilePicture(
-				user = review.creator,
+				user = user,
 			)
 			Column(
 				modifier = Modifier
@@ -65,7 +66,7 @@ fun ReviewHeader(
 					.weight(1f)
 			) {
 				Text(
-					text = review.creator.name,
+					text = user.username,
 					style = MaterialTheme.typography.titleMedium,
 					maxLines = 1,
 					overflow = TextOverflow.Ellipsis
@@ -75,21 +76,27 @@ fun ReviewHeader(
 				)
 			}
 		}
+
+		val completionText = review.completionEnum?.name ?: review.completion
 		Text(
-			text = review.completion.description,
+			text = completionText,
 			style = MaterialTheme.typography.titleMedium,
 			modifier = Modifier.padding(start = 8.dp)
 		)
 	}
 }
 
-@Preview
+@Preview()
 @Composable
 private fun ReviewPreview() {
+	val previewUser = DatabaseSeeder.users.first()
+	val previewReview = DatabaseSeeder.sampleDbReviews.first()
+
 	Review(
-		review = sampleReviews[0],
+		review = previewReview,
+		user = previewUser,
 		modifier = Modifier
-			.padding(horizontal = 16.dp)
+			.padding(16.dp)
 			.fillMaxWidth()
 	)
 }

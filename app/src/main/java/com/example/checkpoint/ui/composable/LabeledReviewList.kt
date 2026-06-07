@@ -20,14 +20,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.checkpoint.data.sampleReviews
+import com.example.checkpoint.data.database.DatabaseSeeder
+import com.example.checkpoint.data.database.entities.ReviewEntity
+import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.ui.icons.Reviews
-import com.example.checkpoint.data.Review as ReviewData
 
 @Composable
 fun ReviewList(
 	title: String,
-	reviews: List<ReviewData>,
+	reviews: List<ReviewEntity>,
+	users: Map<Int, UserEntity> = emptyMap(), // New key-value map (userId -> UserEntity)
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
 	hasWriteReviewButton: Boolean = true
@@ -46,26 +48,36 @@ fun ReviewList(
 			verticalAlignment = Alignment.CenterVertically
 		) {
 			Text(
-				text = title,
-				style = MaterialTheme.typography.titleMedium
+				text = title, style = MaterialTheme.typography.titleMedium
 			)
-			if (hasWriteReviewButton)
-				FilledTonalButton(
-					onClick = { showWriteReviewDialog = true }
-				) {
-					Icon(
-						imageVector = Reviews,
-						contentDescription = "Leave a review",
-					)
-					Text(
-						text = "Leave a review",
-						modifier = Modifier.padding(start = 16.dp)
-					)
-				}
+			if (hasWriteReviewButton) FilledTonalButton(
+				onClick = { showWriteReviewDialog = true }) {
+				Icon(
+					imageVector = Reviews,
+					contentDescription = "Leave a review",
+				)
+				Text(
+					text = "Leave a review", modifier = Modifier.padding(start = 16.dp)
+				)
+			}
 		}
-		reviews.forEach {
+
+		reviews.forEach { review ->
+
+			// If for some reason it is not present , we use a secure fallback.
+			val reviewUser = users[review.userId] ?: UserEntity(
+				id = review.userId,
+				username = "Gamer_${review.userId}",
+				email = "",
+				passwordHash = "",
+				bio = null,
+				publicProfile = true,
+				createdAt = ""
+			)
+
 			Review(
-				review = it,
+				review = review,
+				user = reviewUser,
 				modifier = Modifier
 					.padding(bottom = 8.dp)
 					.fillMaxWidth()
@@ -78,13 +90,18 @@ fun ReviewList(
 	}
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun ReviewListPreview() {
+	val previewReviews = DatabaseSeeder.sampleDbReviews
+
+	val previewUsersMap = DatabaseSeeder.users.associateBy { it.id }
+
 	ReviewList(
 		title = "Reviews",
-		reviews = sampleReviews,
-		modifier = Modifier.padding(horizontal = 16.dp),
+		reviews = previewReviews,
+		users = previewUsersMap,
+		modifier = Modifier.padding(16.dp),
 		hasStartingDivider = true
 	)
 }

@@ -16,20 +16,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.checkpoint.data.User
+import com.example.checkpoint.data.database.entities.UserEntity
 
 @Composable
 fun ProfilePicture(
-	user: User,
+	user: UserEntity,
 	modifier: Modifier = Modifier,
 	fontSize: ProfileMonogramFontSize = ProfileMonogramFontSize.Review
 ) {
-	if (user.profilePicture != null) {
+	if (user.avatarUrl != null) {
 		// TODO: Load actual profile picture if the user has one
 		throw NotImplementedError("Profile picture loading not implemented yet")
 	} else {
 		ProfileMonogram(
-			letter = user.name.first(),
+			letter = user.username.first(),
 			modifier,
 			fontSize = fontSize
 		)

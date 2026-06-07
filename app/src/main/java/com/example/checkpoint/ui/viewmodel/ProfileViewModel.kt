@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.checkpoint.data.database.daos.GenreDao
 import com.example.checkpoint.data.database.daos.UserDao
 import com.example.checkpoint.data.database.entities.GameListEntity
+import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.remote.igdb.IgdbClient
 import com.example.checkpoint.data.remote.igdb.IgdbImageUrl.coverBig
@@ -42,7 +43,7 @@ data class AchievementUiModel(
 
 data class ProfileState(
 	val user: UserEntity? = null,
-	val reviews: List<com.example.checkpoint.data.database.entities.ReviewEntity> = emptyList(),
+	val reviews: List<ReviewEntity> = emptyList(),
 	val achievements: List<AchievementUiModel> = emptyList(),
 	val preferredGenres: List<String> = emptyList(),
 	val userLists: List<GameListEntity> = emptyList(),

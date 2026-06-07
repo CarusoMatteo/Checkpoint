@@ -15,15 +15,14 @@ import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
-import com.example.checkpoint.data.repositories.SettingsRepository
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.ExploreViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
+import com.example.checkpoint.ui.viewmodel.ProfileViewModel
+import com.example.checkpoint.data.repositories.UserRepository
 import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.LoginViewModel
-import com.example.checkpoint.ui.viewmodel.ProfileViewModel
-import com.example.checkpoint.ui.viewmodel.SettingsViewModel
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
@@ -124,6 +123,7 @@ val appModule = module {
 			igdbClient = get()
 		)
 	}
+	single { UserRepository(get()) }
 	single { GameLogRepository(gameLogDao = get()) }
 	single { ReviewRepository(reviewDao = get()) }
 	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
@@ -179,7 +179,8 @@ val appModule = module {
 			gameRepository = get(),
 			gameLogRepository = get(),
 			reviewRepository = get(),
-			gameListRepository = get()
+			gameListRepository = get(),
+			userRepository = get()
 		)
 	}
 

@@ -32,8 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.checkpoint.data.ReviewCompletion
-
+import com.example.checkpoint.data.repositories.CompletionType
+import com.example.checkpoint.data.repositories.GameLogRepository
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WriteReviewDialog(
@@ -41,7 +41,7 @@ fun WriteReviewDialog(
 ) {
 	var rating by remember { mutableFloatStateOf(0f) }
 	val reviewBodyTextField = rememberTextFieldState("")
-	var selectedCompletionType by remember { mutableStateOf<ReviewCompletion?>(null) }
+	var selectedCompletionType by remember { mutableStateOf<CompletionType?>(null) }
 
 	BasicAlertDialog(
 		onDismissRequest = onDismissRequest
@@ -101,9 +101,9 @@ fun WriteReviewDialog(
 				Spacer(Modifier.height(8.dp))
 				HorizontalDivider()
 
-				ReviewCompletion.entries.forEach {
+				CompletionType.entries.forEach {
 					RadioListItem(
-						it.description,
+						it.code,
 						selected = selectedCompletionType == it,
 						onClick = { selectedCompletionType = it },
 						modifier = Modifier
