@@ -65,33 +65,33 @@ object DatabaseSeeder {
 			id = 1,
 			userId = 1,
 			gameId = 1,
-			rating = 9,
+			rating = 4.5f,
 			body = "Great game with an engaging story and fun gameplay! I completed everything and loved every minute of it.",
-			containsSpoilers = false,
+			completion = "COMPLETED",
 			createdAt = Instant.now().toString()
 		), ReviewEntity(
 			id = 2,
 			userId = 1,
 			gameId = 2,
-			rating = 6,
+			rating = 3.0f,
 			body = "The game was enjoyable, but I found the controls a bit clunky.",
-			containsSpoilers = false,
+			completion = "MAIN",
 			createdAt = Instant.now().toString()
 		), ReviewEntity(
 			id = 3,
 			userId = 2,
 			gameId = 1,
-			rating = 10,
+			rating = 5.0f,
 			body = "Absolutely loved it! The graphics and soundtrack were amazing.",
-			containsSpoilers = false,
+			completion = "MAIN_AND_EXTRA",
 			createdAt = Instant.now().toString()
 		), ReviewEntity(
 			id = 4,
 			userId = 3,
 			gameId = 3,
-			rating = 5,
+			rating = 2.5f,
 			body = "The game had potential, but it was plagued with bugs and performance issues.",
-			containsSpoilers = false,
+			completion = "MAIN",
 			createdAt = Instant.now().toString()
 		)
 	)
