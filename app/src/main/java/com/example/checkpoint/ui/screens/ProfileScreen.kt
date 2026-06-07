@@ -36,6 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +58,8 @@ import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
+import com.example.checkpoint.ui.composable.UpdateFavouriteGenresDialog
+import com.example.checkpoint.ui.composable.UpdateTextDialog
 import com.example.checkpoint.ui.viewmodel.AchievementUiModel
 import com.example.checkpoint.ui.viewmodel.LibraryListUiModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
@@ -98,6 +103,9 @@ fun ProfileScreen(
 		navController.navigate(NavigationRoute.GamesGridScreen(title))
 	}
 
+	var showBiographyUpdateDialog by remember { mutableStateOf(false) }
+	var showGenresUpdateDialog by remember { mutableStateOf(false) }
+
 	AppShell(
 		navController = navController,
 		title = "Welcome back, $username!",
@@ -137,7 +145,7 @@ fun ProfileScreen(
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Biography",
-				onUpdateClick = { /* TODO */ },
+				onUpdateClick = { showBiographyUpdateDialog = true },
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
 			Text(
@@ -152,7 +160,7 @@ fun ProfileScreen(
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Favourite Genres",
-				onUpdateClick = { /* TODO */ },
+				onUpdateClick = { showGenresUpdateDialog = true },
 				modifier = Modifier
 					.padding(top = 16.dp)
 					.padding(horizontal = 16.dp)
@@ -200,6 +208,20 @@ fun ProfileScreen(
 				reviews = reviews,
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
 				hasWriteReviewButton = false
+			)
+		}
+
+		if (showBiographyUpdateDialog) {
+			UpdateTextDialog(
+				onSubmit = { /* TODO: Update username in database */ },
+				onDismissRequest = { showBiographyUpdateDialog = false },
+				fieldToUpdate = "Biography",
+				previousValue = currentUser?.bio
+			)
+		} else if (showGenresUpdateDialog) {
+			UpdateFavouriteGenresDialog(
+				onSubmit = { /* TODO: Update favourite genres in database */ },
+				onDismissRequest = { showGenresUpdateDialog = false }
 			)
 		}
 	}
