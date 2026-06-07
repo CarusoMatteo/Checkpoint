@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
@@ -17,8 +16,6 @@ import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Upload
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -26,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,6 +45,7 @@ import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.DatePickerField
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.NotLoggedInShell
+import com.example.checkpoint.ui.composable.PasswordOutlinedTextField
 import com.example.checkpoint.ui.composable.ProfileMonogram
 import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.viewmodel.SignUpUiState
@@ -113,8 +110,6 @@ private fun SignUpCard(
 	val username = rememberTextFieldState("")
 	val password = rememberTextFieldState("")
 	val repeatPassword = rememberTextFieldState("")
-	var showPassword by remember { mutableStateOf(false) }
-	var showRepeatPassword by remember { mutableStateOf(false) }
 	var showProgress by showProgressIndicator
 
 	// Revert upload to false on error
@@ -172,53 +167,21 @@ private fun SignUpCard(
 				}
 			}
 		)
-		OutlinedSecureTextField(
+		PasswordOutlinedTextField(
 			state = password,
 			label = { Text("Password") },
-			textObfuscationMode = if (showPassword) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
 			modifier = Modifier
 				.fillMaxWidth()
 				.padding(horizontal = 16.dp)
 				.padding(bottom = 16.dp),
-			trailingIcon = {
-				Row {
-					if (password.text.isNotEmpty()) {
-						IconButton(onClick = { password.clearText() }) {
-							Icon(Icons.Rounded.Clear, contentDescription = "Clear password")
-						}
-					}
-					IconButton(onClick = { showPassword = !showPassword }) {
-						Icon(
-							imageVector = if (showPassword) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-							contentDescription = "Toggle password visibility"
-						)
-					}
-				}
-			}
 		)
-		OutlinedSecureTextField(
+		PasswordOutlinedTextField(
 			state = repeatPassword,
-			label = { Text("Repeat password") },
-			textObfuscationMode = if (showRepeatPassword) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+			label = { Text("Repeat Password") },
 			modifier = Modifier
 				.fillMaxWidth()
 				.padding(horizontal = 16.dp)
 				.padding(bottom = 16.dp),
-			trailingIcon = {
-				Row {
-					if (repeatPassword.text.isNotEmpty()) {
-						IconButton(onClick = { repeatPassword.clearText() }) {
-							Icon(Icons.Rounded.Clear, contentDescription = "Clear repeat password")
-						}
-					}
-					IconButton(onClick = { showRepeatPassword = !showRepeatPassword }) {
-						Icon(
-							imageVector = if (showRepeatPassword) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-							contentDescription = "Toggle repeat password visibility"
-						)
-					}
-				}
-			}
 		)
 		DatePickerField(
 			label = "Date of birth",

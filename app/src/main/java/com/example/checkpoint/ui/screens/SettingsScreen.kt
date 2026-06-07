@@ -1,0 +1,213 @@
+package com.example.checkpoint.ui.screens
+
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material3.Button
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import com.example.checkpoint.data.repositories.UiTheme
+import com.example.checkpoint.ui.composable.AppShell
+import com.example.checkpoint.ui.composable.NavigationItem
+import com.example.checkpoint.ui.composable.PasswordOutlinedTextField
+import com.example.checkpoint.ui.composable.RadioListItem
+import com.example.checkpoint.ui.viewmodel.UiThemeActions
+import com.example.checkpoint.ui.viewmodel.UiThemeState
+
+@Composable
+fun SettingsScreen(
+	navController: NavHostController,
+	themeState: UiThemeState,
+	themeActions: UiThemeActions
+) {
+	AppShell(
+		navController = navController,
+		title = "User settings",
+		selectedNavigationItem = NavigationItem.Profile,
+		appBarActions = {
+			IconButton(onClick = { /* TODO: Logout */ }) {
+				Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Logout")
+			}
+		}) { innerPadding ->
+		Column(
+			Modifier
+				.fillMaxSize()
+				.padding(innerPadding)
+				.verticalScroll(rememberScrollState())
+		) {
+			ProfileVisibilitySwitch(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp)
+					.padding(vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			UiThemeSelector(
+				themeState = themeState,
+				themeActions = themeActions,
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp)
+					.padding(vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			PasswordUpdateForm(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp)
+					.padding(vertical = 8.dp)
+			)
+		}
+	}
+}
+
+@Composable
+fun ProfileVisibilitySwitch(
+	modifier: Modifier = Modifier
+) {
+	var isProfilePublic by remember { mutableStateOf(true) }
+
+	Column(modifier = modifier) {
+		Text(
+			text = "Profile visibility",
+			style = MaterialTheme.typography.labelSmall,
+			modifier = Modifier.padding(bottom = 8.dp)
+		)
+		Row(
+			modifier = Modifier
+				.fillMaxWidth()
+				.height(48.dp)
+				.clickable(onClick = {
+					isProfilePublic = !isProfilePublic
+					/* TODO: Set user to private and save preference */
+				}),
+			verticalAlignment = Alignment.CenterVertically,
+			horizontalArrangement = Arrangement.SpaceBetween
+		) {
+			Text(
+				"Profile is visible to others",
+				modifier = Modifier
+					.weight(1f)
+					.basicMarquee()
+			)
+			Switch(
+				modifier = Modifier.padding(start = 8.dp),
+				checked = isProfilePublic,
+				onCheckedChange = null
+			)
+		}
+	}
+}
+
+@Composable
+fun UiThemeSelector(
+	themeState: UiThemeState,
+	themeActions: UiThemeActions,
+	modifier: Modifier = Modifier
+) {
+	Column(modifier = modifier) {
+		Text(
+			text = "UI Theme",
+			style = MaterialTheme.typography.labelSmall,
+			modifier = Modifier.padding(vertical = 8.dp)
+		)
+		UiTheme.entries.forEach { theme ->
+			RadioListItem(
+				text = theme.name,
+				modifier = Modifier
+					.fillMaxWidth()
+					.height(48.dp),
+				selected = theme == themeState.theme,
+				onClick = { themeActions.setTheme(theme) }
+			)
+		}
+
+		Text(
+			text = "UI Color Scheme",
+			style = MaterialTheme.typography.labelSmall,
+			modifier = Modifier.padding(vertical = 8.dp)
+		)
+		listOf(true, false).forEach { dynamicColorEnabled ->
+			RadioListItem(
+				text = if (dynamicColorEnabled) "System colors" else "Custom colors",
+				selected = dynamicColorEnabled == themeState.dynamicColor,
+				onClick = { themeActions.setDynamicColor(dynamicColorEnabled) },
+				modifier = Modifier
+					.fillMaxWidth()
+					.height(48.dp)
+			)
+		}
+	}
+}
+
+@Composable
+fun PasswordUpdateForm(modifier: Modifier = Modifier) {
+	val currentPassword = rememberTextFieldState()
+	val newPassword = rememberTextFieldState()
+	val repeatNewPassword = rememberTextFieldState()
+
+	Column(modifier = modifier) {
+		Text(
+			text = "Change Password",
+			style = MaterialTheme.typography.labelSmall,
+			modifier = Modifier.padding(vertical = 8.dp)
+		)
+		ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+			Column(Modifier.padding(16.dp)) {
+				PasswordOutlinedTextField(
+					state = currentPassword,
+					label = { Text("Current password") },
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(bottom = 16.dp),
+				)
+				PasswordOutlinedTextField(
+					state = newPassword,
+					label = { Text("New password") },
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(bottom = 16.dp),
+				)
+				PasswordOutlinedTextField(
+					state = repeatNewPassword,
+					label = { Text("Repeat new password") },
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(bottom = 16.dp),
+				)
+
+				Button(
+					onClick = { /* TODO: Update password */ },
+					modifier = Modifier.fillMaxWidth()
+				) {
+					Text("Update Password")
+				}
+			}
+		}
+	}
+}

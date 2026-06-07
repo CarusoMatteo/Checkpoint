@@ -56,14 +56,13 @@ import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.composable.ProfilePicture
 import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.viewmodel.AchievementUiModel
-import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.LibraryListUiModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
 	navController: NavHostController,
-	achievementsViewModel: AchievementsViewModel, // it will be removed :<(
+	// it will be removed :<(
 	profileViewModel: ProfileViewModel,
 	modifier: Modifier = Modifier,
 ) {
@@ -104,7 +103,7 @@ fun ProfileScreen(
 		title = "Welcome back, $username!",
 		selectedNavigationItem = NavigationItem.Profile,
 		appBarActions = {
-			IconButton(onClick = { /* TODO: Settings / Logout */ }) {
+			IconButton(onClick = { navController.navigate(NavigationRoute.SettingsScreen) }) {
 				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
 		}) { innerPadding ->

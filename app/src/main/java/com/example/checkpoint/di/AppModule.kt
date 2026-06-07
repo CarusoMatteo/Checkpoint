@@ -1,5 +1,7 @@
 package com.example.checkpoint.di
 
+import android.content.Context
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -8,18 +10,20 @@ import com.example.checkpoint.data.database.AppDatabase
 import com.example.checkpoint.data.database.DatabaseSeeder
 import com.example.checkpoint.data.remote.igdb.IgdbClient
 import com.example.checkpoint.data.repositories.AchievementRepository
+import com.example.checkpoint.data.repositories.AuthRepository
 import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
+import com.example.checkpoint.data.repositories.SettingsRepository
+import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.ExploreViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
-import com.example.checkpoint.ui.viewmodel.ProfileViewModel
-import com.example.checkpoint.data.repositories.AuthRepository
-import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.LoginViewModel
+import com.example.checkpoint.ui.viewmodel.ProfileViewModel
+import com.example.checkpoint.ui.viewmodel.SettingsViewModel
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
@@ -34,6 +38,8 @@ import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+
+val Context.dataStore by preferencesDataStore("theme")
 
 val appModule = module {
 
@@ -89,6 +95,9 @@ val appModule = module {
 		}).build()
 	}
 
+	// ── DataStore
+	single { get<Context>().dataStore }
+
 	// ── DAO
 
 	single { get<AppDatabase>().userDao() }
@@ -131,6 +140,7 @@ val appModule = module {
 	single { ReviewRepository(reviewDao = get()) }
 	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
 	single { AchievementRepository(achievementDao = get(), userAchievementDao = get()) }
+	single { SettingsRepository(get()) }
 
 	// ── ViewModel
 
@@ -173,4 +183,7 @@ val appModule = module {
 		)
 	}
 
+	viewModel {
+		SettingsViewModel(get())
+	}
 }

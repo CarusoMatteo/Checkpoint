@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -12,12 +13,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.checkpoint.data.repositories.Game
+import com.example.checkpoint.data.repositories.UiTheme
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.data.session.SessionState
 import com.example.checkpoint.ui.screens.AchievementsScreen
@@ -27,12 +30,15 @@ import com.example.checkpoint.ui.screens.GamesGridScreen
 import com.example.checkpoint.ui.screens.LibraryScreen
 import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
+import com.example.checkpoint.ui.screens.SettingsScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
 import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
+import com.example.checkpoint.ui.viewmodel.SettingsViewModel
+import com.example.checkpoint.ui.viewmodel.UiThemeState
 import kotlinx.serialization.Serializable
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
@@ -47,7 +53,17 @@ class MainActivity : ComponentActivity() {
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
 		setContent {
-			CheckpointTheme {
+			val settingsViewModel = koinViewModel<SettingsViewModel>()
+			val themeState: UiThemeState by settingsViewModel.state.collectAsStateWithLifecycle()
+
+			CheckpointTheme(
+				darkTheme = when (themeState.theme) {
+					UiTheme.Light -> false
+					UiTheme.Dark -> true
+					UiTheme.System -> isSystemInDarkTheme()
+				},
+				dynamicColor = themeState.dynamicColor
+			) {
 				// Check session status
 				val sessionState by sessionManager.sessionState.collectAsState()
 
@@ -136,8 +152,7 @@ fun NavGraph(
 		composable<NavigationRoute.ProfileScreen> {
 			val profileViewModel = koinViewModel<ProfileViewModel>()
 			ProfileScreen(
-				navController = navController, profileViewModel = profileViewModel,
-				achievementsViewModel = achievementsViewModel
+				navController = navController, profileViewModel = profileViewModel
 			)
 		}
 
@@ -174,6 +189,17 @@ fun NavGraph(
 
 		composable<NavigationRoute.SignUpScreen> {
 			SignUpScreen(navController)
+		}
+
+		composable<NavigationRoute.SettingsScreen> {
+			val settingsViewModel = koinViewModel<SettingsViewModel>()
+			val themeState: UiThemeState by settingsViewModel.state.collectAsStateWithLifecycle()
+
+			SettingsScreen(
+				navController,
+				themeState = themeState,
+				themeActions = settingsViewModel.actions
+			)
 		}
 	}
 }

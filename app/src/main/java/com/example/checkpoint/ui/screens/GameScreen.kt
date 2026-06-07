@@ -53,6 +53,7 @@ import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.database.entities.GameListEntity
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LabeledChipRow
@@ -64,7 +65,6 @@ import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.composable.ReviewRating
 import com.example.checkpoint.ui.composable.SmallSplitButtons
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
-import com.example.checkpoint.data.repositories.Game
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -388,7 +388,7 @@ private fun SaveToListsDialog(
 								Checkbox(
 									checked = isChecked,
 									onCheckedChange = { checked ->
-										selectedIds = if (checked == true) {
+										selectedIds = if (checked) {
 											selectedIds + list.id
 										} else {
 											selectedIds - list.id
