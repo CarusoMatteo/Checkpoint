@@ -78,7 +78,7 @@ class ProfileViewModel(
 				achievementRepository.getAchievementsForUser(session.userId)
 			) { allAch, userAch -> Pair(allAch, userAch) }
 
-			// Unisce il caricamento delle liste, la fetch da IGDB per i giochi, e i log
+			// Merges list loading, IGDB fetch for games, and logs
 			val carouselsAndLogsFlow = combine(
 				gameListRepository.getListsForUser(session.userId).map { rawLists ->
 					val defaultLists = ensureDefaultLists(rawLists, session.userId)

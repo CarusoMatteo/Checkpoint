@@ -49,7 +49,7 @@ object DatabaseSeeder {
 		),
 	)
 
-	// Giochi fittizi al quale associare le reviews
+	// Fictitious games to which to associate reviews
 	val sampleGames = listOf(
 		GameEntity(id = 1, igdbId = 22439),
 		GameEntity(id = 2, igdbId = 1002),
@@ -59,7 +59,7 @@ object DatabaseSeeder {
 		GameEntity(id = 6, igdbId = 6036)
 	)
 
-	// Recensioni agganciate agli utenti e ai giochi sopra definiti
+	// Reviews hooked to the users and games defined above
 	val sampleDbReviews = listOf(
 		ReviewEntity(
 			id = 1,
@@ -237,7 +237,7 @@ object DatabaseSeeder {
 		)
 	)
 
-	// Generi di gioco
+	// game genres
 	val sampleGenres = listOf(
 		GenreEntity(id = 1, igdbId = 12, name = "RPG"),
 		GenreEntity(id = 2, igdbId = 5, name = "Shooter"),
@@ -245,7 +245,7 @@ object DatabaseSeeder {
 		GenreEntity(id = 4, igdbId = 15, name = "Strategy")
 	)
 
-	// Generi preferiti dagli utenti
+	// Genres preferred by users
 	val preferredGenres = listOf(
 		UserPreferredGenreEntity(userId = 1, genreId = 1), // john_doe -> RPG
 		UserPreferredGenreEntity(userId = 1, genreId = 4), // john_doe -> Strategy

@@ -132,7 +132,7 @@ class GameRepository(
 	private suspend fun cacheGameData(dto: IgdbGameDto) {
 		dto.platforms?.let { platforms ->
 			val entities = platforms.map { p ->
-				// 1. Controlliamo se la piattaforma esiste già nel database locale
+				// 1. Let's check if the platform already exists in the local database
 				val existingPlatform = platformDao.getByIgdbId(p.id)
 
 				PlatformEntity(
@@ -162,7 +162,7 @@ class GameRepository(
 
 		dto.genres?.let { genres ->
 			val entities = genres.map { g ->
-				// 2. Facciamo lo stesso controllo per i generi
+				// 2. same control for genres
 				val existingGenre =
 					genreDao.getByIgdbId(g.id)
 

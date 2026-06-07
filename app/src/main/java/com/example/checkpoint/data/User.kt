@@ -1,9 +1,9 @@
 package com.example.checkpoint.data
 
 /**
- * Modello di dominio per l'utente.
- * Rappresenta l'utente "vivo" che sta usando l'app,
- * convertito da UserEntity (Room).
+ * Domain model for the user.
+ * Represents the "live" user who is using the app,
+ * Converted from UserEntity (Room).
  */
 data class User(
 	val id: Int,

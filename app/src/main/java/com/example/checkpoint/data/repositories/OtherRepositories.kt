@@ -106,7 +106,7 @@ class AchievementRepository(
 	}
 
 	/**
-	 * Gestisce il pinning direttamente sul database locale Room.
+	 * Handles pinning directly to the local Room database.
 	 */
 	suspend fun togglePin(userId: Int, achievementId: Int) {
 		val userAch = userAchievementDao.getUserAchievement(userId, achievementId)

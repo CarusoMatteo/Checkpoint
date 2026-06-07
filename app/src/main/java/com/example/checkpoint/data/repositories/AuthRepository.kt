@@ -21,10 +21,10 @@ class AuthRepository(
 		return try {
 			val user = userDao.getUserByUsername(usernameOrEmail) ?: userDao.getUserByEmail(
 				usernameOrEmail
-			) ?: return Result.failure(Exception("Utente non trovato"))
+			) ?: return Result.failure(Exception("User not found"))
 
-			// Supporto per fallback: se i dati del seed non contengono il separatore ':'
-			// valoreDelSalt:valoreDellHash
+			// Fallback support: if the seed data does not contain the separator ':'
+			// valueOfSalt:valueOfHash
 			val isCorrect = if (user.passwordHash.contains(":")) {
 				val parts = user.passwordHash.split(":")
 				PasswordHasher.verifyPassword(password, parts[0], parts[1])
@@ -34,13 +34,13 @@ class AuthRepository(
 			}
 
 			return if (isCorrect) {
-				// Salva la sessione su DataStore
+				// Save the session to the DataStore
 				sessionManager.login(user.id, user.username)
 				Log.d(TAG, "Login successful: userId=${user.id}, username=${user.username}")
 				Result.success(user)
 			} else {
-				Log.w(TAG, "Login failed: credenziali non valide per $usernameOrEmail")
-				Result.failure(Exception("Credenziali non valide"))
+				Log.w(TAG, "Login failed: Invalid credentials for $usernameOrEmail")
+				Result.failure(Exception("Invalid credentials"))
 			}
 		} catch (e: Exception) {
 			Log.e(TAG, "Login error: ${e.message}", e)
@@ -79,7 +79,7 @@ class AuthRepository(
 			val generatedId = userDao.upsert(newUser)
 			val loggedInUser = newUser.copy(id = generatedId.toInt())
 
-			// Salva la sessione su DataStore
+			// Save the session to the DataStore
 			sessionManager.login(loggedInUser.id, loggedInUser.username)
 			Log.d(
 				TAG,

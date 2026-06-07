@@ -17,12 +17,12 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-// Modello UI che la schermata si aspetta di ricevere
+// UI template that the screen expects to receive
 data class LibraryListUiModel(
 	val listEntity: GameListEntity, val games: List<Game>
 )
 
-// Stato completo della libreria
+// Full Library Status
 data class LibraryState(
 	val isLoading: Boolean = true,
 	val carousels: List<LibraryListUiModel> = emptyList(),
@@ -56,14 +56,14 @@ class LibraryViewModel(
 								when (it.type) {
 									"BACKLOG" -> 0
 									"SAVED" -> 1
-									else -> 2 // Le CUSTOM vanno per ultime
+									else -> 2
 								}
-							}.thenBy { it.id } // A parità di type (es. CUSTOM), ordina per ID di creazione
+							}.thenBy { it.id }
 						)
 
 						for (list in sortedLists) {
 							try {
-								// Usiamo first() per evitare loop infiniti
+								// Use first() to avoid infinite loops
 								val gameEntities =
 									gameListRepository.getGamesInList(list.id).first()
 								val igdbIds = gameEntities.map { it.igdbId }
@@ -100,13 +100,13 @@ class LibraryViewModel(
 							} catch (e: Exception) {
 								Log.e(
 									"LibraryViewModel",
-									"Errore nel caricamento della lista ${list.name}",
+									"Error loading the list ${list.name}",
 									e
 								)
 							}
 						}
 
-						// Spegne il caricamento e aggiorna i caroselli
+						// Turns off loading and refreshes carousels
 						_state.value = LibraryState(
 							isLoading = false, carousels = loadedCarousels
 						)
@@ -114,16 +114,12 @@ class LibraryViewModel(
 				} else {
 					_state.value = LibraryState(
 						isLoading = false,
-						errorMessage = "Devi effettuare l'accesso per vedere la libreria."
+						errorMessage = "You must be logged in to see the library."
 					)
 				}
 			}
 		}
 	}
-
-	// ─────────────────────────────────────────────────────────────────────────
-	// AZIONI UI CHIAMATE DALLA LIBRARYSCREEN
-	// ─────────────────────────────────────────────────────────────────────────
 
 	fun createCustomList(name: String) {
 		viewModelScope.launch {
@@ -136,10 +132,10 @@ class LibraryViewModel(
 		viewModelScope.launch {
 			val list = gameListRepository.getListById(listId).first()
 			if (list != null) {
-				// 1. Elimina dal Database
+				// 1. Delete from Database
 				gameListRepository.deleteList(list)
 
-				// 2. Aggiorna la UI istantaneamente (rimuove il carosello)
+				// 2. Update UI instantly
 				val updatedCarousels =
 					_state.value.carousels.filterNot { it.listEntity.id == listId }
 				_state.value = _state.value.copy(carousels = updatedCarousels)
@@ -149,15 +145,14 @@ class LibraryViewModel(
 
 	fun removeGameFromListByIgdbId(listId: Int, igdbId: Int) {
 		viewModelScope.launch {
-			// 1. Cerca l'entità locale tramite l'igdbId
+			// 1. Search for the local entity using the igdbId
 			val gameEntities = gameListRepository.getGamesInList(listId).first()
 			val localGame = gameEntities.find { it.igdbId == igdbId }
 
 			if (localGame != null) {
-				// 2. Elimina dal Database usando il tuo metodo deleteByIds
 				gameListRepository.removeGameFromList(listId, localGame.id)
 
-				// 3. Aggiorna la UI istantaneamente (rimuove il gioco dal carosello specifico)
+				// 2. Update UI instantly
 				val updatedCarousels = _state.value.carousels.map { carousel ->
 					if (carousel.listEntity.id == listId) {
 						carousel.copy(games = carousel.games.filterNot { it.igdbId == igdbId })

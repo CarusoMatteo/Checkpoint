@@ -28,14 +28,14 @@ class CheckpointApplication : Application(), KoinComponent {
 			modules(appModule)
 		}
 
-		// Forza l'apertura del DB subito dopo che Koin è pronto
+		// Force open the DB immediately after Koin is ready
 		val db: AppDatabase by inject()
 		CoroutineScope(Dispatchers.IO).launch {
 			db.openHelper.writableDatabase
 		}
 
-		// Questo DEVE avvenire PRIMA che MainActivity controlla sessionState
-		// senno  MainActivity vede sempre LoggedOut
+		// This MUST happen BEFORE the MainActivity checks sessionState
+		// otherwise MainActivity always sees LoggedOut
 		val sessionManager: SessionManager by inject()
 		CoroutineScope(Dispatchers.IO).launch {
 			try {

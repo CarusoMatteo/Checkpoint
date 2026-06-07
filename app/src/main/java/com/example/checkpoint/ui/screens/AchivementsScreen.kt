@@ -47,10 +47,10 @@ fun AchievementsScreen(
 	achievementsViewModel: AchievementsViewModel,
 	modifier: Modifier = Modifier
 ) {
-	// Raccogliamo lo stato globale della UI dal ViewModel
+	// I collect the global UI state from the ViewModel
 	val uiState by achievementsViewModel.uiState.collectAsState()
 
-	// Calcoliamo il numero di achievement pinnati direttamente dalla lista reale
+	// Calculate the number of pinned achievements directly from the real list
 	val currentPinnedCount = uiState.achievements.count { it.isPinned }
 
 	AppShell(
@@ -59,7 +59,7 @@ fun AchievementsScreen(
 		selectedNavigationItem = NavigationItem.Profile
 	) { innerPadding ->
 
-		// Gestione del caricamento iniziale dal DB
+		// Initial load management from the DB
 		if (uiState.isLoading) {
 			Box(
 				modifier = Modifier
@@ -96,7 +96,7 @@ fun AchievementsScreen(
 
 			LazyColumn {
 				items(uiState.achievements, key = { it.id }) { achievement ->
-					// Può essere rimosso dai pin se è già pinnato, oppure aggiunto solo se siamo sotto la soglia dei 3
+					// It can be removed from pins if it is already pinned, or added only if we are below the threshold of 3
 					val canPin =
 						achievement.isUnlocked && (achievement.isPinned || currentPinnedCount < 3)
 
@@ -204,7 +204,7 @@ private fun AchievementRow(
 }
 
 @Composable
-private fun AchievementBadge(achievement: AchievementUiModel) { // Aggiornato al nuovo tipo UiModel
+private fun AchievementBadge(achievement: AchievementUiModel) {
 	val bgColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primaryContainer
 	else MaterialTheme.colorScheme.surfaceVariant
 

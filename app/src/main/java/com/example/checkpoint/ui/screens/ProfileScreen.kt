@@ -63,23 +63,23 @@ import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 @Composable
 fun ProfileScreen(
 	navController: NavHostController,
-	achievementsViewModel: AchievementsViewModel, // andrà rimosso :<(
+	achievementsViewModel: AchievementsViewModel, // it will be removed :<(
 	profileViewModel: ProfileViewModel,
 	modifier: Modifier = Modifier,
 ) {
 	val uiState by profileViewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
 
-	// estraggo i dati dal db
+	// I extract the data from the DB
 	val currentUser = uiState.user
-	val username = currentUser?.username ?: "Utente"
+	val username = currentUser?.username ?: "User"
 	val email = currentUser?.email ?: ""
-	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "Nessuna biografia inserita."
+	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "No biography included."
 
-	// filtro
+	// Filter
 	val achievements = uiState.achievements.filter { it.isPinned }
 
-	// Creo l'oggetto di dominio (temporaneo fino a migliore soluzione)
+	// I create the domain object (temporary until best solution)
 	val userDomain = User(
 		id = currentUser?.id ?: 0, name = username
 	)
@@ -93,7 +93,7 @@ fun ProfileScreen(
 		)
 	}
 
-	// Funzione per navigare alla griglia della lista
+	// Function to navigate to the list grid
 	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
 		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
 		navController.navigate(NavigationRoute.GamesGridScreen(title))
@@ -134,7 +134,7 @@ fun ProfileScreen(
 					.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
 
-			// ── Biografia
+			// ── Biography
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Biography",
@@ -149,7 +149,7 @@ fun ProfileScreen(
 					.padding(bottom = 8.dp)
 			)
 
-			// ── Generi preferiti
+			// ── Favorite genres
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ProfileSection(
 				title = "Favourite Genres",
@@ -161,7 +161,7 @@ fun ProfileScreen(
 			val preferredGenres = uiState.preferredGenres
 			if (preferredGenres.isEmpty()) {
 				Text(
-					text = "Nessun genere preferito selezionato.",
+					text = "No favorite genre selected.",
 					style = MaterialTheme.typography.bodyMedium,
 					color = MaterialTheme.colorScheme.onSurfaceVariant,
 					modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -194,7 +194,7 @@ fun ProfileScreen(
 					.padding(vertical = 8.dp)
 			)
 
-			// ── Recensioni dal DB
+			// ── Reviews from the DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
@@ -207,7 +207,7 @@ fun ProfileScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componenti privati
+// Private components
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -287,7 +287,7 @@ private fun MyCollectionsSection(
 
 		if (carousels.isEmpty()) {
 			Text(
-				text = "Nessuna lista creata.",
+				text = "No list created.",
 				style = MaterialTheme.typography.bodyMedium,
 				color = MaterialTheme.colorScheme.onSurfaceVariant,
 				modifier = Modifier.padding(horizontal = 16.dp)
@@ -328,7 +328,7 @@ private fun MyCollectionsSection(
 								overflow = Ellipsis
 							)
 							Text(
-								text = if (carousel.games.size == 1) "1 gioco" else "${carousel.games.size} giochi",
+								text = if (carousel.games.size == 1) "1 game" else "${carousel.games.size} games",
 								style = MaterialTheme.typography.labelSmall,
 								color = MaterialTheme.colorScheme.onSurfaceVariant
 							)

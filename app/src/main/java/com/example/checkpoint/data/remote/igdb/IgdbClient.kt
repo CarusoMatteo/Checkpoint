@@ -95,7 +95,7 @@ class IgdbClient(
 	 */
 	suspend fun getFranchiseGamesIds(igdbId: Int): List<Int> {
 		return try {
-			// richiedo i franchise e le collection dove è presente il gioco
+			// I request the franchises and collections where the game is present
 			val response = query<List<IgdbGameDto>>(
 				endpoint = "games", body = """
                 fields collections, franchises;
@@ -112,18 +112,18 @@ class IgdbClient(
 			if (relatedIds.isEmpty()) {
 				Log.d(
 					TAG,
-					"getFranchiseGamesIds: igdbId=$igdbId non appartiene a nessuna collection o franchise"
+					"getFranchiseGamesIds: igdbId=$igdbId does not belong to any collection or franchise"
 				)
 				return emptyList()
 			}
 
 			Log.d(
 				TAG,
-				"getFranchiseGamesIds: igdbId=$igdbId appartiene alle collections/franchises: $relatedIds"
+				"getFranchiseGamesIds: igdbId=$igdbId belongs to the collections/franchises: $relatedIds"
 			)
 
-			//faccio il build delle condition
-			// utilizzo sia franchise che collections per future-proofing (collection sta diventando deprecato)
+			//I build the conditions
+			// use of both franchises and collections for future-proofing (collection is becoming deprecated)
 			val conditions = mutableListOf<String>()
 			if (!gameDto?.collections.isNullOrEmpty()) {
 				conditions.add("collections = (${gameDto!!.collections!!.joinToString(",")})")
@@ -134,7 +134,7 @@ class IgdbClient(
 
 			val whereClause = conditions.joinToString(" | ")
 
-			// recupero i giochi che matchano le condition
+			// Catch up on games that match conditions
 			val gamesResponse = query<List<IgdbGameDto>>(
 				endpoint = "games", body = """
                 fields id;
@@ -143,14 +143,14 @@ class IgdbClient(
             """.trimIndent()
 			)
 
-			//Escludo il gioco corrente
+			//I exclude the current game
 			val franchiseIds = gamesResponse.map { it.id }.filter { it != igdbId }
 
-			Log.d(TAG, "getFranchiseGamesIds: trovati ${franchiseIds.size} altri giochi correlati")
+			Log.d(TAG, "getFranchiseGamesIds: Found ${franchiseIds.size} other related games")
 
 			franchiseIds
 		} catch (e: Exception) {
-			Log.e(TAG, "getFranchiseGamesIds: errore per igdbId=$igdbId - ${e.message}", e)
+			Log.e(TAG, "getFranchiseGamesIds: error for igdbId=$igdbId - ${e.message}", e)
 			emptyList()
 		}
 	}
@@ -159,7 +159,7 @@ class IgdbClient(
 	 * Recover upcoming games (with future release date).
 	 */
 	suspend fun getComingSoonGames(limit: Int = 15): List<IgdbGameDto> {
-		//timestamp attuale
+		//Current timestamp
 		val currentTimestamp = System.currentTimeMillis() / 1000
 		return query(
 			endpoint = "games", body = """
@@ -292,7 +292,7 @@ class IgdbClient(
 				""".trimIndent()
 			)
 		}.getOrElse {
-			Log.e(TAG, "Errore nel recupero dei generi: ${it.message}")
+			Log.e(TAG, "Error in retrieval of genres: ${it.message}")
 			emptyList()
 		}
 	}
@@ -310,7 +310,7 @@ class IgdbClient(
 				""".trimIndent()
 			)
 		}.getOrElse {
-			Log.e(TAG, "Errore nel recupero delle piattaforme: ${it.message}")
+			Log.e(TAG, "Error in recovering platforms: ${it.message}")
 			emptyList()
 		}
 	}

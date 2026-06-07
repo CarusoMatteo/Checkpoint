@@ -45,7 +45,7 @@ class ExploreViewModel(
 	private val _state = MutableStateFlow(ExploreState())
 	val state: StateFlow<ExploreState> = _state.asStateFlow()
 
-	// FIX: Sincronizziamo il flow interno con il valore iniziale dello stato
+	// We synchronize the internal flow with the initial value of the state
 	private val _searchQuery = MutableStateFlow(_state.value.searchQuery)
 
 	val actions = ExploreActions(
@@ -67,12 +67,12 @@ class ExploreViewModel(
 	init {
 		loadInitialData()
 
-		// Se c'è già una query di default (es. "final fantasy"), esegue subito la ricerca iniziale
+		// If there is already a default query (e.g. "final fantasy"), it performs the initial search immediately
 		if (_searchQuery.value.isNotBlank()) {
 			search(_searchQuery.value)
 		}
 
-		// Ricerca con debounce per i cambi di testo successivi
+		// Search with debounce for later text changes
 		viewModelScope.launch {
 			_searchQuery
 				.debounce(400)
@@ -122,7 +122,7 @@ class ExploreViewModel(
 		viewModelScope.launch {
 			_state.update { it.copy(isLoadingRecommendations = true) }
 
-			// TODO: Sostituisci questi metodi fittizi con le reali implementazioni del tuo repository
+			// TODO: Replace these dummy methods with real implementations of your repository
 			val becausePlayed = gameRepository.getPopularGames().shuffled().take(5)
 			val bestPlatform = gameRepository.getRecentReleases().shuffled().take(5)
 			val sinceGenre = gameRepository.getPopularGames().take(5)

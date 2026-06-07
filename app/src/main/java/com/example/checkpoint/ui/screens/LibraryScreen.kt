@@ -48,9 +48,9 @@ fun LibraryScreen(
 	var showAddListDialog by remember { mutableStateOf(false) }
 	var newListName by remember { mutableStateOf("") }
 
-	// Stati per le finestre di conferma
+	// Statuses for confirmation windows
 	var selectedGameContext by remember { mutableStateOf<Pair<Int, Game>?>(null) } // (List ID, Game)
-	var listToDelete by remember { mutableStateOf<Int?>(null) } // Contiene l'ID della lista da eliminare
+	var listToDelete by remember { mutableStateOf<Int?>(null) } // Contains the ID of the list to be deleted
 
 	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
 		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
@@ -81,7 +81,7 @@ fun LibraryScreen(
 					modifier = Modifier
 						.fillMaxSize()
 						.verticalScroll(scrollState)
-						.padding(bottom = 80.dp) // Spazio per non coprire i caroselli con il FAB
+						.padding(bottom = 80.dp) // Space not to cover carousels with the FAB
 				) {
 					if (state.carousels.isEmpty()) {
 						Box(
@@ -90,7 +90,7 @@ fun LibraryScreen(
 								.padding(32.dp),
 							contentAlignment = Alignment.Center
 						) {
-							Text("Non hai ancora creato nessuna lista o le tue liste sono vuote.")
+							Text("You haven't created any lists yet, or your lists are empty.")
 						}
 					} else {
 						state.carousels.forEachIndexed { index, carouselModel ->
@@ -103,7 +103,7 @@ fun LibraryScreen(
 								hasStartingDivider = index > 0,
 								hasDeleteAction = isCustomList,
 								onDeleteClick = {
-									// Invece di eliminare direttamente, apriamo il dialog di conferma
+									// Instead of deleting directly, we open the confirmation dialog
 									listToDelete = carouselModel.listEntity.id
 								},
 								onGameClick = { igdbId ->
@@ -124,7 +124,7 @@ fun LibraryScreen(
 				}
 			}
 
-			// FAB per creare una nuova lista
+			// FAB to create a new list
 			FloatingActionButton(
 				onClick = { showAddListDialog = true },
 				containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -133,15 +133,13 @@ fun LibraryScreen(
 					.align(Alignment.BottomEnd)
 					.padding(16.dp)
 			) {
-				Icon(imageVector = Icons.Rounded.Add, contentDescription = "Nuova Lista")
+				Icon(imageVector = Icons.Rounded.Add, contentDescription = "New List")
 			}
 		}
 
-		// ───────────────────────────────────────────────────────────────────────
-		// DIALOGS
-		// ───────────────────────────────────────────────────────────────────────
+		//───────────── DIALOGS
 
-		// 1. Dialog per creare una nuova lista
+		// 1. Dialog to create a new list
 		if (showAddListDialog) {
 			AlertDialog(
 				onDismissRequest = { showAddListDialog = false },
@@ -172,7 +170,7 @@ fun LibraryScreen(
 			)
 		}
 
-		// 2. Dialog per rimuovere un gioco dalla lista
+		// 2. Dialog to remove a game from the list
 		selectedGameContext?.let { context ->
 			val listId = context.first
 			val game = context.second
@@ -180,7 +178,7 @@ fun LibraryScreen(
 			AlertDialog(
 				onDismissRequest = { selectedGameContext = null },
 				title = { Text(text = game.name) },
-				text = { Text("Vuoi davvero rimuovere questo gioco dalla lista?") },
+				text = { Text("Do you really want to remove this game from the list?") },
 				confirmButton = {
 					TextButton(
 						colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -188,31 +186,31 @@ fun LibraryScreen(
 							vm.removeGameFromListByIgdbId(listId, game.igdbId)
 							selectedGameContext = null
 						}
-					) { Text("Rimuovi") }
+					) { Text("Remove") }
 				},
 				dismissButton = {
-					TextButton(onClick = { selectedGameContext = null }) { Text("Annulla") }
+					TextButton(onClick = { selectedGameContext = null }) { Text("Cancel") }
 				}
 			)
 		}
 
-		// 3. NUOVO Dialog per eliminare una Custom List
+		// 3. NEW Dialog to delete a Custom List
 		listToDelete?.let { listId ->
 			AlertDialog(
 				onDismissRequest = { listToDelete = null },
-				title = { Text("Elimina Lista") },
-				text = { Text("Sei sicuro di voler eliminare questa lista? Tutti i giochi al suo interno verranno rimossi. L'azione è irreversibile.") },
+				title = { Text("Delete List") },
+				text = { Text("Are you sure you want to eliminate this list? All games in it will be removed. The action is irreversible.") },
 				confirmButton = {
 					TextButton(
 						colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
 						onClick = {
 							vm.deleteCustomList(listId)
-							listToDelete = null // Chiude il dialog
+							listToDelete = null // Closes the dialog
 						}
-					) { Text("Elimina") }
+					) { Text("Eliminate") }
 				},
 				dismissButton = {
-					TextButton(onClick = { listToDelete = null }) { Text("Annulla") }
+					TextButton(onClick = { listToDelete = null }) { Text("Abort") }
 				}
 			)
 		}

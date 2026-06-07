@@ -41,7 +41,7 @@ import org.koin.core.parameter.parametersOf
 
 class MainActivity : ComponentActivity() {
 
-	// Inietto il SessionManager
+	// I inject the SessionManager
 	private val sessionManager: SessionManager by inject()
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
 		enableEdgeToEdge()
 		setContent {
 			CheckpointTheme {
-				// Controllo lo stato della sessione
+				// Check session status
 				val sessionState by sessionManager.sessionState.collectAsState()
 
 				if (sessionState is SessionState.Loading) {
@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
 						CircularProgressIndicator()
 					}
 				} else {
-					//Calcolo la destinazione iniziale in base alla sessione
+					//Calculate the initial destination based on the session
 					val startDestination = if (sessionState is SessionState.LoggedIn) {
 						NavigationRoute.ProfileScreen
 					} else {

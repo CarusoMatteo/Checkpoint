@@ -31,7 +31,7 @@ fun ExploreScreen(
 		navController, title = "Explore", selectedNavigationItem = NavigationItem.Explore
 	) { innerPadding ->
 
-		// Mostra lo spinner se tutte le sezioni principali sono ancora in caricamento continuo
+		// Show the spinner if all major sections are still in continuous loading
 		if (state.isLoadingPopular && state.isLoadingRecent && state.isLoadingRecommendations) {
 			Box(
 				modifier = Modifier
@@ -138,7 +138,7 @@ fun ExploreScreen(
 			//7 Since you searched
 			if (state.searchQuery.isNotBlank()) {
 				LazyGamesCarousel(
-					title = "Since you Serched \"${state.searchQuery}\"",
+					title = "Since you Searched \"${state.searchQuery}\"",
 					games = state.searchResults,
 					onGameClick = { igdbId ->
 						navController.navigate(NavigationRoute.GameScreen(igdbId))
