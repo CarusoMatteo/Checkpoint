@@ -2,12 +2,15 @@ package com.example.checkpoint.ui.composable
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,54 +42,155 @@ fun FiltersDrawer(
 		sheetState = sheetState,
 		onDismissRequest = { showBottomSheet.value = false },
 	) {
-		Row(
+		Column(
 			modifier = Modifier
-				.fillMaxWidth()
-				.padding(horizontal = 16.dp),
-			horizontalArrangement = Arrangement.Center
+				.weight(1f, false)
+				.verticalScroll(rememberScrollState())
 		) {
-			Text(
-				"Filter games",
-				style = MaterialTheme.typography.titleLarge
+			Row(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp),
+				horizontalArrangement = Arrangement.Center
+			) {
+				Text(
+					"Filter games",
+					style = MaterialTheme.typography.titleLarge
+				)
+			}
+
+			LabeledChipGrid(
+				title = "Platforms",
+				chips = listOf(
+					ChipContent("PlayStation 5", selected = true, action = { }),
+					ChipContent("PlayStation 4", selected = false, action = { }),
+					ChipContent("PlayStation 3", selected = false, action = { }),
+					ChipContent("Nintendo Switch 2", selected = false, action = { }),
+					ChipContent("Nintendo Switch", selected = false, action = { }),
+					ChipContent("Wii", selected = false, action = { }),
+					ChipContent("Steam (PC)", selected = true, action = { }),
+					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
+					ChipContent("Xbox Series X|S", selected = false, action = { }),
+					ChipContent("Xbox One", selected = false, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			LabeledChipGrid(
+				title = "Platforms",
+				chips = listOf(
+					ChipContent("PlayStation 5", selected = true, action = { }),
+					ChipContent("PlayStation 4", selected = false, action = { }),
+					ChipContent("PlayStation 3", selected = false, action = { }),
+					ChipContent("Nintendo Switch 2", selected = false, action = { }),
+					ChipContent("Nintendo Switch", selected = false, action = { }),
+					ChipContent("Wii", selected = false, action = { }),
+					ChipContent("Steam (PC)", selected = true, action = { }),
+					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
+					ChipContent("Xbox Series X|S", selected = false, action = { }),
+					ChipContent("Xbox One", selected = false, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			LabeledChipGrid(
+				title = "Platforms",
+				chips = listOf(
+					ChipContent("PlayStation 5", selected = true, action = { }),
+					ChipContent("PlayStation 4", selected = false, action = { }),
+					ChipContent("PlayStation 3", selected = false, action = { }),
+					ChipContent("Nintendo Switch 2", selected = false, action = { }),
+					ChipContent("Nintendo Switch", selected = false, action = { }),
+					ChipContent("Wii", selected = false, action = { }),
+					ChipContent("Steam (PC)", selected = true, action = { }),
+					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
+					ChipContent("Xbox Series X|S", selected = false, action = { }),
+					ChipContent("Xbox One", selected = false, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			LabeledChipGrid(
+				title = "Platforms",
+				chips = listOf(
+					ChipContent("PlayStation 5", selected = true, action = { }),
+					ChipContent("PlayStation 4", selected = false, action = { }),
+					ChipContent("PlayStation 3", selected = false, action = { }),
+					ChipContent("Nintendo Switch 2", selected = false, action = { }),
+					ChipContent("Nintendo Switch", selected = false, action = { }),
+					ChipContent("Wii", selected = false, action = { }),
+					ChipContent("Steam (PC)", selected = true, action = { }),
+					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
+					ChipContent("Xbox Series X|S", selected = false, action = { }),
+					ChipContent("Xbox One", selected = false, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			LabeledChipGrid(
+				title = "Platforms",
+				chips = listOf(
+					ChipContent("PlayStation 5", selected = true, action = { }),
+					ChipContent("PlayStation 4", selected = false, action = { }),
+					ChipContent("PlayStation 3", selected = false, action = { }),
+					ChipContent("Nintendo Switch 2", selected = false, action = { }),
+					ChipContent("Nintendo Switch", selected = false, action = { }),
+					ChipContent("Wii", selected = false, action = { }),
+					ChipContent("Steam (PC)", selected = true, action = { }),
+					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
+					ChipContent("Xbox Series X|S", selected = false, action = { }),
+					ChipContent("Xbox One", selected = false, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			LabeledChipGrid(
+				title = "Platforms",
+				chips = listOf(
+					ChipContent("PlayStation 5", selected = true, action = { }),
+					ChipContent("PlayStation 4", selected = false, action = { }),
+					ChipContent("PlayStation 3", selected = false, action = { }),
+					ChipContent("Nintendo Switch 2", selected = false, action = { }),
+					ChipContent("Nintendo Switch", selected = false, action = { }),
+					ChipContent("Wii", selected = false, action = { }),
+					ChipContent("Steam (PC)", selected = true, action = { }),
+					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
+					ChipContent("Xbox Series X|S", selected = false, action = { }),
+					ChipContent("Xbox One", selected = false, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+			LabeledChipGrid(
+				title = "Genre",
+				chips = listOf(
+					ChipContent("Action", selected = false, action = { }),
+					ChipContent("Adventure", selected = false, action = { }),
+					ChipContent("RPG", selected = true, action = { }),
+					ChipContent("Strategy", selected = true, action = { }),
+					ChipContent("Simulation", selected = true, action = { }),
+					ChipContent("Survival Horror", selected = true, action = { }),
+					ChipContent("Indie", selected = true, action = { }),
+				),
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 8.dp)
 			)
 		}
 
-		LabeledChipGrid(
-			title = "Platforms",
-			chips = listOf(
-				ChipContent("PlayStation 5", selected = true, action = { }),
-				ChipContent("PlayStation 4", selected = false, action = { }),
-				ChipContent("PlayStation 3", selected = false, action = { }),
-				ChipContent("Nintendo Switch 2", selected = false, action = { }),
-				ChipContent("Nintendo Switch", selected = false, action = { }),
-				ChipContent("Wii", selected = false, action = { }),
-				ChipContent("Steam (PC)", selected = true, action = { }),
-				ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-				ChipContent("Xbox Series X|S", selected = false, action = { }),
-				ChipContent("Xbox One", selected = false, action = { }),
-			),
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 8.dp)
-		)
 		HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-		LabeledChipGrid(
-			title = "Genre",
-			chips = listOf(
-				ChipContent("Action", selected = false, action = { }),
-				ChipContent("Adventure", selected = false, action = { }),
-				ChipContent("RPG", selected = true, action = { }),
-				ChipContent("Strategy", selected = true, action = { }),
-				ChipContent("Simulation", selected = true, action = { }),
-				ChipContent("Survival Horror", selected = true, action = { }),
-				ChipContent("Indie", selected = true, action = { }),
-			),
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 8.dp)
-		)
-		HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -108,6 +212,7 @@ fun FiltersDrawer(
 							showBottomSheet.value = false
 						}
 					}
+					// TODO: Apply filters
 				},
 				modifier = Modifier.fillMaxWidth()
 			) {

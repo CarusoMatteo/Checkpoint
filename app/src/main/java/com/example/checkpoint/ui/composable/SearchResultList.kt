@@ -1,5 +1,6 @@
 package com.example.checkpoint.ui.composable
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,13 +15,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.repositories.Game
 
 @Composable
 fun SearchResultList(
 	games: List<Game>,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	navController: NavHostController
 ) {
 	val selectedChips = listOf(
 		ChipContent("Action", selected = true, action = { }),
@@ -43,6 +48,13 @@ fun SearchResultList(
 					game = game,
 					modifier = Modifier
 						.fillMaxWidth()
+						.clickable(onClick = {
+							navController.navigate(
+								NavigationRoute.GameScreen(
+									game.igdbId
+								)
+							)
+						})
 						.padding(start = 16.dp)
 				)
 			}
@@ -62,9 +74,7 @@ fun SearchResultItem(
 		GameCover(
 			game = game,
 			showInformationOverlay = false,
-			clickActions = ClickActions(
-				onClick = { /* TODO: Navigate to game */ },
-				onLongClick = { }),
+			clickActions = null,
 			modifier = Modifier.height(60.dp)
 		)
 		Column(
@@ -89,6 +99,7 @@ fun SearchResultItem(
 @Composable
 private fun SearchResultListPreview() {
 	SearchResultList(
+		navController = rememberNavController(),
 		games = listOf(
 			Game(
 				id = 0,

@@ -2,16 +2,10 @@ package com.example.checkpoint.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.FilterAlt
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -191,28 +185,9 @@ fun ExploreScreen(
 		},
 		searchContent = {
 			SearchResultList(
-				games = sampleSearchResults // TODO: Replace with actual search results
+				games = sampleSearchResults, // TODO: Replace with actual search results
+				navController = navController
 			)
-		},
-		actions = {
-			Row {
-				IconButton(
-					onClick = { isFiltersDrawerOpen.value = true }
-				) {
-					Icon(
-						imageVector = Icons.Rounded.FilterAlt,
-						contentDescription = "Show filters"
-					)
-				}
-				IconButton(
-					onClick = { /* TODO: Search */ }
-				) {
-					Icon(
-						imageVector = Icons.Rounded.Search,
-						contentDescription = null
-					)
-				}
-			}
 		},
 		onSearch = { /* TODO: Implement search feature to update displayed games */ }
 	)
