@@ -45,9 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
-import com.example.checkpoint.data.Review
-import com.example.checkpoint.data.ReviewCompletion
-import com.example.checkpoint.data.User
+import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
@@ -72,26 +70,19 @@ fun ProfileScreen(
 
 	// I extract the data from the DB
 	val currentUser = uiState.user
-	val username = currentUser?.username ?: "User"
-	val email = currentUser?.email ?: ""
-	val bio = currentUser?.bio?.takeIf { it.isNotBlank() } ?: "No biography included."
+
+	val safeUser = currentUser ?: UserEntity(
+		id = 0,
+		username = "User",
+		email = "",
+		passwordHash = "",
+		bio = "No biography included.",
+		publicProfile = true,
+		createdAt = ""
+	)
 
 	// Filter
 	val achievements = uiState.achievements.filter { it.isPinned }
-
-	// I create the domain object (temporary until best solution)
-	val userDomain = User(
-		id = currentUser?.id ?: 0, name = username
-	)
-
-	val reviews = uiState.reviews.map { entity ->
-		Review(
-			creator = userDomain,
-			rating = entity.rating.toFloat() / 2f,
-			comment = entity.body,
-			completion = ReviewCompletion.MAIN
-		)
-	}
 
 	// Function to navigate to the list grid
 	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
@@ -101,7 +92,7 @@ fun ProfileScreen(
 
 	AppShell(
 		navController = navController,
-		title = "Welcome back, $username!",
+		title = "Welcome back, ${safeUser.username}!",
 		selectedNavigationItem = NavigationItem.Profile,
 		appBarActions = {
 			IconButton(onClick = { /* TODO: Settings / Logout */ }) {
@@ -127,8 +118,7 @@ fun ProfileScreen(
 		) {
 			// ── Header
 			ProfileHeader(
-				domainUser = userDomain,
-				email = email,
+				user = safeUser,
 				modifier = Modifier
 					.fillMaxWidth()
 					.padding(vertical = 8.dp, horizontal = 16.dp)
@@ -142,7 +132,7 @@ fun ProfileScreen(
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
 			)
 			Text(
-				text = bio,
+				text = safeUser.bio ?: "No biography included.",
 				style = MaterialTheme.typography.bodyMedium,
 				modifier = Modifier
 					.padding(horizontal = 16.dp)
@@ -181,8 +171,7 @@ fun ProfileScreen(
 				modifier = Modifier.padding(vertical = 8.dp),
 				onCollectionClick = { carousel ->
 					navigateToGrid(carousel.listEntity.name, carousel.games)
-				}
-			)
+				})
 
 			// ── Achievement dal DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
@@ -198,7 +187,8 @@ fun ProfileScreen(
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
-				reviews = reviews,
+				reviews = uiState.reviews,
+				users = mapOf(safeUser.id to safeUser),
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
 				hasWriteReviewButton = false
 			)
@@ -211,11 +201,11 @@ fun ProfileScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileHeader(domainUser: User, email: String, modifier: Modifier = Modifier) {
+private fun ProfileHeader(user: UserEntity, modifier: Modifier = Modifier) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
 		Box(contentAlignment = Alignment.BottomEnd) {
 			ProfilePicture(
-				user = domainUser,
+				user = user,
 				modifier = Modifier
 					.size(80.dp)
 					.clip(CircleShape)
@@ -232,12 +222,11 @@ private fun ProfileHeader(domainUser: User, email: String, modifier: Modifier = 
 		Spacer(Modifier.width(16.dp))
 		Column {
 			Text(
-				text = domainUser.name,
-				style = MaterialTheme.typography.headlineSmall,
-				fontWeight = FontWeight.Bold
+				text = user.username,
+				style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold
 			)
 			Text(
-				text = email,
+				text = user.email,
 				style = MaterialTheme.typography.bodyMedium,
 				color = MaterialTheme.colorScheme.onSurfaceVariant
 			)

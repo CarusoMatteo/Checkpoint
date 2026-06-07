@@ -17,6 +17,7 @@ import com.example.checkpoint.ui.viewmodel.ExploreViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.data.repositories.AuthRepository
+import com.example.checkpoint.data.repositories.UserRepository
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.LoginViewModel
@@ -115,6 +116,7 @@ val appModule = module {
 			igdbClient = get()
 		)
 	}
+	single { UserRepository(get()) }
 	single { GameLogRepository(gameLogDao = get()) }
 	single { ReviewRepository(reviewDao = get()) }
 	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
@@ -169,7 +171,8 @@ val appModule = module {
 			gameRepository = get(),
 			gameLogRepository = get(),
 			reviewRepository = get(),
-			gameListRepository = get()
+			gameListRepository = get(),
+			userRepository = get()
 		)
 	}
 

@@ -53,7 +53,6 @@ import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.database.entities.GameListEntity
-import com.example.checkpoint.data.sampleLocalGames
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
@@ -135,9 +134,7 @@ fun GameScreen(
 						listsContainingGame = state.listsContainingGame,
 						onPrimaryClick = { viewModel.actions.onAddGameToBacklog() },
 						onConfirmListsClick = { listIds ->
-							viewModel.actions.onSynchronizeLists(
-								listIds
-							)
+							viewModel.actions.onSynchronizeLists(listIds)
 						},
 						onCreateListClick = { name -> viewModel.actions.onCreateNewList(name) },
 						modifier = Modifier
@@ -213,7 +210,8 @@ fun GameScreen(
 
 					ReviewList(
 						title = "Reviews",
-						reviews = sampleLocalGames.first().reviews,
+						reviews = state.reviews,
+						users = state.reviewUsers,
 						modifier = Modifier.padding(horizontal = 16.dp),
 						hasStartingDivider = true
 					)
