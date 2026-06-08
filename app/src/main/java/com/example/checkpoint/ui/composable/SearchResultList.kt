@@ -19,40 +19,52 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
+import com.example.checkpoint.data.database.entities.GenreEntity
+import com.example.checkpoint.data.database.entities.PlatformEntity
 import com.example.checkpoint.data.repositories.Game
 
 @Composable
 fun SearchResultList(
 	games: List<Game>,
 	modifier: Modifier = Modifier,
-	navController: NavHostController
+	navController: NavHostController,
+	genres: List<GenreEntity> = emptyList(),
+	platforms: List<PlatformEntity> = emptyList(),
+	selectedGenreIds: Set<Int> = emptySet(),
+	selectedPlatformIds: Set<Int> = emptySet(),
+	onGenreToggle: (Int) -> Unit = {},
+	onPlatformToggle: (Int) -> Unit = {}
 ) {
-	val selectedChips = listOf(
-		ChipContent("Action", selected = true, action = { }),
-		ChipContent("Adventure", selected = true, action = { }),
-		ChipContent("RPG", selected = true, action = { }),
-		ChipContent("Strategy", selected = true, action = { }),
-		ChipContent("Simulation", selected = true, action = { })
-	)
+	// Show only the filter chips actively selected by the FiltersDrawer
+	val genreChips = genres.filter { selectedGenreIds.contains(it.igdbId) }.map { genre ->
+		ChipContent(
+			label = genre.name, selected = true, action = { onGenreToggle(genre.igdbId) })
+	}
+	val platformChips =
+		platforms.filter { selectedPlatformIds.contains(it.igdbId) }.map { platform ->
+			ChipContent(
+				label = platform.abbreviation ?: platform.name,
+				selected = true,
+				action = { onPlatformToggle(platform.igdbId) })
+		}
+	val allChips = genreChips + platformChips
 
 	Column(modifier = modifier.fillMaxWidth()) {
-		FilterChipRow(
-			chips = selectedChips,
-			modifier = Modifier.fillMaxWidth()
-		)
+		if (allChips.isNotEmpty()) {
+			FilterChipRow(
+				chips = allChips, modifier = Modifier.fillMaxWidth()
+			)
+		}
 		LazyColumn(
 			modifier = Modifier.fillMaxWidth()
 		) {
 			items(games) { game ->
 				SearchResultItem(
-					game = game,
-					modifier = Modifier
+					game = game, modifier = Modifier
 						.fillMaxWidth()
 						.clickable(onClick = {
 							navController.navigate(
-								NavigationRoute.GameScreen(
-									game.igdbId
-								)
+								NavigationRoute.GameScreen(game.igdbId)
 							)
 						})
 						.padding(start = 16.dp)
@@ -64,12 +76,10 @@ fun SearchResultList(
 
 @Composable
 fun SearchResultItem(
-	game: Game,
-	modifier: Modifier = Modifier
+	game: Game, modifier: Modifier = Modifier
 ) {
 	Row(
-		modifier = modifier,
-		verticalAlignment = Alignment.CenterVertically
+		modifier = modifier, verticalAlignment = Alignment.CenterVertically
 	) {
 		GameCover(
 			game = game,
@@ -81,15 +91,12 @@ fun SearchResultItem(
 			modifier = Modifier.padding(start = 12.dp)
 		) {
 			Text(
-				text = game.name,
-				style = MaterialTheme.typography.bodyLarge,
-				maxLines = 1
+				text = game.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1
 			)
 			Text(
 				text = game.publisher ?: "",
 				style = MaterialTheme.typography.bodyMedium,
-				maxLines = 1,
-				modifier = Modifier
+				maxLines = 1
 			)
 		}
 	}
@@ -99,22 +106,8 @@ fun SearchResultItem(
 @Composable
 private fun SearchResultListPreview() {
 	SearchResultList(
-		navController = rememberNavController(),
-		games = listOf(
+		navController = rememberNavController(), games = listOf(
 			Game(
-				id = 0,
-				igdbId = 123,
-				name = "Example Game",
-				summary = "This is an example game.",
-				coverUrl = null,
-				genres = listOf("Action", "Adventure"),
-				platforms = listOf("PC", "PlayStation 5"),
-				developer = "Example Studios",
-				publisher = "Example Publishing",
-				firstReleaseDate = 1700000000000,
-				totalRating = 85.5,
-				totalRatingCount = 1000
-			), Game(
 				id = 0,
 				igdbId = 123,
 				name = "Example Game",

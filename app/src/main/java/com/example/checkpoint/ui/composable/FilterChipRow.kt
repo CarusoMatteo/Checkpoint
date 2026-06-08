@@ -15,7 +15,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.checkpoint.data.ChipContent
 
-
 @Composable
 fun FilterChipRow(
 	chips: List<ChipContent>,
@@ -33,10 +32,12 @@ fun FilterChipRow(
 				onClick = chip.action,
 				selected = chip.selected,
 				leadingIcon = {
-					Icon(
-						imageVector = Icons.Rounded.Check,
-						contentDescription = "Deselect ${chip.label}"
-					)
+					if (chip.selected) {
+						Icon(
+							imageVector = Icons.Rounded.Check,
+							contentDescription = "Deselect ${chip.label}"
+						)
+					} else null
 				}
 			)
 		}

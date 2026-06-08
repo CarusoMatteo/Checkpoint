@@ -29,18 +29,57 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.checkpoint.data.ChipContent
+import com.example.checkpoint.data.database.entities.GenreEntity
+import com.example.checkpoint.data.database.entities.PlatformEntity
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FiltersDrawer(
-	showBottomSheet: MutableState<Boolean>
+	showBottomSheet: MutableState<Boolean>,
+	genres: List<GenreEntity>,
+	platforms: List<PlatformEntity>,
+	selectedGenreIds: Set<Int>,
+	selectedPlatformIds: Set<Int>,
+	onGenreToggle: (Int) -> Unit,
+	onPlatformToggle: (Int) -> Unit,
+	onResetAll: () -> Unit
 ) {
 	val sheetState = rememberModalBottomSheetState()
 	val scope = rememberCoroutineScope()
+
+	// Filter State pending befor Apply button is pressed
+	val pendingGenreIds = remember { mutableStateOf(selectedGenreIds) }
+	val pendingPlatformIds = remember { mutableStateOf(selectedPlatformIds) }
+
+	fun togglePendingGenre(id: Int) {
+		val updated = pendingGenreIds.value.toMutableSet()
+		if (!updated.remove(id)) updated.add(id)
+		pendingGenreIds.value = updated
+	}
+
+	fun togglePendingPlatform(id: Int) {
+		val updated = pendingPlatformIds.value.toMutableSet()
+		if (!updated.remove(id)) updated.add(id)
+		pendingPlatformIds.value = updated
+	}
+
+	// Commits the diff between pending state and current VM state
+	fun applyToViewModel() {
+		val genresToAdd = pendingGenreIds.value - selectedGenreIds
+		val genresToRemove = selectedGenreIds - pendingGenreIds.value
+		genresToAdd.forEach { onGenreToggle(it) }
+		genresToRemove.forEach { onGenreToggle(it) }
+
+		val platformsToAdd = pendingPlatformIds.value - selectedPlatformIds
+		val platformsToRemove = selectedPlatformIds - pendingPlatformIds.value
+		platformsToAdd.forEach { onPlatformToggle(it) }
+		platformsToRemove.forEach { onPlatformToggle(it) }
+	}
+
 	ModalBottomSheet(
-		sheetState = sheetState,
-		onDismissRequest = { showBottomSheet.value = false },
+		// Dismiss without Apply, pending changes are discarded
+		onDismissRequest = { showBottomSheet.value = false }, sheetState = sheetState
 	) {
 		Column(
 			modifier = Modifier
@@ -54,140 +93,43 @@ fun FiltersDrawer(
 				horizontalArrangement = Arrangement.Center
 			) {
 				Text(
-					"Filter games",
-					style = MaterialTheme.typography.titleLarge
+					"Filter games", style = MaterialTheme.typography.titleLarge
 				)
 			}
 
-			LabeledChipGrid(
-				title = "Platforms",
-				chips = listOf(
-					ChipContent("PlayStation 5", selected = true, action = { }),
-					ChipContent("PlayStation 4", selected = false, action = { }),
-					ChipContent("PlayStation 3", selected = false, action = { }),
-					ChipContent("Nintendo Switch 2", selected = false, action = { }),
-					ChipContent("Nintendo Switch", selected = false, action = { }),
-					ChipContent("Wii", selected = false, action = { }),
-					ChipContent("Steam (PC)", selected = true, action = { }),
-					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-					ChipContent("Xbox Series X|S", selected = false, action = { }),
-					ChipContent("Xbox One", selected = false, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
+			if (genres.isNotEmpty()) {
+				val genreChips = genres.map { genre ->
+					ChipContent(
+						label = genre.name,
+						selected = pendingGenreIds.value.contains(genre.igdbId),
+						action = { togglePendingGenre(genre.igdbId) })
+				}
+				LabeledChipGrid(
+					title = "Genres",
+					chips = genreChips,
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(horizontal = 16.dp, vertical = 8.dp)
+				)
+			}
+
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-			LabeledChipGrid(
-				title = "Platforms",
-				chips = listOf(
-					ChipContent("PlayStation 5", selected = true, action = { }),
-					ChipContent("PlayStation 4", selected = false, action = { }),
-					ChipContent("PlayStation 3", selected = false, action = { }),
-					ChipContent("Nintendo Switch 2", selected = false, action = { }),
-					ChipContent("Nintendo Switch", selected = false, action = { }),
-					ChipContent("Wii", selected = false, action = { }),
-					ChipContent("Steam (PC)", selected = true, action = { }),
-					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-					ChipContent("Xbox Series X|S", selected = false, action = { }),
-					ChipContent("Xbox One", selected = false, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
-			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-			LabeledChipGrid(
-				title = "Platforms",
-				chips = listOf(
-					ChipContent("PlayStation 5", selected = true, action = { }),
-					ChipContent("PlayStation 4", selected = false, action = { }),
-					ChipContent("PlayStation 3", selected = false, action = { }),
-					ChipContent("Nintendo Switch 2", selected = false, action = { }),
-					ChipContent("Nintendo Switch", selected = false, action = { }),
-					ChipContent("Wii", selected = false, action = { }),
-					ChipContent("Steam (PC)", selected = true, action = { }),
-					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-					ChipContent("Xbox Series X|S", selected = false, action = { }),
-					ChipContent("Xbox One", selected = false, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
-			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-			LabeledChipGrid(
-				title = "Platforms",
-				chips = listOf(
-					ChipContent("PlayStation 5", selected = true, action = { }),
-					ChipContent("PlayStation 4", selected = false, action = { }),
-					ChipContent("PlayStation 3", selected = false, action = { }),
-					ChipContent("Nintendo Switch 2", selected = false, action = { }),
-					ChipContent("Nintendo Switch", selected = false, action = { }),
-					ChipContent("Wii", selected = false, action = { }),
-					ChipContent("Steam (PC)", selected = true, action = { }),
-					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-					ChipContent("Xbox Series X|S", selected = false, action = { }),
-					ChipContent("Xbox One", selected = false, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
-			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-			LabeledChipGrid(
-				title = "Platforms",
-				chips = listOf(
-					ChipContent("PlayStation 5", selected = true, action = { }),
-					ChipContent("PlayStation 4", selected = false, action = { }),
-					ChipContent("PlayStation 3", selected = false, action = { }),
-					ChipContent("Nintendo Switch 2", selected = false, action = { }),
-					ChipContent("Nintendo Switch", selected = false, action = { }),
-					ChipContent("Wii", selected = false, action = { }),
-					ChipContent("Steam (PC)", selected = true, action = { }),
-					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-					ChipContent("Xbox Series X|S", selected = false, action = { }),
-					ChipContent("Xbox One", selected = false, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
-			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-			LabeledChipGrid(
-				title = "Platforms",
-				chips = listOf(
-					ChipContent("PlayStation 5", selected = true, action = { }),
-					ChipContent("PlayStation 4", selected = false, action = { }),
-					ChipContent("PlayStation 3", selected = false, action = { }),
-					ChipContent("Nintendo Switch 2", selected = false, action = { }),
-					ChipContent("Nintendo Switch", selected = false, action = { }),
-					ChipContent("Wii", selected = false, action = { }),
-					ChipContent("Steam (PC)", selected = true, action = { }),
-					ChipContent("Epic Games Store (PC)", selected = false, action = { }),
-					ChipContent("Xbox Series X|S", selected = false, action = { }),
-					ChipContent("Xbox One", selected = false, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
-			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-			LabeledChipGrid(
-				title = "Genre",
-				chips = listOf(
-					ChipContent("Action", selected = false, action = { }),
-					ChipContent("Adventure", selected = false, action = { }),
-					ChipContent("RPG", selected = true, action = { }),
-					ChipContent("Strategy", selected = true, action = { }),
-					ChipContent("Simulation", selected = true, action = { }),
-					ChipContent("Survival Horror", selected = true, action = { }),
-					ChipContent("Indie", selected = true, action = { }),
-				),
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(horizontal = 16.dp, vertical = 8.dp)
-			)
+
+			if (platforms.isNotEmpty()) {
+				val platformChips = platforms.map { platform ->
+					ChipContent(
+						label = platform.abbreviation ?: platform.name,
+						selected = pendingPlatformIds.value.contains(platform.igdbId),
+						action = { togglePendingPlatform(platform.igdbId) })
+				}
+				LabeledChipGrid(
+					title = "Platforms",
+					chips = platformChips,
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(horizontal = 16.dp, vertical = 8.dp)
+				)
+			}
 		}
 
 		HorizontalDivider(Modifier.padding(horizontal = 16.dp))
@@ -197,24 +139,32 @@ fun FiltersDrawer(
 				.padding(16.dp),
 			horizontalArrangement = Arrangement.spacedBy(16.dp)
 		) {
+			val totalPending = pendingGenreIds.value.size + pendingPlatformIds.value.size
+
 			OutlinedButton(
-				onClick = { /* TODO: reset */ },
-				modifier = Modifier.fillMaxWidth(0.5f)
+				// Reset all: clears only the local pending state
+				onClick = {
+					pendingGenreIds.value = emptySet()
+					pendingPlatformIds.value = emptySet()
+				}, modifier = Modifier.fillMaxWidth(0.5f), enabled = totalPending > 0
 			) {
 				Text("Reset all")
-				Spacer(Modifier.width(8.dp))
-				Badge { Text("3") }
+				if (totalPending > 0) {
+					Spacer(Modifier.width(8.dp))
+					Badge { Text(totalPending.toString()) }
+				}
 			}
+
 			Button(
+				// Apply: commits pending state to vm, then closes the sheet
 				onClick = {
+					applyToViewModel()
 					scope.launch { sheetState.hide() }.invokeOnCompletion {
 						if (!sheetState.isVisible) {
 							showBottomSheet.value = false
 						}
 					}
-					// TODO: Apply filters
-				},
-				modifier = Modifier.fillMaxWidth()
+				}, modifier = Modifier.fillMaxWidth()
 			) {
 				Text("Apply")
 			}
@@ -229,6 +179,14 @@ private fun FiltersDrawerPreview() {
 	Box(
 		modifier = Modifier.fillMaxSize()
 	) {
-		FiltersDrawer(showBottomSheet)
+		FiltersDrawer(
+			showBottomSheet = showBottomSheet,
+			genres = emptyList(),
+			platforms = emptyList(),
+			selectedGenreIds = emptySet(),
+			selectedPlatformIds = emptySet(),
+			onGenreToggle = {},
+			onPlatformToggle = {},
+			onResetAll = {})
 	}
 }
