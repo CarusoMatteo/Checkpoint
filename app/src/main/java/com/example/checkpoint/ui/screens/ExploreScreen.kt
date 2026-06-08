@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.repositories.Game
+import com.example.checkpoint.ui.composable.FiltersDrawer
 import com.example.checkpoint.ui.composable.LazyGamesCarousel
 import com.example.checkpoint.ui.composable.NavigationItem
 import com.example.checkpoint.ui.composable.SearchAppShell
@@ -30,38 +31,22 @@ fun ExploreScreen(
 	val state by vm.state.collectAsStateWithLifecycle()
 	val isFiltersDrawerOpen = remember { mutableStateOf(false) }
 
-	val sampleSearchResults = listOf(
-		Game(
-			id = 0,
-			igdbId = 123,
-			name = "Example Game",
-			summary = "This is an example game.",
-			coverUrl = null,
-			genres = listOf("Action", "Adventure"),
-			platforms = listOf("PC", "PlayStation 5"),
-			developer = "Example Studios",
-			publisher = "Example Publishing",
-			firstReleaseDate = 1700000000000,
-			totalRating = 85.5,
-			totalRatingCount = 1000
-		), Game(
-			id = 0,
-			igdbId = 123,
-			name = "Example Game",
-			summary = "This is an example game.",
-			coverUrl = null,
-			genres = listOf("Action", "Adventure"),
-			platforms = listOf("PC", "PlayStation 5"),
-			developer = "Example Studios",
-			publisher = "Example Publishing",
-			firstReleaseDate = 1700000000000,
-			totalRating = 85.5,
-			totalRatingCount = 1000
+	// Bottom Sheet Drawer for filter selection (Genres and Platforms)
+	if (isFiltersDrawerOpen.value) {
+		FiltersDrawer(
+			showBottomSheet = isFiltersDrawerOpen,
+			genres = state.availableGenres,
+			platforms = state.availablePlatforms,
+			selectedGenreIds = state.selectedGenreIds,
+			selectedPlatformIds = state.selectedPlatformIds,
+			onGenreToggle = { vm.toggleGenreId(it) },
+			onPlatformToggle = { vm.togglePlatformId(it) },
+			onResetAll = { vm.clearFilters() }
 		)
-	)
+	}
 
 	SearchAppShell(
-		navController,
+		navController = navController,
 		title = "Explore",
 		selectedNavigationItem = NavigationItem.Explore,
 		isFiltersDrawerOpen = isFiltersDrawerOpen,
@@ -79,7 +64,7 @@ fun ExploreScreen(
 			val scrollState = rememberScrollState()
 			val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
 				navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
-				navController.navigate(NavigationRoute.GamesGridScreen(title)) // This will now work!
+				navController.navigate(NavigationRoute.GamesGridScreen(title))
 			}
 
 			Column(
@@ -130,9 +115,7 @@ fun ExploreScreen(
 							navController.navigate(NavigationRoute.GameScreen(igdbId))
 						},
 						onSeeAllClick = {
-							navigateToGrid(
-								"Because you played", state.becauseYouPlayed
-							)
+							navigateToGrid("Because you played", state.becauseYouPlayed)
 						})
 				}
 
@@ -158,32 +141,44 @@ fun ExploreScreen(
 							navController.navigate(NavigationRoute.GameScreen(igdbId))
 						},
 						onSeeAllClick = {
-							navigateToGrid(
-								"Since you like RPG", state.sinceYouLikeGenre
-							)
+							navigateToGrid("Since you like RPG", state.sinceYouLikeGenre)
 						})
 				}
-				//7 Since you searched
-				if (state.searchQuery.isNotBlank()) {
+
+				// 7. Since you searched
+				if (state.searchQuery.isNotBlank() && state.searchResults.isNotEmpty()) {
 					LazyGamesCarousel(
-						title = "Since you Searched \"${state.searchQuery}\"",
+						title = "Since you searched \"${state.searchQuery}\"",
 						games = state.searchResults,
 						onGameClick = { igdbId ->
 							navController.navigate(NavigationRoute.GameScreen(igdbId))
 						},
 						onSeeAllClick = {
-							navigateToGrid(
-								"Since you searched", state.searchResults
-							)
+							navigateToGrid("Since you searched", state.searchResults)
 						})
 				}
 			}
 		},
 		searchContent = {
-			SearchResultList(
-				games = sampleSearchResults, // TODO: Replace with actual search results
-				navController = navController
-			)
+			if (state.isSearching) {
+				Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+					CircularProgressIndicator()
+				}
+			} else {
+				SearchResultList(
+					games = state.searchResults,
+					navController = navController,
+					genres = state.availableGenres,
+					platforms = state.availablePlatforms,
+					selectedGenreIds = state.selectedGenreIds,
+					selectedPlatformIds = state.selectedPlatformIds,
+					onGenreToggle = { vm.toggleGenreId(it) },
+					onPlatformToggle = { vm.togglePlatformId(it) }
+				)
+			}
 		},
-		onSearch = { /* TODO: Implement search feature to update displayed games */ })
+		onSearch = { query ->
+			vm.onSearchQueryChange(query)
+		}
+	)
 }
