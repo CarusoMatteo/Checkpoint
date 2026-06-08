@@ -32,11 +32,10 @@ data class ReviewEntity(
 	@ColumnInfo(name = "rating") val rating: Float,
 	@ColumnInfo(name = "body") val body: String,
 	@ColumnInfo(name = "completion") val completion: String,
-	@ColumnInfo(name = "created_at") val createdAt: String? = null,
-	@ColumnInfo(name = "updated_at") val updatedAt: String? = null
+	@ColumnInfo(name = "created_at") val createdAt: String? = null
 ) {
 	init {
-		require(rating in 1.0f..5.0f) { "Rating must be between 1.0 and 5.0" }
+		require(rating in 0.0f..5.0f) { "Rating must be between 0.0 and 5.0" }
 	}
 
 	// Helper for UI

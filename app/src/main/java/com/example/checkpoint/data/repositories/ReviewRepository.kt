@@ -40,8 +40,7 @@ class ReviewRepository(
 			rating = rating,
 			body = body,
 			completion = completion.code,
-			createdAt = if (existingId == 0) now else null,
-			updatedAt = now
+			createdAt = if (existingId == 0) now else null
 		)
 		reviewDao.upsert(entity)
 	}
