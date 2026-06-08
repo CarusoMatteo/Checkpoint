@@ -1,5 +1,6 @@
 package com.example.checkpoint.ui.composable
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +62,7 @@ fun SearchResultList(
 			items(games) { game ->
 				SearchResultItem(
 					game = game, modifier = Modifier
+						.padding(bottom = 8.dp)
 						.fillMaxWidth()
 						.clickable(onClick = {
 							navController.navigate(
@@ -85,18 +87,26 @@ fun SearchResultItem(
 			game = game,
 			showInformationOverlay = false,
 			clickActions = null,
-			modifier = Modifier.height(60.dp)
+			modifier = Modifier.height(60.dp),
+			clipShape = MaterialTheme.shapes.medium
 		)
 		Column(
-			modifier = Modifier.padding(start = 12.dp)
+			modifier = Modifier
+				.padding(start = 12.dp)
+				.fillMaxWidth()
 		) {
 			Text(
-				text = game.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1
+				text = game.name,
+				style = MaterialTheme.typography.bodyLarge,
+				maxLines = 1,
+				modifier = Modifier.basicMarquee()
 			)
+			// TODO: Fix that games are missing publishers
 			Text(
-				text = game.publisher ?: "",
+				text = game.publisher ?: "NO PUBLISHER",
 				style = MaterialTheme.typography.bodyMedium,
-				maxLines = 1
+				maxLines = 1,
+				modifier = Modifier.basicMarquee()
 			)
 		}
 	}

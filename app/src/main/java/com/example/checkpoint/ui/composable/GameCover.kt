@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ fun GameCover(
 	publisher: String?,
 	showInformationOverlay: Boolean,
 	clickActions: ClickActions?,
+	clipShape: CornerBasedShape,
 	modifier: Modifier = Modifier,
 	nameMaxLines: Int = 2,
 	publisherMaxLines: Int = 1
@@ -50,13 +52,13 @@ fun GameCover(
 	Box(
 		modifier = if (clickActions != null) modifier
 			.aspectRatio(3f / 4f)
-			.clip(MaterialTheme.shapes.extraLarge)
+			.clip(clipShape)
 			.combinedClickable(
 				onClick = clickActions.onClick, onLongClick = clickActions.onLongClick
 			)
 		else modifier
 			.aspectRatio(3f / 4f)
-			.clip(MaterialTheme.shapes.extraLarge)
+			.clip(clipShape)
 	) {
 		AsyncImage(
 			model = model,
@@ -115,7 +117,8 @@ fun GameCover(
 	clickActions: ClickActions?,
 	modifier: Modifier = Modifier,
 	nameMaxLines: Int = 2,
-	publisherMaxLines: Int = 1
+	publisherMaxLines: Int = 1,
+	clipShape: CornerBasedShape = MaterialTheme.shapes.extraLarge
 ) = GameCover(
 	model = game.imageResourceId,
 	name = game.name,
@@ -124,7 +127,8 @@ fun GameCover(
 	clickActions = clickActions,
 	modifier = modifier,
 	nameMaxLines = nameMaxLines,
-	publisherMaxLines = publisherMaxLines
+	publisherMaxLines = publisherMaxLines,
+	clipShape = clipShape
 )
 
 /**
@@ -137,7 +141,8 @@ fun GameCover(
 	clickActions: ClickActions?,
 	modifier: Modifier = Modifier,
 	nameMaxLines: Int = 2,
-	publisherMaxLines: Int = 1
+	publisherMaxLines: Int = 1,
+	clipShape: CornerBasedShape = MaterialTheme.shapes.extraLarge,
 ) = GameCover(
 	model = game.coverUrl,
 	name = game.name,
@@ -146,7 +151,8 @@ fun GameCover(
 	clickActions = clickActions,
 	modifier = modifier,
 	nameMaxLines = nameMaxLines,
-	publisherMaxLines = publisherMaxLines
+	publisherMaxLines = publisherMaxLines,
+	clipShape = clipShape
 )
 
 @Preview
