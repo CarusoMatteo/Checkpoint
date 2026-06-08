@@ -150,6 +150,7 @@ fun ExploreScreen(
 					LazyGamesCarousel(
 						title = "Since you searched \"${state.searchQuery}\"",
 						games = state.searchResults,
+						hasStartingDivider = true,
 						onGameClick = { igdbId ->
 							navController.navigate(NavigationRoute.GameScreen(igdbId))
 						},
