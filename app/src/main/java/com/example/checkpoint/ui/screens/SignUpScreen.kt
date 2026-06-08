@@ -74,7 +74,7 @@ fun SignUpScreen(
 		title = "Welcome back!",
 		selectedNavigationItem = NavigationItem.Profile,
 		appBarActions = {
-			IconButton(onClick = { /* TODO: Settings */ }) {
+			IconButton(onClick = { navController.navigate(NavigationRoute.SettingsScreen) }) {
 				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
 			}
 		}

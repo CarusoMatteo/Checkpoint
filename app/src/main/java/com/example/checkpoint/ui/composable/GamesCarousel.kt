@@ -21,11 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.checkpoint.data.LocalGame
 import com.example.checkpoint.data.repositories.Game
-import com.example.checkpoint.data.sampleLocalGames
 
 /**
  * Reusable layout skeleton providing a standardized header row with action items
@@ -79,48 +76,6 @@ private fun CarouselShell(
 }
 
 /**
- * Horizontal carousel displaying a collection of [LocalGame] items.
- * Built for compatibility with existing preview components and static local states.
- */
-@Composable
-fun LazyGamesCarousel(
-	title: String,
-	games: List<LocalGame>,
-	modifier: Modifier = Modifier,
-	hasStartingDivider: Boolean = false,
-	hasDeleteAction: Boolean = false,
-	onDeleteClick: () -> Unit = {},
-	onSeeAllClick: () -> Unit = {}
-) {
-	CarouselShell(
-		title = title,
-		hasStartingDivider = hasStartingDivider,
-		hasDeleteAction = hasDeleteAction,
-		onDeleteClick = onDeleteClick,
-		onSeeAllClick = onSeeAllClick,
-		modifier = modifier
-	) {
-		LazyRow(
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(bottom = 8.dp),
-			contentPadding = PaddingValues(horizontal = 16.dp),
-			horizontalArrangement = Arrangement.spacedBy(8.dp)
-		) {
-			items(games) { game ->
-				GameCover(
-					game = game,
-					showInformationOverlay = true,
-					clickActions = ClickActions(
-						onClick = { /* TODO: Navigate to game details */ },
-						onLongClick = { /* TODO: Show game options */ }),
-					modifier = Modifier.height(200.dp))
-			}
-		}
-	}
-}
-
-/**
  * Horizontal carousel displaying a collection of domain [Game] entities fetched from the IGDB API.
  */
 @Composable
@@ -162,15 +117,4 @@ fun LazyGamesCarousel(
 			}
 		}
 	}
-}
-
-@Preview
-@Composable
-private fun LazyGamesCarouselPreview() {
-	LazyGamesCarousel(
-		title = "Since you liked ${sampleLocalGames.first().name}",
-		games = sampleLocalGames,
-		hasStartingDivider = true,
-		hasDeleteAction = true
-	)
 }

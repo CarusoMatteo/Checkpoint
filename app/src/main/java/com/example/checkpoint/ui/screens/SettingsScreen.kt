@@ -60,6 +60,7 @@ fun SettingsScreen(
 				.padding(innerPadding)
 				.verticalScroll(rememberScrollState())
 		) {
+			// TODO: Hide if user isn't logged in
 			ProfileVisibilitySwitch(
 				modifier = Modifier
 					.fillMaxWidth()
@@ -75,6 +76,7 @@ fun SettingsScreen(
 					.padding(horizontal = 16.dp)
 					.padding(vertical = 8.dp)
 			)
+			// TODO: Hide if user isn't logged in
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			PasswordUpdateForm(
 				modifier = Modifier
