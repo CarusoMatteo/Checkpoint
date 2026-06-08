@@ -203,6 +203,9 @@ class IgdbClient(
                        cover.image_id,
                        genres.name,
                        platforms.name,
+                       involved_companies.company.name,
+                       involved_companies.developer,
+                       involved_companies.publisher,
                        first_release_date,
                        total_rating;
                 search "$query";

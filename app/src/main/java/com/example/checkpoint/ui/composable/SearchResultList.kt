@@ -61,7 +61,8 @@ fun SearchResultList(
 		) {
 			items(games) { game ->
 				SearchResultItem(
-					game = game, modifier = Modifier
+					game = game,
+					modifier = Modifier
 						.padding(bottom = 8.dp)
 						.fillMaxWidth()
 						.clickable(onClick = {
@@ -101,9 +102,16 @@ fun SearchResultItem(
 				maxLines = 1,
 				modifier = Modifier.basicMarquee()
 			)
-			// TODO: Fix that games are missing publishers
+			val companyText = when {
+				!game.publisher.isNullOrBlank() && !game.developer.isNullOrBlank() &&
+						game.publisher != game.developer -> "${game.developer} • ${game.publisher}"
+
+				!game.publisher.isNullOrBlank() -> game.publisher
+				!game.developer.isNullOrBlank() -> game.developer
+				else -> "Unknown Company"
+			}
 			Text(
-				text = game.publisher ?: "NO PUBLISHER",
+				text = companyText,
 				style = MaterialTheme.typography.bodyMedium,
 				maxLines = 1,
 				modifier = Modifier.basicMarquee()
