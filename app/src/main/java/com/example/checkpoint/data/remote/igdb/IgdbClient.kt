@@ -12,14 +12,10 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
-
 private const val TAG = "IgdbClient"
 
 /**
  * Utility to build IGDB image URLs from an imageId.
- *
- * Available sizes: cover_small, cover_big, screenshot_med,
- * screenshot_big, screenshot_huge, thumb, micro, 720p, 1080p
  */
 object IgdbImageUrl {
 	fun coverBig(imageId: String) =
@@ -28,8 +24,6 @@ object IgdbImageUrl {
 	fun coverSmall(imageId: String) =
 		"https://images.igdb.com/igdb/image/upload/t_cover_small/$imageId.jpg"
 
-	fun screenshot(imageId: String) =
-		"https://images.igdb.com/igdb/image/upload/t_screenshot_big/$imageId.jpg"
 }
 
 /**
@@ -305,8 +299,10 @@ class IgdbClient(
 		return runCatching {
 			query<List<IgdbPlatformDto>>(
 				endpoint = "platforms", body = """
-					fields name, abbreviation;
-					limit 500;
+					fields name, abbreviation, generation;
+					where generation >= 7 | id = 6;
+					sort generation desc;
+					limit 30;
 				""".trimIndent()
 			)
 		}.getOrElse {
