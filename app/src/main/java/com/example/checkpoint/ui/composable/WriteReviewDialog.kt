@@ -40,10 +40,12 @@ import com.example.checkpoint.data.repositories.CompletionType
 @Composable
 fun WriteReviewDialog(
 	onDismissRequest: () -> Unit,
+	onSubmit: (Float, String, CompletionType) -> Unit
 ) {
 	var rating by remember { mutableFloatStateOf(0f) }
 	val reviewBodyTextField = rememberTextFieldState("")
 	var selectedCompletionType by remember { mutableStateOf<CompletionType?>(null) }
+	var errorMessage by remember { mutableStateOf<String?>(null) }
 
 	BasicAlertDialog(
 		onDismissRequest = onDismissRequest
@@ -113,9 +115,21 @@ fun WriteReviewDialog(
 							.height(56.dp)
 					)
 				}
+
+				// Error feedback text
+				if (errorMessage != null) {
+					Text(
+						text = errorMessage!!,
+						color = MaterialTheme.colorScheme.error,
+						style = MaterialTheme.typography.bodySmall,
+						modifier = Modifier.padding(top = 8.dp)
+					)
+				}
+
 				Row(
 					modifier = Modifier
-						.fillMaxWidth(),
+						.fillMaxWidth()
+						.padding(top = 16.dp),
 					horizontalArrangement = Arrangement.End
 				) {
 					TextButton(
@@ -124,7 +138,23 @@ fun WriteReviewDialog(
 						Text("Cancel")
 					}
 					TextButton(
-						onClick = onDismissRequest
+						onClick = {
+							if (selectedCompletionType == null) {
+								errorMessage = "Please select a completion type."
+								return@TextButton
+							}
+							if (reviewBodyTextField.text.isBlank()) {
+								errorMessage = "Please write a review body."
+								return@TextButton
+							}
+
+							// Forward the result
+							onSubmit(
+								rating,
+								reviewBodyTextField.text.toString(),
+								selectedCompletionType!!
+							)
+						}
 					) {
 						Text("Submit")
 					}
@@ -138,6 +168,9 @@ fun WriteReviewDialog(
 @Composable
 private fun WriteReviewDialogPreview() {
 	Box(Modifier.fillMaxSize()) {
-		WriteReviewDialog(onDismissRequest = { })
+		WriteReviewDialog(
+			onDismissRequest = { },
+			onSubmit = { _, _, _ -> }
+		)
 	}
 }

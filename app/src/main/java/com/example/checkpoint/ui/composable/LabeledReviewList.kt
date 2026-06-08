@@ -23,16 +23,18 @@ import androidx.compose.ui.unit.dp
 import com.example.checkpoint.data.database.DatabaseSeeder
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserEntity
+import com.example.checkpoint.data.repositories.CompletionType
 import com.example.checkpoint.ui.icons.Reviews
 
 @Composable
 fun ReviewList(
 	title: String,
 	reviews: List<ReviewEntity>,
-	users: Map<Int, UserEntity> = emptyMap(), // New key-value map (userId -> UserEntity)
+	users: Map<Int, UserEntity> = emptyMap(),
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
-	hasWriteReviewButton: Boolean = true
+	hasWriteReviewButton: Boolean = true,
+	onReviewSubmit: (Float, String, CompletionType) -> Unit = { _, _, _ -> }
 ) {
 	var showWriteReviewDialog by remember { mutableStateOf(false) }
 
@@ -50,15 +52,16 @@ fun ReviewList(
 			Text(
 				text = title, style = MaterialTheme.typography.titleMedium
 			)
-			if (hasWriteReviewButton) FilledTonalButton(
-				onClick = { showWriteReviewDialog = true }) {
-				Icon(
-					imageVector = Reviews,
-					contentDescription = "Leave a review",
-				)
-				Text(
-					text = "Leave a review", modifier = Modifier.padding(start = 16.dp)
-				)
+			if (hasWriteReviewButton) {
+				FilledTonalButton(onClick = { showWriteReviewDialog = true }) {
+					Icon(
+						imageVector = Reviews,
+						contentDescription = "Leave a review",
+					)
+					Text(
+						text = "Leave a review", modifier = Modifier.padding(start = 16.dp)
+					)
+				}
 			}
 		}
 
@@ -86,7 +89,12 @@ fun ReviewList(
 	}
 
 	if (showWriteReviewDialog) {
-		WriteReviewDialog { showWriteReviewDialog = false }
+		WriteReviewDialog(
+			onDismissRequest = { showWriteReviewDialog = false },
+			onSubmit = { rating, body, completion ->
+				onReviewSubmit(rating, body, completion)
+				showWriteReviewDialog = false
+			})
 	}
 }
 
@@ -94,7 +102,6 @@ fun ReviewList(
 @Composable
 private fun ReviewListPreview() {
 	val previewReviews = DatabaseSeeder.sampleDbReviews
-
 	val previewUsersMap = DatabaseSeeder.users.associateBy { it.id }
 
 	ReviewList(
