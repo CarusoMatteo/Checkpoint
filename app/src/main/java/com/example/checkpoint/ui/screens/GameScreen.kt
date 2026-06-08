@@ -1,5 +1,9 @@
 package com.example.checkpoint.ui.screens
 
+import android.content.Context
+import android.content.Intent
+import android.provider.CalendarContract
+import android.util.Log
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -53,6 +58,7 @@ import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.database.entities.GameListEntity
+import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.LabeledChipRow
 import com.example.checkpoint.ui.composable.LabeledText
@@ -63,7 +69,6 @@ import com.example.checkpoint.ui.composable.ReviewList
 import com.example.checkpoint.ui.composable.ReviewRating
 import com.example.checkpoint.ui.composable.SmallSplitButtons
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
-import com.example.checkpoint.data.repositories.Game
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -76,6 +81,7 @@ fun GameScreen(
 ) {
 	val state by viewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
+	val ctx = LocalContext.current
 
 	AppShell(
 		navController = navController,
@@ -168,7 +174,13 @@ fun GameScreen(
 								modifier = Modifier
 									.fillMaxWidth()
 									.padding(vertical = 8.dp, horizontal = 16.dp)
-							) { /* TODO: Add to calendar action */ }
+							) {
+								addEventToCalendar(
+									ctx = ctx,
+									title = game.name,
+									startTime = game.firstReleaseDate
+								)
+							}
 						} else {
 							LabeledText(
 								title = "Release date",
@@ -467,5 +479,27 @@ private fun SaveToListsDialog(
 				TextButton(onClick = { showCreateListDialog = false }) { Text("Cancel") }
 			}
 		)
+	}
+}
+
+private fun addEventToCalendar(
+	ctx: Context,
+	title: String,
+	startTime: Long
+) {
+	val intent = Intent(Intent.ACTION_INSERT).apply {
+		data = CalendarContract.Events.CONTENT_URI
+		putExtra(CalendarContract.Events.TITLE, title)
+		putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+		Log.i(
+			"GameScreen",
+			"Adding calendar event with start time: $startTime (${Instant.ofEpochSecond(startTime)})"
+		)
+		// TODO: Fix starting time
+		// putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTime)
+	}
+
+	if (intent.resolveActivity(ctx.packageManager) != null) {
+		ctx.startActivity(intent)
 	}
 }
