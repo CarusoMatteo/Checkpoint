@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,7 +57,9 @@ fun WriteReviewDialog(
 			color = MaterialTheme.colorScheme.surfaceContainerHigh
 		) {
 			Column(
-				Modifier.padding(24.dp)
+				Modifier
+					.padding(24.dp)
+					.verticalScroll(rememberScrollState())
 			) {
 				Text(
 					"New review",
@@ -77,7 +81,6 @@ fun WriteReviewDialog(
 					Text(
 						text = "0",
 						style = MaterialTheme.typography.labelSmall,
-						// color = MaterialTheme.colorScheme.onSurfaceVariant
 					)
 					Slider(
 						value = rating,
@@ -89,7 +92,6 @@ fun WriteReviewDialog(
 					Text(
 						text = "5",
 						style = MaterialTheme.typography.labelSmall,
-						// color = MaterialTheme.colorScheme.onSurfaceVariant
 					)
 				}
 				Spacer(Modifier.height(8.dp))

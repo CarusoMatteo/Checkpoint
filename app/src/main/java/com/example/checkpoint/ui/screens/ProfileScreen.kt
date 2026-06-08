@@ -50,6 +50,7 @@ import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.repositories.Game
+import com.example.checkpoint.data.sampleChipContents
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -210,8 +211,9 @@ fun ProfileScreen(
 			)
 		} else if (showGenresUpdateDialog) {
 			UpdateFavouriteGenresDialog(
-				onSubmit = { /* TODO: Update favourite genres in database */ },
-				onDismissRequest = { showGenresUpdateDialog = false }
+				onSubmit = { genres -> /* TODO: Update favourite genres in database */ },
+				onDismissRequest = { showGenresUpdateDialog = false },
+				genreChips = sampleChipContents /* TODO: Pass actual genres from igdb */
 			)
 		}
 	}
