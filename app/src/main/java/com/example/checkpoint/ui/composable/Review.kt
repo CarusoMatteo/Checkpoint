@@ -54,7 +54,8 @@ fun ReviewHeader(
 		verticalAlignment = Alignment.CenterVertically
 	) {
 		Row(
-			modifier = Modifier.weight(1f),
+			modifier = Modifier
+				.weight(1f),
 			verticalAlignment = Alignment.CenterVertically
 		) {
 			ProfilePicture(
@@ -63,7 +64,6 @@ fun ReviewHeader(
 			Column(
 				modifier = Modifier
 					.padding(start = 8.dp)
-					.weight(1f)
 			) {
 				Text(
 					text = user.username,
@@ -77,11 +77,11 @@ fun ReviewHeader(
 			}
 		}
 
-		val completionText = review.completionEnum?.name ?: review.completion
 		Text(
-			text = completionText,
+			text = review.completionEnum?.displayName ?: review.completion,
 			style = MaterialTheme.typography.titleMedium,
-			modifier = Modifier.padding(start = 8.dp)
+			modifier = Modifier
+				.padding(start = 8.dp)
 		)
 	}
 }

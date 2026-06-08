@@ -29,6 +29,8 @@ private val USERNAME_KEY = stringPreferencesKey("username")
  * Manages user authentication state and handles persistent session storage using Jetpack DataStore.
  */
 class SessionManager(private val context: Context) {
+	// TODO: Fix fake user being logged-in at app startup after tapping Profile
+	//  Should show login page again, instead of User page
 
 	private val _sessionState = MutableStateFlow<SessionState>(SessionState.Loading)
 	val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()

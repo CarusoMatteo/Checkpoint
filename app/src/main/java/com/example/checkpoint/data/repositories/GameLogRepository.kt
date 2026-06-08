@@ -10,8 +10,10 @@ import java.time.format.DateTimeFormatter
 /**
  * Completion type aligned with the [ReviewCompletion] enum in the existing UI domain.
  */
-enum class CompletionType(val code: String) {
-	MAIN("MAIN"), MAIN_AND_EXTRA("MAIN_AND_EXTRA"), COMPLETED("COMPLETED");
+enum class CompletionType(val code: String, val displayName: String) {
+	MAIN("MAIN", "Main"),
+	MAIN_AND_EXTRA("MAIN_AND_EXTRA", "Main + Extras"),
+	COMPLETED("COMPLETED", "100% completed");
 
 	companion object {
 		fun fromCode(code: String?): CompletionType? = entries.firstOrNull { it.code == code }
@@ -36,7 +38,6 @@ class GameLogRepository(
 
 	/**
 	 * Creates or updates a game log.
-	 * Automatically sets [updatedAt].
 	 */
 	suspend fun upsertLog(
 		userId: Int,

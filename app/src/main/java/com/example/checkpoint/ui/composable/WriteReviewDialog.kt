@@ -33,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.checkpoint.data.repositories.CompletionType
-import com.example.checkpoint.data.repositories.GameLogRepository
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WriteReviewDialog(
@@ -103,7 +103,7 @@ fun WriteReviewDialog(
 
 				CompletionType.entries.forEach {
 					RadioListItem(
-						it.code,
+						it.displayName,
 						selected = selectedCompletionType == it,
 						onClick = { selectedCompletionType = it },
 						modifier = Modifier
