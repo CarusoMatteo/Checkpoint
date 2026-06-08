@@ -2,14 +2,18 @@ package com.example.checkpoint.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.checkpoint.data.database.entities.GenreEntity
+import com.example.checkpoint.data.database.entities.PlatformEntity
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.repositories.GameRepository
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -21,7 +25,12 @@ data class ExploreState(
 	val sinceYouLikeGenre: List<Game> = emptyList(),
 	val comingSoonGames: List<Game> = emptyList(),
 	val searchResults: List<Game> = emptyList(),
-	val searchQuery: String = "final fantasy", // test
+	val searchQuery: String = "",
+	val availableGenres: List<GenreEntity> = emptyList(),
+	val availablePlatforms: List<PlatformEntity> = emptyList(),
+	val selectedGenreIds: Set<Int> = emptySet(),
+	val selectedPlatformIds: Set<Int> = emptySet(),
+
 	val isLoadingPopular: Boolean = false,
 	val isLoadingRecent: Boolean = false,
 	val isLoadingComingSoon: Boolean = false,
@@ -30,61 +39,18 @@ data class ExploreState(
 	val error: String? = null
 )
 
-data class ExploreActions(
-	val onSearchQueryChange: (String) -> Unit,
-	val onSearchSubmit: () -> Unit,
-	val onClearSearch: () -> Unit,
-	val onRefresh: () -> Unit
-)
-
-@OptIn(FlowPreview::class)
 class ExploreViewModel(
 	private val gameRepository: GameRepository
 ) : ViewModel() {
 
+	private var searchJob: Job? = null
+
 	private val _state = MutableStateFlow(ExploreState())
 	val state: StateFlow<ExploreState> = _state.asStateFlow()
 
-	// We synchronize the internal flow with the initial value of the state
-	private val _searchQuery = MutableStateFlow(_state.value.searchQuery)
-
-	val actions = ExploreActions(
-		onSearchQueryChange = { query ->
-			_state.update { it.copy(searchQuery = query) }
-			_searchQuery.value = query
-		},
-		onSearchSubmit = {
-			val query = _state.value.searchQuery
-			if (query.isNotBlank()) search(query)
-		},
-		onClearSearch = {
-			_state.update { it.copy(searchQuery = "", searchResults = emptyList()) }
-			_searchQuery.value = ""
-		},
-		onRefresh = { loadInitialData() }
-	)
-
 	init {
 		loadInitialData()
-
-		// If there is already a default query (e.g. "final fantasy"), it performs the initial search immediately
-		if (_searchQuery.value.isNotBlank()) {
-			search(_searchQuery.value)
-		}
-
-		// Search with debounce for later text changes
-		viewModelScope.launch {
-			_searchQuery
-				.debounce(400)
-				.distinctUntilChanged()
-				.collect { query ->
-					if (query.isBlank()) {
-						_state.update { it.copy(searchResults = emptyList(), isSearching = false) }
-					} else {
-						search(query)
-					}
-				}
-		}
+		observeSearchTriggers()
 	}
 
 	private fun loadInitialData() {
@@ -92,7 +58,99 @@ class ExploreViewModel(
 		loadRecentReleases()
 		loadRecommendations()
 		loadComingSoonGames()
+		loadGenresAndPlatforms()
 	}
+
+	private fun loadGenresAndPlatforms() {
+		// 1. Remote Synchronization (IGDB -> Room)
+		viewModelScope.launch {
+			try {
+				gameRepository.fetchGenresFromIgdb()
+			} catch (e: Exception) {
+				_state.update { it.copy(error = "Error loading genres from IGDB: ${e.message}") }
+			}
+		}
+
+		viewModelScope.launch {
+			try {
+				gameRepository.fetchPlatformsFromIgdb()
+			} catch (e: Exception) {
+				_state.update { it.copy(error = "Error loading platforms from IGDB: ${e.message}") }
+			}
+		}
+
+		viewModelScope.launch {
+			gameRepository.getAllGenresFromDb().collect { genresList ->
+				_state.update { it.copy(availableGenres = genresList) }
+			}
+		}
+
+		viewModelScope.launch {
+			gameRepository.getAllPlatformsFromDb().collect { platformsList ->
+				_state.update { it.copy(availablePlatforms = platformsList) }
+			}
+		}
+	}
+
+	@OptIn(FlowPreview::class)
+	private fun observeSearchTriggers() {
+		// Observe Text, Genres, and Platforms simultaneously.
+		// If any of the three changes, start the filtered search
+		viewModelScope.launch {
+			_state.map { Triple(it.searchQuery, it.selectedGenreIds, it.selectedPlatformIds) }
+				.distinctUntilChanged()
+				.debounce(400) // wait
+				.collect { (query, genres, platforms) ->
+					if (query.isBlank() && genres.isEmpty() && platforms.isEmpty()) {
+						_state.update { it.copy(searchResults = emptyList(), isSearching = false) }
+					} else {
+						executeSearch(query, genres.toList(), platforms.toList())
+					}
+				}
+		}
+	}
+
+	private fun executeSearch(query: String, genres: List<Int>, platforms: List<Int>) {
+		searchJob?.cancel()
+		searchJob = viewModelScope.launch {
+			_state.update { it.copy(isSearching = true) }
+			try {
+				val results = gameRepository.searchGamesWithFilters(query, genres, platforms)
+				_state.update { it.copy(searchResults = results, isSearching = false) }
+			} catch (e: Exception) {
+				_state.update {
+					it.copy(
+						searchResults = emptyList(), isSearching = false, error = e.localizedMessage
+					)
+				}
+			}
+		}
+	}
+
+	fun onSearchQueryChange(query: String) {
+		_state.update { it.copy(searchQuery = query) }
+	}
+
+	fun toggleGenreId(genreId: Int) {
+		_state.update { current ->
+			val updated = current.selectedGenreIds.toMutableSet()
+			if (!updated.remove(genreId)) updated.add(genreId)
+			current.copy(selectedGenreIds = updated)
+		}
+	}
+
+	fun togglePlatformId(platformId: Int) {
+		_state.update { current ->
+			val updated = current.selectedPlatformIds.toMutableSet()
+			if (!updated.remove(platformId)) updated.add(platformId)
+			current.copy(selectedPlatformIds = updated)
+		}
+	}
+
+	fun clearFilters() {
+		_state.update { it.copy(selectedGenreIds = emptySet(), selectedPlatformIds = emptySet()) }
+	}
+
 
 	private fun loadPopularGames() {
 		viewModelScope.launch {
@@ -122,7 +180,6 @@ class ExploreViewModel(
 		viewModelScope.launch {
 			_state.update { it.copy(isLoadingRecommendations = true) }
 
-			// TODO: Replace these dummy methods with real implementations of your repository
 			val becausePlayed = gameRepository.getPopularGames().shuffled().take(5)
 			val bestPlatform = gameRepository.getRecentReleases().shuffled().take(5)
 			val sinceGenre = gameRepository.getPopularGames().take(5)
@@ -135,14 +192,6 @@ class ExploreViewModel(
 					isLoadingRecommendations = false
 				)
 			}
-		}
-	}
-
-	private fun search(query: String) {
-		viewModelScope.launch {
-			_state.update { it.copy(isSearching = true) }
-			val results = gameRepository.searchGames(query)
-			_state.update { it.copy(searchResults = results, isSearching = false) }
 		}
 	}
 }

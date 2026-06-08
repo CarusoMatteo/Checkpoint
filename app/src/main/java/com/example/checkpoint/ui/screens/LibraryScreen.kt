@@ -207,7 +207,7 @@ fun LibraryScreen(
 							vm.deleteCustomList(listId)
 							listToDelete = null // Closes the dialog
 						}
-					) { Text("Eliminate") }
+					) { Text("Delete") }
 				},
 				dismissButton = {
 					TextButton(onClick = { listToDelete = null }) { Text("Abort") }

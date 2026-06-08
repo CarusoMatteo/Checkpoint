@@ -161,9 +161,6 @@ fun SearchAppShell(
 		) {
 			mainContent()
 		}
-		if (isFiltersDrawerOpen.value) {
-			FiltersDrawer(showBottomSheet = isFiltersDrawerOpen)
-		}
 	}
 }
 
