@@ -231,12 +231,15 @@ class GameScreenViewModel(
 		startedAt: LocalDate?,
 		finishedAt: LocalDate?,
 	) {
-		val gameId = _state.value.game?.id ?: return
 		val existingId = _state.value.userLog?.id ?: 0
 		viewModelScope.launch {
+			// I make sure the game exists locally before adding the log
+			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
+			val verifiedGameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
+
 			gameLogRepository.upsertLog(
 				userId = userId,
-				gameId = gameId,
+				gameId = verifiedGameId,
 				rating = rating,
 				hoursPlayed = hoursPlayed,
 				completionType = completionType,
@@ -244,21 +247,26 @@ class GameScreenViewModel(
 				finishedAt = finishedAt,
 				existingId = existingId,
 			)
+			observeUserData(verifiedGameId)
 		}
 	}
 
 	private fun writeReview(rating: Float, body: String, completion: CompletionType) {
-		val gameId = _state.value.game?.id ?: return
 		val existingId = _state.value.userReview?.id ?: 0
 		viewModelScope.launch {
+			// I make sure the game exists locally before reviewing it
+			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
+			val verifiedGameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
+
 			reviewRepository.upsertReview(
 				userId = userId,
-				gameId = gameId,
+				gameId = verifiedGameId,
 				rating = rating,
 				body = body,
 				completion = completion,
 				existingId = existingId,
 			)
+			observeUserData(verifiedGameId)
 		}
 	}
 

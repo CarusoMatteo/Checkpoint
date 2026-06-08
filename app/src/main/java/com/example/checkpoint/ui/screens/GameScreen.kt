@@ -112,8 +112,7 @@ fun GameScreen(
 					contentAlignment = Alignment.Center
 				) {
 					Text(
-						text = state.error ?: "Error",
-						color = MaterialTheme.colorScheme.error
+						text = state.error ?: "Error", color = MaterialTheme.colorScheme.error
 					)
 				}
 			}
@@ -213,8 +212,12 @@ fun GameScreen(
 						reviews = state.reviews,
 						users = state.reviewUsers,
 						modifier = Modifier.padding(horizontal = 16.dp),
-						hasStartingDivider = true
-					)
+						hasStartingDivider = true,
+						// Hides the button if the user has already reviewed the game
+						hasWriteReviewButton = state.userReview == null,
+						onReviewSubmit = { rating, body, completion ->
+							viewModel.actions.onWriteReview(rating, body, completion)
+						})
 				}
 			}
 		}
@@ -279,8 +282,7 @@ private fun GameHeader(
 					Icon(
 						imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
 					)
-				}
-			)
+				})
 		}
 	}
 
@@ -381,22 +383,18 @@ private fun SaveToListsDialog(
 										}
 									}
 									.padding(vertical = 4.dp),
-								verticalAlignment = Alignment.CenterVertically
-							) {
+								verticalAlignment = Alignment.CenterVertically) {
 								Checkbox(
-									checked = isChecked,
-									onCheckedChange = { checked ->
+									checked = isChecked, onCheckedChange = { checked ->
 										selectedIds = if (checked) {
 											selectedIds + list.id
 										} else {
 											selectedIds - list.id
 										}
-									}
-								)
+									})
 								Spacer(modifier = Modifier.width(8.dp))
 								Text(
-									text = list.name,
-									style = MaterialTheme.typography.bodyLarge
+									text = list.name, style = MaterialTheme.typography.bodyLarge
 								)
 							}
 						}
@@ -407,8 +405,7 @@ private fun SaveToListsDialog(
 
 
 				TextButton(
-					onClick = { showCreateListDialog = true },
-					modifier = Modifier.fillMaxWidth()
+					onClick = { showCreateListDialog = true }, modifier = Modifier.fillMaxWidth()
 				) {
 					Icon(imageVector = Icons.Rounded.Add, contentDescription = "Add List")
 					Spacer(modifier = Modifier.width(8.dp))
@@ -429,8 +426,7 @@ private fun SaveToListsDialog(
 					}
 					Spacer(modifier = Modifier.width(8.dp))
 					TextButton(
-						onClick = { onConfirm(selectedIds.toList()) }
-					) {
+						onClick = { onConfirm(selectedIds.toList()) }) {
 						Text("OK")
 					}
 				}
@@ -460,12 +456,10 @@ private fun SaveToListsDialog(
 							newListName = ""
 							showCreateListDialog = false
 						}
-					}
-				) { Text("Create") }
+					}) { Text("Create") }
 			},
 			dismissButton = {
 				TextButton(onClick = { showCreateListDialog = false }) { Text("Cancel") }
-			}
-		)
+			})
 	}
 }
