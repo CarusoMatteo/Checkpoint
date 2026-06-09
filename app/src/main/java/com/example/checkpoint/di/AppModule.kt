@@ -113,7 +113,7 @@ val appModule = module {
 
 	// ── Repository
 
-	single { AuthRepository(userDao = get(), sessionManager = get()) }
+	single { AuthRepository(userDao = get(), sessionManager = get(), gameListRepository = get()) }
 	single {
 		GameRepository(
 			gameDao = get(),

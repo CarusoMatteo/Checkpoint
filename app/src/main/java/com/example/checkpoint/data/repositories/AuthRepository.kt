@@ -12,6 +12,7 @@ private const val TAG = "Auth"
 class AuthRepository(
 	private val userDao: UserDao,
 	private val sessionManager: SessionManager,
+	private val gameListRepository: GameListRepository
 ) {
 	/**
 	 * Login: Verify username/email and password, save the session.
@@ -19,9 +20,9 @@ class AuthRepository(
 	 */
 	suspend fun login(usernameOrEmail: String, password: String): Result<UserEntity> {
 		return try {
-			val user = userDao.getUserByUsername(usernameOrEmail) ?: userDao.getUserByEmail(
-				usernameOrEmail
-			) ?: return Result.failure(Exception("User not found"))
+			val user = userDao.getUserByUsername(usernameOrEmail)
+				?: userDao.getUserByEmail(usernameOrEmail)
+				?: return Result.failure(Exception("User not found"))
 
 			val isCorrect = if (user.passwordHash.contains(":")) {
 				val parts = user.passwordHash.split(":")
@@ -46,6 +47,7 @@ class AuthRepository(
 
 	/**
 	 * SignUp: Create a new user with salt + hash, then log in.
+	 * After registration, creates the default BACKLOG and SAVED lists automatically.
 	 * The session is persisted to the DataStore.
 	 */
 	suspend fun signUp(
@@ -74,6 +76,21 @@ class AuthRepository(
 			val generatedId = userDao.upsert(newUser)
 			val loggedInUser = newUser.copy(id = generatedId.toInt())
 
+			// Create the default lists for the new user
+			gameListRepository.createList(
+				userId = loggedInUser.id,
+				name = "Backlog",
+				type = "BACKLOG",
+				isPublic = true
+			)
+			gameListRepository.createList(
+				userId = loggedInUser.id,
+				name = "Saved",
+				type = "SAVED",
+				isPublic = true
+			)
+			Log.d(TAG, "Default lists created for userId=${loggedInUser.id}")
+
 			sessionManager.login(loggedInUser.id, loggedInUser.username)
 			Log.d(TAG, "SignUp successful: userId=${loggedInUser.id}")
 			Result.success(loggedInUser)
@@ -88,7 +105,6 @@ class AuthRepository(
 	 */
 	suspend fun updateAvatarUrl(userId: Int, avatarPath: String) {
 		try {
-
 			val users = userDao.getUsersByIds(listOf(userId))
 			val user = users.firstOrNull() ?: return
 			userDao.upsert(user.copy(avatarUrl = avatarPath))
