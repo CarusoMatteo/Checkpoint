@@ -1,26 +1,33 @@
 package com.example.checkpoint.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.PhotoCamera
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -28,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,24 +42,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.DatePickerField
 import com.example.checkpoint.ui.composable.NavigationItem
-import com.example.checkpoint.ui.composable.NotLoggedInShell
-import com.example.checkpoint.ui.composable.PasswordOutlinedTextField
-import com.example.checkpoint.ui.composable.ProfileMonogram
-import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.viewmodel.SignUpUiState
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import org.koin.androidx.compose.koinViewModel
+import java.io.File
+import java.time.Instant
+import java.time.LocalDate
+import java.time.Period
+import java.time.ZoneId
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
 	navController: NavHostController,
@@ -61,7 +71,6 @@ fun SignUpScreen(
 	viewModel: SignUpViewModel = koinViewModel()
 ) {
 	val uiState by viewModel.uiState.collectAsState()
-
 	val context = LocalContext.current
 
 	LaunchedEffect(uiState.isSuccess) {
@@ -73,69 +82,59 @@ fun SignUpScreen(
 	}
 
 	AppShell(
-		navController,
-		title = "Welcome back!",
-		selectedNavigationItem = NavigationItem.Profile,
-		appBarActions = {
-			IconButton(onClick = { navController.navigate(NavigationRoute.SettingsScreen) }) {
-				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
-			}
-		}
+		navController = navController,
+		title = "Sign Up",
+		selectedNavigationItem = NavigationItem.Profile
 	) { innerPadding ->
-		NotLoggedInShell(
-			modifier = modifier.padding(innerPadding)
-		) { showProgressIndicator ->
+		Column(
+			modifier = modifier
+				.fillMaxSize()
+				.verticalScroll(rememberScrollState())
+				.padding(innerPadding)
+				.padding(16.dp),
+			verticalArrangement = Arrangement.Center,
+			horizontalAlignment = Alignment.CenterHorizontally
+		) {
 			SignUpCard(
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(16.dp),
-				showProgressIndicator = showProgressIndicator,
-				navController = navController,
+				modifier = Modifier.fillMaxWidth(),
 				uiState = uiState,
-				onSignUpClick = { username, email, password ->
+				navController = navController,
+				onSignUpClick = { username, email, password, avatarUri ->
 					viewModel.signUp(
 						context = context,
 						username = username,
 						email = email,
 						password = password,
 						bio = "",
-						avatarUri = null
+						avatarUri = avatarUri
 					)
-				}
-			)
+				})
 		}
 	}
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SignUpCard(
 	modifier: Modifier = Modifier,
-	showProgressIndicator: MutableState<Boolean>,
-	navController: NavHostController,
 	uiState: SignUpUiState,
-	onSignUpClick: (String, String, String) -> Unit
+	navController: NavHostController,
+	onSignUpClick: (String, String, String, Uri?) -> Unit
 ) {
-	val email = rememberTextFieldState("")
 	val username = rememberTextFieldState("")
+	val email = rememberTextFieldState("")
 	val password = rememberTextFieldState("")
 	val repeatPassword = rememberTextFieldState("")
-	var showProgress by showProgressIndicator
 
-	// Revert upload to false on error
-	LaunchedEffect(uiState.isLoading) {
-		if (!uiState.isLoading) {
-			showProgress = false
-		}
-	}
+	var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+	var isOldEnough by remember { mutableStateOf(false) }
+	var dateError by remember { mutableStateOf<String?>(null) }
 
-	OutlinedCard(
-		modifier = modifier
-	) {
+	OutlinedCard(modifier = modifier) {
 		Text(
 			"Let's get to know you!",
 			modifier = Modifier.padding(16.dp),
-			style = MaterialTheme.typography.titleLarge
+			style = MaterialTheme.typography.titleLarge,
+			fontWeight = FontWeight.Bold
 		)
 
 		if (uiState.error != null) {
@@ -147,100 +146,105 @@ private fun SignUpCard(
 			)
 		}
 
-		OutlinedTextField(
-			state = email,
-			label = { Text("Email") },
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
-			trailingIcon = {
-				if (email.text.isNotEmpty()) {
-					IconButton(onClick = { email.clearText() }) {
-						Icon(Icons.Rounded.Clear, contentDescription = "Clear email")
-					}
-				}
-			}
-		)
+		if (dateError != null) {
+			Text(
+				text = dateError!!,
+				color = MaterialTheme.colorScheme.error,
+				style = MaterialTheme.typography.bodyMedium,
+				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+		}
+
 		OutlinedTextField(
 			state = username,
 			label = { Text("Username") },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
-			trailingIcon = {
-				if (username.text.isNotEmpty()) {
-					IconButton(onClick = { username.clearText() }) {
-						Icon(Icons.Rounded.Clear, contentDescription = "Clear username")
-					}
-				}
-			}
+				.padding(horizontal = 16.dp, vertical = 4.dp)
 		)
-		PasswordOutlinedTextField(
+		OutlinedTextField(
+			state = email,
+			label = { Text("Email") },
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(horizontal = 16.dp, vertical = 4.dp)
+		)
+		OutlinedTextField(
 			state = password,
 			label = { Text("Password") },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
+				.padding(horizontal = 16.dp, vertical = 4.dp)
 		)
-		PasswordOutlinedTextField(
+		OutlinedTextField(
 			state = repeatPassword,
 			label = { Text("Repeat Password") },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
+				.padding(horizontal = 16.dp, vertical = 4.dp)
 		)
+
 		DatePickerField(
 			label = "Date of birth",
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
-			onDateSelected = { /* TODO: Handle date selection */ }
-		)
+				.padding(horizontal = 16.dp, vertical = 8.dp),
+			onDateSelected = { timestamp ->
+				if (timestamp != null) {
+					val birthDate =
+						Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+					val age = Period.between(birthDate, LocalDate.now()).years
+					if (age < 18) {
+						isOldEnough = false
+						dateError = "You must be at least 18 years old to register."
+					} else {
+						isOldEnough = true
+						dateError = null
+					}
+				} else {
+					isOldEnough = false
+					dateError = null
+				}
+			})
 
 		PictureSelector(
 			username = username,
+			selectedImageUri = selectedImageUri,
+			onImageSelected = { uri -> selectedImageUri = uri },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp)
+				.padding(horizontal = 16.dp, vertical = 16.dp)
 		)
 
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
+				.padding(horizontal = 16.dp, vertical = 4.dp),
 			verticalAlignment = Alignment.CenterVertically,
 			horizontalArrangement = Arrangement.SpaceBetween
 		) {
-			Text("Already have an account?", modifier = Modifier.weight(1f))
-			TextButton(onClick = { navController.popBackStack() }) {
-				Text("Log in")
-			}
+			Text("Already have an account?")
+			TextButton(onClick = { navController.popBackStack() }) { Text("Log in") }
 		}
+
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp)
-				.padding(bottom = 16.dp),
+				.padding(16.dp),
 			horizontalArrangement = Arrangement.End
 		) {
-			Button(onClick = {
-				if (!showProgress) {
-					showProgress = true
+			Button(
+				onClick = {
 					onSignUpClick(
 						username.text.toString(),
 						email.text.toString(),
-						password.text.toString()
+						password.text.toString(),
+						selectedImageUri
 					)
-				}
-			}) {
-				Text("Register")
+				},
+				enabled = !uiState.isLoading && isOldEnough && password.text.isNotBlank() && password.text.toString() == repeatPassword.text.toString()
+			) {
+				Text(if (uiState.isLoading) "Registering..." else "Register")
 			}
 		}
 	}
@@ -250,63 +254,119 @@ private fun SignUpCard(
 fun PictureSelector(
 	modifier: Modifier = Modifier,
 	username: TextFieldState,
-	image: String? = null
+	selectedImageUri: Uri?,
+	onImageSelected: (Uri?) -> Unit
 ) {
-	val height = 100.dp
+	val context = LocalContext.current
+	var cameraUri by remember { mutableStateOf<Uri?>(null) }
 
-	Row(
-		modifier = modifier
-	) {
-		if (image == null) {
-			ProfileMonogram(
-				letter = username.text.nullableFirst() ?: 'A',
-				modifier = Modifier.size(height),
-				fontSize = ProfileMonogramFontSize.Profile
+	// Gallery Picker
+	val pickMediaLauncher = rememberLauncherForActivityResult(
+		contract = PickVisualMedia()
+	) { uri: Uri? ->
+		if (uri != null) onImageSelected(uri)
+	}
+
+	// Launcher to take the photo
+	val takePictureLauncher = rememberLauncherForActivityResult(
+		contract = ActivityResultContracts.TakePicture()
+	) { success ->
+		if (success) cameraUri?.let { onImageSelected(it) }
+	}
+
+	val launchCameraAction = {
+		try {
+			val tempFile = File(context.cacheDir, "camera_avatar_temp.jpg")
+			if (tempFile.exists()) tempFile.delete()
+			tempFile.createNewFile()
+
+			val uri = FileProvider.getUriForFile(
+				context, "${context.packageName}.fileprovider",//in manifest
+				tempFile
+			)
+			cameraUri = uri
+			takePictureLauncher.launch(uri)
+		} catch (e: Exception) {
+			Log.e("CAMERA_ERR", "Error launching camera", e)
+			Toast.makeText(context, "Camera error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+		}
+	}
+
+	// request Permission
+	val requestCameraPermissionLauncher = rememberLauncherForActivityResult(
+		contract = ActivityResultContracts.RequestPermission()
+	) { isGranted ->
+		if (isGranted) {
+			launchCameraAction()
+		}
+	}
+
+	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+		if (selectedImageUri == null) {
+			val letter = if (username.text.isNotEmpty()) username.text.first() else 'A'
+			Text(
+				text = letter.toString().uppercase(),
+				style = MaterialTheme.typography.headlineLarge,
+				modifier = Modifier
+					.size(100.dp)
+					.clip(RoundedCornerShape(8.dp))
+					.padding(24.dp)
 			)
 		} else {
-			// TODO: Load uploaded image
+			AsyncImage(
+				model = selectedImageUri,
+				contentDescription = "Selected avatar",
+				modifier = Modifier
+					.size(100.dp)
+					.clip(RoundedCornerShape(8.dp)),
+				contentScale = ContentScale.Crop
+			)
 		}
 
 		Column(
 			modifier = Modifier
 				.padding(start = 16.dp)
 				.weight(1f)
-				.fillMaxWidth()
-				.height(height),
-			verticalArrangement = Arrangement.SpaceAround,
-			horizontalAlignment = Alignment.CenterHorizontally
+				.height(100.dp),
+			verticalArrangement = Arrangement.SpaceBetween
 		) {
 			Button(
-				onClick = { /* TODO: Take a photo intent */ },
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(0.dp),
-				shape = RoundedCornerShape(
-					topStart = 24.dp,
-					topEnd = 24.dp,
-					bottomStart = 8.dp,
-					bottomEnd = 8.dp
+				onClick = {
+					val hasPermission = ContextCompat.checkSelfPermission(
+						context, Manifest.permission.CAMERA
+					) == PackageManager.PERMISSION_GRANTED
+
+					if (hasPermission) {
+						// already has permission
+						launchCameraAction()
+					} else {
+						// no permission yet
+						requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+					}
+				}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(
+					topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp
 				)
 			) {
 				Icon(
-					imageVector = Icons.Rounded.PhotoCamera,
+					Icons.Rounded.PhotoCamera,
 					contentDescription = null,
 					modifier = Modifier.padding(end = 8.dp)
 				)
 				Text("Take a photo")
 			}
+
+			// Gallery Picker
 			FilledTonalButton(
-				onClick = { /* TODO: Upload a picture intent */ },
-				modifier = Modifier.fillMaxWidth(),
-				shape = RoundedCornerShape(
-					topStart = 8.dp,
-					topEnd = 8.dp,
-					bottomStart = 24.dp,
-					bottomEnd = 24.dp
+				onClick = {
+					pickMediaLauncher.launch(
+						PickVisualMediaRequest(PickVisualMedia.ImageOnly)
+					)
+				}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(
+					topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp
 				)
 			) {
 				Icon(
-					imageVector = Icons.Rounded.Upload,
+					Icons.Rounded.Upload,
 					contentDescription = null,
 					modifier = Modifier.padding(end = 8.dp)
 				)
@@ -314,31 +374,4 @@ fun PictureSelector(
 			}
 		}
 	}
-}
-
-private fun CharSequence.nullableFirst() = if (this.isNotEmpty()) this.first() else null
-
-@Preview
-@Composable
-private fun PictureSelectorPreview() {
-	PictureSelector(
-		modifier = Modifier
-			.fillMaxWidth()
-			.padding(16.dp),
-		username = rememberTextFieldState("John Doe")
-	)
-}
-
-@Preview
-@Composable
-private fun SignUpPreview() {
-	SignUpCard(
-		modifier = Modifier
-			.fillMaxWidth()
-			.padding(16.dp),
-		showProgressIndicator = remember { mutableStateOf(false) },
-		navController = rememberNavController(),
-		uiState = SignUpUiState(),
-		onSignUpClick = { _, _, _ -> }
-	)
 }

@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 data class SignUpUiState(
 	val isLoading: Boolean = false,
@@ -17,6 +19,7 @@ data class SignUpUiState(
 )
 
 class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() {
+
 	private val _uiState = MutableStateFlow(SignUpUiState())
 	val uiState = _uiState.asStateFlow()
 
@@ -39,7 +42,9 @@ class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() 
 			authRepository.signUp(username, email, password, bio)
 				.onSuccess { user ->
 					if (avatarUri != null) {
-						authRepository.saveAvatar(context, avatarUri, user.id)
+						saveAvatarToInternalStorage(context, avatarUri, user.id)?.let { path ->
+							authRepository.updateAvatarUrl(user.id, path)
+						}
 					}
 					_uiState.update { it.copy(isLoading = false, isSuccess = true) }
 				}
@@ -51,6 +56,19 @@ class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() 
 						)
 					}
 				}
+		}
+	}
+
+	private fun saveAvatarToInternalStorage(context: Context, uri: Uri, userId: Int): String? {
+		return try {
+			val avatarDir = File(context.filesDir, "avatars").also { it.mkdirs() }
+			val destFile = File(avatarDir, "user_$userId.jpg")
+			context.contentResolver.openInputStream(uri)?.use { input ->
+				FileOutputStream(destFile).use { output -> input.copyTo(output) }
+			}
+			destFile.absolutePath
+		} catch (_: Exception) {
+			null
 		}
 	}
 }

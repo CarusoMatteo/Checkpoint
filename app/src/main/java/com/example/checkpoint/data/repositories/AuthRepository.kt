@@ -1,14 +1,10 @@
 package com.example.checkpoint.data.repositories
 
-import android.content.Context
-import android.net.Uri
 import android.util.Log
 import com.example.checkpoint.data.database.daos.UserDao
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.security.PasswordHasher
 import com.example.checkpoint.data.session.SessionManager
-import java.io.File
-import java.io.FileOutputStream
 import java.time.Instant
 
 private const val TAG = "Auth"
@@ -31,17 +27,19 @@ class AuthRepository(
 				val parts = user.passwordHash.split(":")
 				PasswordHasher.verifyPassword(password, parts[0], parts[1])
 			} else {
-				// Fallback for dataSeeder accounts
 				user.passwordHash == password
 			}
 
-			if (isCorrect) {
+			return if (isCorrect) {
 				sessionManager.login(user.id, user.username)
+				Log.d(TAG, "Login successful: userId=${user.id}, username=${user.username}")
 				Result.success(user)
 			} else {
+				Log.w(TAG, "Login failed: Invalid credentials for $usernameOrEmail")
 				Result.failure(Exception("Invalid credentials"))
 			}
 		} catch (e: Exception) {
+			Log.e(TAG, "Login error: ${e.message}", e)
 			Result.failure(e)
 		}
 	}
@@ -63,12 +61,11 @@ class AuthRepository(
 
 			val salt = PasswordHasher.generateSalt()
 			val hash = PasswordHasher.hashPassword(password, salt)
-			val combinedPasswordHash = "$salt:$hash"
 
 			val newUser = UserEntity(
 				username = username,
 				email = email,
-				passwordHash = combinedPasswordHash,
+				passwordHash = "$salt:$hash",
 				bio = bio,
 				publicProfile = true,
 				createdAt = Instant.now().toString()
@@ -77,10 +74,8 @@ class AuthRepository(
 			val generatedId = userDao.upsert(newUser)
 			val loggedInUser = newUser.copy(id = generatedId.toInt())
 
-			// // Save the session to the DataStore
 			sessionManager.login(loggedInUser.id, loggedInUser.username)
 			Log.d(TAG, "SignUp successful: userId=${loggedInUser.id}")
-
 			Result.success(loggedInUser)
 		} catch (e: Exception) {
 			Log.e(TAG, "SignUp error: ${e.message}", e)
@@ -89,26 +84,29 @@ class AuthRepository(
 	}
 
 	/**
-	 * Logout: deletes the session from the DataStore.
+	 * Update avatarUrl in DB after file is copied to filesDir.
 	 */
-	suspend fun logout() {
-		sessionManager.logout()
+	suspend fun updateAvatarUrl(userId: Int, avatarPath: String) {
+		try {
+
+			val users = userDao.getUsersByIds(listOf(userId))
+			val user = users.firstOrNull() ?: return
+			userDao.upsert(user.copy(avatarUrl = avatarPath))
+			Log.d(TAG, "Avatar updated for userId=$userId")
+		} catch (e: Exception) {
+			Log.e(TAG, "Error updating avatar: ${e.message}", e)
+		}
 	}
 
 	/**
-	 * Save the chosen or taken image within the internal directory of the App.
+	 * Logout: deletes the session from the DataStore.
 	 */
-	fun saveAvatar(context: Context, uri: Uri, userId: Int): String? {
-		return try {
-			val avatarDir = File(context.filesDir, "avatars").also { it.mkdirs() }
-			val destFile = File(avatarDir, "user_$userId.jpg")
-			context.contentResolver.openInputStream(uri)?.use { input ->
-				FileOutputStream(destFile).use { output -> input.copyTo(output) }
-			}
-			destFile.absolutePath
+	suspend fun logout() {
+		try {
+			sessionManager.logout()
+			Log.d(TAG, "Logout successful")
 		} catch (e: Exception) {
-			Log.e(TAG, "Error saving avatar locally: ${e.message}")
-			null
+			Log.e(TAG, "Logout error: ${e.message}", e)
 		}
 	}
 }
