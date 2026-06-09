@@ -4,28 +4,23 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.checkpoint.data.database.daos.GenreDao
+import com.example.checkpoint.data.database.daos.ReviewDao
+import com.example.checkpoint.data.database.daos.UserPreferredGenreDao
+import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
+import com.example.checkpoint.data.database.entities.UserEntity
+import com.example.checkpoint.data.database.entities.UserPreferredGenreEntity
 import com.example.checkpoint.data.repositories.AchievementRepository
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.repositories.GameListRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.UserRepository
-import com.example.checkpoint.data.database.daos.GenreDao
-import com.example.checkpoint.data.database.daos.ReviewDao
-import com.example.checkpoint.data.database.daos.UserPreferredGenreDao
-import com.example.checkpoint.data.database.entities.UserEntity
-import com.example.checkpoint.data.database.entities.UserPreferredGenreEntity
+import com.example.checkpoint.data.security.PasswordHasher
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.data.session.SessionState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -48,101 +43,80 @@ data class AchievementUiModel(
 	val progressFraction: Float get() = (progress.toFloat() / threshold).coerceIn(0f, 1f)
 }
 
-// ─── Profile state
 
-data class ProfileState(
+data class ProfileUiState(
 	val user: UserEntity? = null,
+	val isLoading: Boolean = false,
+	val error: String? = null,
 	val achievements: List<AchievementUiModel> = emptyList(),
-	val reviews: List<ReviewEntity> = emptyList(),
-	val carousels: List<LibraryListUiModel> = emptyList(),
 	val preferredGenres: List<String> = emptyList(),
-	val allAvailableGenres: List<String> = emptyList(),
-	val isLoading: Boolean = true,
-	val error: String? = null
+	val carousels: List<LibraryListUiModel> = emptyList(),
+	val reviews: List<ReviewEntity> = emptyList(),
+	val allAvailableGenres: List<String> = emptyList()
 )
 
-// ─── ViewModel
+// ─── ViewModel ────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ProfileViewModel(
-	private val sessionManager: SessionManager,
 	private val userRepository: UserRepository,
 	private val gameRepository: GameRepository,
 	private val gameListRepository: GameListRepository,
 	private val achievementRepository: AchievementRepository,
+	private val reviewDao: ReviewDao,
 	private val genreDao: GenreDao,
 	private val userPreferredGenreDao: UserPreferredGenreDao,
-	private val reviewDao: ReviewDao
+	private val sessionManager: SessionManager
 ) : ViewModel() {
 
-	/**
-	 * Use flatMapLatest on the sessionState: whenever the session changes
-	 * (Loading -> LoggedIn, LoggedIn -> LoggedOut, etc.) the internal flow is
-	 * Automatically deleted and recreated.
-	 *
-	 */
-	@OptIn(ExperimentalCoroutinesApi::class)
-	val state: StateFlow<ProfileState> = sessionManager.sessionState.flatMapLatest { session ->
-		when (session) {
-			is SessionState.Loading -> flowOf(ProfileState(isLoading = true))
-			is SessionState.LoggedOut -> flowOf(ProfileState(isLoading = false))
-			is SessionState.LoggedIn -> buildProfileFlow(session.userId)
-		}
-	}.stateIn(
-		scope = viewModelScope,
-		started = SharingStarted.WhileSubscribed(5000),
-		initialValue = ProfileState(isLoading = true)
-	)
+	// Get User ID from Session
+	private val loggedInUserId =
+		sessionManager.sessionState.map { if (it is SessionState.LoggedIn) it.userId else null }
+			.distinctUntilChanged()
 
-	/**
-	 * Combine all DB responsive flows for a given userId.
-	 */
-	@OptIn(ExperimentalCoroutinesApi::class)
-	private fun buildProfileFlow(userId: Int) = combine(
-		// User + favorite genres + all genres
-		combine(
-			userRepository.getUserById(userId),
-			genreDao.getPreferredGenresForUser(userId),
-			gameRepository.getAllGenresFromDb()
-		) { user, preferredGenres, allGenres ->
-			Triple(user, preferredGenres.map { it.name }, allGenres.map { it.name })
-		},
+	val state: StateFlow<ProfileUiState> = loggedInUserId.flatMapLatest { userId ->
+		if (userId == null) {
+			flowOf(ProfileUiState(isLoading = false))
+		} else {
+			val userFlow = userRepository.getUserById(userId)
 
-		// Achievement  + progress
-		combine(
-			achievementRepository.getAllAchievements(),
-			achievementRepository.getAchievementsForUser(userId)
-		) { allAch, userAch ->
-			val userMap = userAch.associateBy { it.achievementId }
-			allAch.map { ach ->
-				val ua = userMap[ach.id]
-				AchievementUiModel(
-					id = ach.id,
-					code = ach.code,
-					name = ach.name,
-					description = ach.description,
-					iconUrl = ach.iconUrl,
-					threshold = ach.threshold,
-					progress = ua?.progress ?: 0,
-					unlockedAt = ua?.unlockedAt,
-					isPinned = ua?.isPinned ?: false,
-					categoryId = ach.categoryId
-				)
-			}
-		},
+			val achievementsFlow = achievementRepository.getAchievementsForUser(userId)
+				.combine(achievementRepository.getAllAchievements()) { userAchs, allAchs ->
+					userAchs.mapNotNull { ua ->
+						val ach = allAchs.find { it.id == ua.achievementId }
+						if (ach != null) {
+							AchievementUiModel(
+								id = ach.id,
+								code = ach.code,
+								name = ach.name,
+								description = ach.description,
+								iconUrl = ach.iconUrl,
+								threshold = ach.threshold,
+								progress = ua?.progress ?: 0,
+								unlockedAt = ua?.unlockedAt,
+								isPinned = ua?.isPinned ?: false,
+								categoryId = ach.categoryId
+							)
+						} else null
+					}
+				}
 
-		// Reviews
-		reviewDao.getReviewsByUser(userId),
+			val reviewsFlow = reviewDao.getReviewsByUser(userId)
 
-		// Collections
-		gameListRepository.getListsForUser(userId).flatMapLatest { lists ->
-			if (lists.isEmpty()) {
-				flowOf(emptyList())
-			} else {
-				combine(
-					lists.map { list ->
-						gameListRepository.getGamesInList(list.id).map { gameEntities ->
-							val games = gameEntities.mapNotNull { entity ->
-								gameRepository.fetchGameDetails(entity.igdbId) ?: Game(
+			val preferredGenresFlow =
+				genreDao.getPreferredGenresForUser(userId).map { list -> list.map { it.name } }
+
+			val allGenresFlow =
+				gameRepository.getAllGenresFromDb().map { list -> list.map { it.name } }
+
+			val carouselsFlow = gameListRepository.getListsForUser(userId).flatMapLatest { lists ->
+				if (lists.isEmpty()) {
+					flowOf(emptyList<LibraryListUiModel>())
+				} else {
+					val carouselFlows = lists.map { listEntity ->
+						gameListRepository.getGamesInList(listEntity.id).map { gameEntities ->
+							val games = gameEntities.map { entity ->
+								Game(
 									id = entity.id,
 									igdbId = entity.igdbId,
 									name = "Game #${entity.igdbId}",
@@ -157,47 +131,58 @@ class ProfileViewModel(
 									totalRatingCount = null
 								)
 							}
-							LibraryListUiModel(listEntity = list, games = games)
+							LibraryListUiModel(listEntity, games)
 						}
-					}) { it.toList() }
+					}
+					// combine flows into a single list
+					combine(carouselFlows) { array: Array<LibraryListUiModel> -> array.toList() }
+				}
+			}
+			combine(
+				combine(userFlow, achievementsFlow, reviewsFlow, ::Triple),
+				combine(preferredGenresFlow, allGenresFlow, carouselsFlow, ::Triple)
+			) { (user, achs, revs), (prefG, allG, carousels) ->
+				ProfileUiState(
+					user = user,
+					isLoading = false,
+					achievements = achs,
+					reviews = revs,
+					preferredGenres = prefG,
+					allAvailableGenres = allG,
+					carousels = carousels
+				)
 			}
 		}
+	}.stateIn(
+		scope = viewModelScope,
+		started = SharingStarted.WhileSubscribed(5000),
+		initialValue = ProfileUiState(isLoading = true)
+	)
 
-	) { (user, preferredGenres, allGenres), achievements, reviews, carousels ->
-		ProfileState(
-			user = user,
-			achievements = achievements,
-			reviews = reviews,
-			carousels = carousels,
-			preferredGenres = preferredGenres,
-			allAvailableGenres = allGenres,
-			isLoading = false,
-			error = null
-		)
-	}
 
-	// ── Avatar
+	suspend fun updatePassword(current: String, new: String): Result<Unit> {
+		val currentUser = state.value.user ?: return Result.failure(Exception("User not logged in"))
 
-	fun updateAvatar(context: Context, uri: Uri) {
-		val user = state.value.user ?: return
-		viewModelScope.launch {
-			val path = saveAvatarToInternalStorage(context, uri, user.id)
-			if (path != null) {
-				userRepository.upsertUser(user.copy(avatarUrl = path))
-			}
+		val isCorrect = if (currentUser.passwordHash.contains(":")) {
+			val parts = currentUser.passwordHash.split(":")
+			PasswordHasher.verifyPassword(current, parts[0], parts[1])
+		} else {
+			currentUser.passwordHash == current
 		}
-	}
 
-	private fun saveAvatarToInternalStorage(context: Context, uri: Uri, userId: Int): String? {
+		if (!isCorrect) {
+			return Result.failure(Exception("Your current password is incorrect"))
+		}
+
 		return try {
-			val avatarDir = File(context.filesDir, "avatars").also { it.mkdirs() }
-			val destFile = File(avatarDir, "user_$userId.jpg")
-			context.contentResolver.openInputStream(uri)?.use { input ->
-				FileOutputStream(destFile).use { output -> input.copyTo(output) }
-			}
-			destFile.absolutePath
-		} catch (_: Exception) {
-			null
+			val salt = PasswordHasher.generateSalt()
+			val hash = PasswordHasher.hashPassword(new, salt)
+			val combinedHash = "$salt:$hash"
+
+			userRepository.upsertUser(currentUser.copy(passwordHash = combinedHash))
+			Result.success(Unit)
+		} catch (e: Exception) {
+			Result.failure(e)
 		}
 	}
 
@@ -226,14 +211,37 @@ class ProfileViewModel(
 		viewModelScope.launch {
 			userPreferredGenreDao.deleteAllForUser(user.id)
 			val allGenres = gameRepository.getAllGenresFromDb().first()
-			val nameToEntity = allGenres.associateBy { it.name }
+
 			genreNames.forEach { name ->
-				nameToEntity[name]?.let { genre ->
+				allGenres.find { it.name == name }?.let { genre ->
 					userPreferredGenreDao.upsert(
 						UserPreferredGenreEntity(userId = user.id, genreId = genre.id)
 					)
 				}
 			}
+		}
+	}
+
+	fun updateAvatar(context: Context, uri: Uri) {
+		val user = state.value.user ?: return
+		viewModelScope.launch {
+			val path = saveAvatarLocal(context, uri, user.id)
+			if (path != null) {
+				userRepository.upsertUser(user.copy(avatarUrl = path))
+			}
+		}
+	}
+
+	private fun saveAvatarLocal(context: Context, uri: Uri, userId: Int): String? {
+		return try {
+			val avatarDir = File(context.filesDir, "avatars").also { it.mkdirs() }
+			val destFile = File(avatarDir, "user_$userId.jpg")
+			context.contentResolver.openInputStream(uri)?.use { input ->
+				FileOutputStream(destFile).use { output -> input.copyTo(output) }
+			}
+			destFile.absolutePath
+		} catch (_: Exception) {
+			null
 		}
 	}
 }

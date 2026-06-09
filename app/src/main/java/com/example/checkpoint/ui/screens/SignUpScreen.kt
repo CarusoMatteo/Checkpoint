@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -60,6 +61,8 @@ fun SignUpScreen(
 	viewModel: SignUpViewModel = koinViewModel()
 ) {
 	val uiState by viewModel.uiState.collectAsState()
+
+	val context = LocalContext.current
 
 	LaunchedEffect(uiState.isSuccess) {
 		if (uiState.isSuccess) {
@@ -90,7 +93,14 @@ fun SignUpScreen(
 				navController = navController,
 				uiState = uiState,
 				onSignUpClick = { username, email, password ->
-					viewModel.signUp(username, email, password, "")
+					viewModel.signUp(
+						context = context,
+						username = username,
+						email = email,
+						password = password,
+						bio = "",
+						avatarUri = null
+					)
 				}
 			)
 		}

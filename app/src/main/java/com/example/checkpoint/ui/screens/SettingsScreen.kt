@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +44,7 @@ import com.example.checkpoint.ui.composable.RadioListItem
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.ui.viewmodel.UiThemeActions
 import com.example.checkpoint.ui.viewmodel.UiThemeState
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
@@ -49,18 +54,16 @@ fun SettingsScreen(
 	profileViewModel: ProfileViewModel,
 	onLogout: () -> Unit
 ) {
-	val profileState by profileViewModel.state.collectAsState()
-	val currentUser = profileState.user
+	val uiState by profileViewModel.state.collectAsState()
+	val isLoggedIn = uiState.user != null
 
 	AppShell(
 		navController = navController,
 		title = "User settings",
 		selectedNavigationItem = NavigationItem.Profile,
 		appBarActions = {
-			if (currentUser != null) {
-				IconButton(onClick = onLogout) {
-					Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Logout")
-				}
+			IconButton(onClick = onLogout) {
+				Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Logout")
 			}
 		}) { innerPadding ->
 		Column(
@@ -69,11 +72,9 @@ fun SettingsScreen(
 				.padding(innerPadding)
 				.verticalScroll(rememberScrollState())
 		) {
-			// Profile visibility
-			if (currentUser != null) {
+			if (isLoggedIn) {
 				ProfileVisibilitySwitch(
-					isPublic = currentUser.publicProfile,
-					onToggle = { profileViewModel.setProfilePublic(it) },
+					profileViewModel = profileViewModel,
 					modifier = Modifier
 						.fillMaxWidth()
 						.padding(horizontal = 16.dp)
@@ -91,14 +92,10 @@ fun SettingsScreen(
 					.padding(vertical = 8.dp)
 			)
 
-			// password update
-			if (currentUser != null) {
+			if (isLoggedIn) {
 				HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 				PasswordUpdateForm(
-					onUpdatePassword = { current, newPass ->
-						// TODO: aggiungere updatePassword a ProfileViewModel
-						//       con verifica dell'hash corrente prima di salvare
-					},
+					profileViewModel = profileViewModel,
 					modifier = Modifier
 						.fillMaxWidth()
 						.padding(horizontal = 16.dp)
@@ -111,8 +108,11 @@ fun SettingsScreen(
 
 @Composable
 fun ProfileVisibilitySwitch(
-	isPublic: Boolean, onToggle: (Boolean) -> Unit, modifier: Modifier = Modifier
+	profileViewModel: ProfileViewModel, modifier: Modifier = Modifier
 ) {
+	val uiState by profileViewModel.state.collectAsState()
+	val isProfilePublic = uiState.user?.publicProfile ?: true
+
 	Column(modifier = modifier) {
 		Text(
 			text = "Profile visibility",
@@ -123,7 +123,9 @@ fun ProfileVisibilitySwitch(
 			modifier = Modifier
 				.fillMaxWidth()
 				.height(48.dp)
-				.clickable { onToggle(!isPublic) },
+				.clickable(onClick = {
+					profileViewModel.setProfilePublic(!isProfilePublic)
+				}),
 			verticalAlignment = Alignment.CenterVertically,
 			horizontalArrangement = Arrangement.SpaceBetween
 		) {
@@ -134,7 +136,7 @@ fun ProfileVisibilitySwitch(
 			)
 			Switch(
 				modifier = Modifier.padding(start = 8.dp),
-				checked = isPublic,
+				checked = isProfilePublic,
 				onCheckedChange = null
 			)
 		}
@@ -160,6 +162,7 @@ fun UiThemeSelector(
 				selected = theme == themeState.theme,
 				onClick = { themeActions.setTheme(theme) })
 		}
+
 		Text(
 			text = "UI Color Scheme",
 			style = MaterialTheme.typography.labelSmall,
@@ -180,12 +183,16 @@ fun UiThemeSelector(
 
 @Composable
 fun PasswordUpdateForm(
-	onUpdatePassword: (current: String, new: String) -> Unit, modifier: Modifier = Modifier
+	profileViewModel: ProfileViewModel, modifier: Modifier = Modifier
 ) {
 	val currentPassword = rememberTextFieldState()
 	val newPassword = rememberTextFieldState()
 	val repeatNewPassword = rememberTextFieldState()
+
 	var errorMessage by remember { mutableStateOf<String?>(null) }
+	var successMessage by remember { mutableStateOf<String?>(null) }
+	var isLoading by remember { mutableStateOf(false) }
+	val scope = rememberCoroutineScope()
 
 	Column(modifier = modifier) {
 		Text(
@@ -214,9 +221,7 @@ fun PasswordUpdateForm(
 					label = { Text("Repeat new password") },
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(
-							bottom = if (errorMessage != null) 8.dp else 16.dp
-						),
+						.padding(bottom = 16.dp),
 				)
 
 				if (errorMessage != null) {
@@ -228,28 +233,56 @@ fun PasswordUpdateForm(
 					)
 				}
 
+				if (successMessage != null) {
+					Text(
+						text = successMessage!!,
+						color = MaterialTheme.colorScheme.primary,
+						style = MaterialTheme.typography.bodySmall,
+						modifier = Modifier.padding(bottom = 12.dp)
+					)
+				}
+
 				Button(
 					onClick = {
-						val current = currentPassword.text.toString()
-						val new = newPassword.text.toString()
-						val repeat = repeatNewPassword.text.toString()
+						val currentPwdText = currentPassword.text.toString()
+						val newPwdText = newPassword.text.toString()
+						val repeatNewPwdText = repeatNewPassword.text.toString()
 
 						errorMessage = when {
-							current.isBlank() || new.isBlank() || repeat.isBlank() -> "Fill in all fields"
-
-							new != repeat -> "New passwords don't match"
-
-							new.length < 8 -> "Password must be at least 8 characters"
-
+							currentPwdText.isBlank() || newPwdText.isBlank() || repeatNewPwdText.isBlank() -> "Fill in all fields"
+							newPwdText != repeatNewPwdText -> "New passwords don't match"
+							newPwdText.length < 8 -> "The new password must be at least 8 characters long"
 							else -> null
 						}
 
 						if (errorMessage == null) {
-							onUpdatePassword(current, new)
+							isLoading = true
+							scope.launch {
+								val result =
+									profileViewModel.updatePassword(currentPwdText, newPwdText)
+								isLoading = false
+								if (result.isSuccess) {
+									successMessage = "Password updated successfully!"
+									currentPassword.clearText()
+									newPassword.clearText()
+									repeatNewPassword.clearText()
+								} else {
+									errorMessage = result.exceptionOrNull()?.message
+										?: "Error during update"
+								}
+							}
 						}
-					}, modifier = Modifier.fillMaxWidth()
+					}, enabled = !isLoading, modifier = Modifier.fillMaxWidth()
 				) {
-					Text("Update Password")
+					if (isLoading) {
+						CircularProgressIndicator(
+							modifier = Modifier.size(20.dp),
+							strokeWidth = 2.dp,
+							color = MaterialTheme.colorScheme.onPrimary
+						)
+					} else {
+						Text("Update Password")
+					}
 				}
 			}
 		}

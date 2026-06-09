@@ -1,5 +1,7 @@
 package com.example.checkpoint.ui.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.checkpoint.data.repositories.AuthRepository
@@ -9,27 +11,43 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SignUpUiState(
-	val isLoading: Boolean = false, val error: String? = null, val isSuccess: Boolean = false
+	val isLoading: Boolean = false,
+	val error: String? = null,
+	val isSuccess: Boolean = false
 )
 
 class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() {
 	private val _uiState = MutableStateFlow(SignUpUiState())
 	val uiState = _uiState.asStateFlow()
 
-	fun signUp(username: String, email: String, password: String, bio: String) {
+	fun signUp(
+		context: Context,
+		username: String,
+		email: String,
+		password: String,
+		bio: String,
+		avatarUri: Uri?
+	) {
 		if (username.isBlank() || email.isBlank() || password.isBlank()) {
 			_uiState.update { it.copy(error = "Fill in all required fields") }
 			return
 		}
 
+		_uiState.update { it.copy(isLoading = true, error = null) }
+
 		viewModelScope.launch {
-			_uiState.update { it.copy(isLoading = true, error = null) }
 			authRepository.signUp(username, email, password, bio)
-				.onSuccess { _uiState.update { it.copy(isLoading = false, isSuccess = true) } }
+				.onSuccess { user ->
+					if (avatarUri != null) {
+						authRepository.saveAvatar(context, avatarUri, user.id)
+					}
+					_uiState.update { it.copy(isLoading = false, isSuccess = true) }
+				}
 				.onFailure { ex ->
 					_uiState.update {
 						it.copy(
-							isLoading = false, error = ex.localizedMessage
+							isLoading = false,
+							error = ex.localizedMessage ?: "Error during registration"
 						)
 					}
 				}
