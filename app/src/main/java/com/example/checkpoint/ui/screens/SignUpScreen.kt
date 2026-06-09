@@ -12,22 +12,24 @@ import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,16 +48,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.DatePickerField
 import com.example.checkpoint.ui.composable.NavigationItem
+import com.example.checkpoint.ui.composable.NotLoggedInShell
+import com.example.checkpoint.ui.composable.PasswordOutlinedTextField
+import com.example.checkpoint.ui.composable.ProfileMonogram
+import com.example.checkpoint.ui.composable.ProfileMonogramFontSize
 import com.example.checkpoint.ui.viewmodel.SignUpUiState
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -64,6 +72,7 @@ import java.time.LocalDate
 import java.time.Period
 import java.time.ZoneId
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
 	navController: NavHostController,
@@ -82,59 +91,66 @@ fun SignUpScreen(
 	}
 
 	AppShell(
-		navController = navController,
-		title = "Sign Up",
-		selectedNavigationItem = NavigationItem.Profile
-	) { innerPadding ->
-		Column(
-			modifier = modifier
-				.fillMaxSize()
-				.verticalScroll(rememberScrollState())
-				.padding(innerPadding)
-				.padding(16.dp),
-			verticalArrangement = Arrangement.Center,
-			horizontalAlignment = Alignment.CenterHorizontally
-		) {
+		navController,
+		title = "Welcome back!",
+		selectedNavigationItem = NavigationItem.Profile,
+		appBarActions = {
+			IconButton(onClick = { navController.navigate(NavigationRoute.SettingsScreen) }) {
+				Icon(Icons.Rounded.Settings, contentDescription = "Settings")
+			}
+		}) { innerPadding ->
+		NotLoggedInShell(
+			modifier = modifier.padding(innerPadding)
+		) { showProgressIndicator ->
 			SignUpCard(
-				modifier = Modifier.fillMaxWidth(),
-				uiState = uiState,
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(16.dp),
+				showProgressIndicator = showProgressIndicator,
 				navController = navController,
+				uiState = uiState,
 				onSignUpClick = { username, email, password, avatarUri ->
 					viewModel.signUp(
-						context = context,
-						username = username,
-						email = email,
-						password = password,
-						bio = "",
-						avatarUri = avatarUri
+						context, username, email, password, "", avatarUri
 					)
 				})
 		}
 	}
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SignUpCard(
 	modifier: Modifier = Modifier,
-	uiState: SignUpUiState,
+	showProgressIndicator: MutableState<Boolean>,
 	navController: NavHostController,
+	uiState: SignUpUiState,
 	onSignUpClick: (String, String, String, Uri?) -> Unit
 ) {
-	val username = rememberTextFieldState("")
 	val email = rememberTextFieldState("")
+	val username = rememberTextFieldState("")
 	val password = rememberTextFieldState("")
 	val repeatPassword = rememberTextFieldState("")
+	var showProgress by showProgressIndicator
 
 	var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 	var isOldEnough by remember { mutableStateOf(false) }
 	var dateError by remember { mutableStateOf<String?>(null) }
 
-	OutlinedCard(modifier = modifier) {
+	// Revert upload to false on error
+	LaunchedEffect(uiState.isLoading) {
+		if (!uiState.isLoading) {
+			showProgress = false
+		}
+	}
+
+	OutlinedCard(
+		modifier = modifier
+	) {
 		Text(
 			"Let's get to know you!",
 			modifier = Modifier.padding(16.dp),
-			style = MaterialTheme.typography.titleLarge,
-			fontWeight = FontWeight.Bold
+			style = MaterialTheme.typography.titleLarge
 		)
 
 		if (uiState.error != null) {
@@ -156,39 +172,55 @@ private fun SignUpCard(
 		}
 
 		OutlinedTextField(
-			state = username,
-			label = { Text("Username") },
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 4.dp)
-		)
-		OutlinedTextField(
 			state = email,
 			label = { Text("Email") },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 4.dp)
-		)
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
+			trailingIcon = {
+				if (email.text.isNotEmpty()) {
+					IconButton(onClick = { email.clearText() }) {
+						Icon(Icons.Rounded.Clear, contentDescription = "Clear email")
+					}
+				}
+			})
 		OutlinedTextField(
+			state = username,
+			label = { Text("Username") },
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
+			trailingIcon = {
+				if (username.text.isNotEmpty()) {
+					IconButton(onClick = { username.clearText() }) {
+						Icon(Icons.Rounded.Clear, contentDescription = "Clear username")
+					}
+				}
+			})
+		PasswordOutlinedTextField(
 			state = password,
 			label = { Text("Password") },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 4.dp)
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
 		)
-		OutlinedTextField(
+		PasswordOutlinedTextField(
 			state = repeatPassword,
 			label = { Text("Repeat Password") },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 4.dp)
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
 		)
-
 		DatePickerField(
 			label = "Date of birth",
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 8.dp),
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
 			onDateSelected = { timestamp ->
 				if (timestamp != null) {
 					val birthDate =
@@ -213,38 +245,45 @@ private fun SignUpCard(
 			onImageSelected = { uri -> selectedImageUri = uri },
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 16.dp)
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp)
 		)
 
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(horizontal = 16.dp, vertical = 4.dp),
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
 			verticalAlignment = Alignment.CenterVertically,
 			horizontalArrangement = Arrangement.SpaceBetween
 		) {
-			Text("Already have an account?")
-			TextButton(onClick = { navController.popBackStack() }) { Text("Log in") }
+			Text("Already have an account?", modifier = Modifier.weight(1f))
+			TextButton(onClick = { navController.popBackStack() }) {
+				Text("Log in")
+			}
 		}
-
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
-				.padding(16.dp),
+				.padding(horizontal = 16.dp)
+				.padding(bottom = 16.dp),
 			horizontalArrangement = Arrangement.End
 		) {
 			Button(
 				onClick = {
-					onSignUpClick(
-						username.text.toString(),
-						email.text.toString(),
-						password.text.toString(),
-						selectedImageUri
-					)
+					if (!showProgress) {
+						showProgress = true
+						onSignUpClick(
+							username.text.toString(),
+							email.text.toString(),
+							password.text.toString(),
+							selectedImageUri
+						)
+					}
 				},
 				enabled = !uiState.isLoading && isOldEnough && password.text.isNotBlank() && password.text.toString() == repeatPassword.text.toString()
 			) {
-				Text(if (uiState.isLoading) "Registering..." else "Register")
+				Text("Register")
 			}
 		}
 	}
@@ -259,6 +298,7 @@ fun PictureSelector(
 ) {
 	val context = LocalContext.current
 	var cameraUri by remember { mutableStateOf<Uri?>(null) }
+	val height = 100.dp
 
 	// Gallery Picker
 	val pickMediaLauncher = rememberLauncherForActivityResult(
@@ -281,8 +321,7 @@ fun PictureSelector(
 			tempFile.createNewFile()
 
 			val uri = FileProvider.getUriForFile(
-				context, "${context.packageName}.fileprovider",//in manifest
-				tempFile
+				context, "${context.packageName}.fileprovider", tempFile
 			)
 			cameraUri = uri
 			takePictureLauncher.launch(uri)
@@ -301,23 +340,21 @@ fun PictureSelector(
 		}
 	}
 
-	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+	Row(
+		modifier = modifier
+	) {
 		if (selectedImageUri == null) {
-			val letter = if (username.text.isNotEmpty()) username.text.first() else 'A'
-			Text(
-				text = letter.toString().uppercase(),
-				style = MaterialTheme.typography.headlineLarge,
-				modifier = Modifier
-					.size(100.dp)
-					.clip(RoundedCornerShape(8.dp))
-					.padding(24.dp)
+			ProfileMonogram(
+				letter = username.text.nullableFirst() ?: 'A',
+				modifier = Modifier.size(height),
+				fontSize = ProfileMonogramFontSize.Profile
 			)
 		} else {
 			AsyncImage(
 				model = selectedImageUri,
 				contentDescription = "Selected avatar",
 				modifier = Modifier
-					.size(100.dp)
+					.size(height)
 					.clip(RoundedCornerShape(8.dp)),
 				contentScale = ContentScale.Crop
 			)
@@ -327,8 +364,10 @@ fun PictureSelector(
 			modifier = Modifier
 				.padding(start = 16.dp)
 				.weight(1f)
-				.height(100.dp),
-			verticalArrangement = Arrangement.SpaceBetween
+				.fillMaxWidth()
+				.height(height),
+			verticalArrangement = Arrangement.SpaceAround,
+			horizontalAlignment = Alignment.CenterHorizontally
 		) {
 			Button(
 				onClick = {
@@ -337,36 +376,34 @@ fun PictureSelector(
 					) == PackageManager.PERMISSION_GRANTED
 
 					if (hasPermission) {
-						// already has permission
 						launchCameraAction()
 					} else {
-						// no permission yet
 						requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
 					}
-				}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(
-					topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp
+				}, modifier = Modifier
+					.fillMaxWidth()
+					.padding(0.dp), shape = RoundedCornerShape(
+					topStart = 24.dp, topEnd = 24.dp, bottomStart = 8.dp, bottomEnd = 8.dp
 				)
 			) {
 				Icon(
-					Icons.Rounded.PhotoCamera,
+					imageVector = Icons.Rounded.PhotoCamera,
 					contentDescription = null,
 					modifier = Modifier.padding(end = 8.dp)
 				)
 				Text("Take a photo")
 			}
-
-			// Gallery Picker
 			FilledTonalButton(
 				onClick = {
 					pickMediaLauncher.launch(
 						PickVisualMediaRequest(PickVisualMedia.ImageOnly)
 					)
 				}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(
-					topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp
+					topStart = 8.dp, topEnd = 8.dp, bottomStart = 24.dp, bottomEnd = 24.dp
 				)
 			) {
 				Icon(
-					Icons.Rounded.Upload,
+					imageVector = Icons.Rounded.Upload,
 					contentDescription = null,
 					modifier = Modifier.padding(end = 8.dp)
 				)
@@ -374,4 +411,31 @@ fun PictureSelector(
 			}
 		}
 	}
+}
+
+private fun CharSequence.nullableFirst() = if (this.isNotEmpty()) this.first() else null
+
+@Preview
+@Composable
+private fun PictureSelectorPreview() {
+	PictureSelector(
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(16.dp),
+		username = rememberTextFieldState("John Doe"),
+		selectedImageUri = null,
+		onImageSelected = {})
+}
+
+@Preview
+@Composable
+private fun SignUpPreview() {
+	SignUpCard(
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(16.dp),
+		showProgressIndicator = remember { mutableStateOf(false) },
+		navController = rememberNavController(),
+		uiState = SignUpUiState(),
+		onSignUpClick = { _, _, _, _ -> })
 }
