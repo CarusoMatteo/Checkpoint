@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -19,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.checkpoint.data.repositories.AuthRepository
 import com.example.checkpoint.data.repositories.Game
 import com.example.checkpoint.data.repositories.UiTheme
 import com.example.checkpoint.data.session.SessionManager
@@ -39,6 +41,9 @@ import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.ui.viewmodel.SettingsViewModel
 import com.example.checkpoint.ui.viewmodel.UiThemeState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
@@ -46,7 +51,6 @@ import org.koin.core.parameter.parametersOf
 
 class MainActivity : ComponentActivity() {
 
-	// I inject the SessionManager
 	private val sessionManager: SessionManager by inject()
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,10 +65,8 @@ class MainActivity : ComponentActivity() {
 					UiTheme.Light -> false
 					UiTheme.Dark -> true
 					UiTheme.System -> isSystemInDarkTheme()
-				},
-				dynamicColor = themeState.dynamicColor
+				}, dynamicColor = themeState.dynamicColor
 			) {
-				// Check session status
 				val sessionState by sessionManager.sessionState.collectAsState()
 
 				if (sessionState is SessionState.Loading) {
@@ -72,16 +74,12 @@ class MainActivity : ComponentActivity() {
 						CircularProgressIndicator()
 					}
 				} else {
-					//Calculate the initial destination based on the session
-					val startDestination = if (sessionState is SessionState.LoggedIn) {
-						NavigationRoute.ProfileScreen
-					} else {
-						NavigationRoute.LoginScreen
-					}
-
+					val startDestination = NavigationRoute.ExploreScreen
 					val navController = rememberNavController()
 					NavGraph(
-						navController = navController, startDestination = startDestination
+						navController = navController,
+						sessionManager = sessionManager,
+						startDestination = startDestination
 					)
 				}
 			}
@@ -130,9 +128,15 @@ sealed interface NavigationRoute {
 @Composable
 fun NavGraph(
 	navController: NavHostController,
+	sessionManager: SessionManager,
 	startDestination: NavigationRoute = NavigationRoute.ExploreScreen,
 ) {
-	// Instantiated here in the activity scope, shared between ProfileScreen e AchievementsScreen
+	// ProfileViewModel is shared between ProfileScreen
+	// and SettingsScreen without being recreated on navigation
+	val profileViewModel: ProfileViewModel = koinViewModel()
+
+	// AchievementsViewModel is shared between
+	// ProfileScreen and AchievementsScreen
 	val achievementsViewModel: AchievementsViewModel = koinViewModel()
 
 	NavHost(
@@ -150,16 +154,51 @@ fun NavGraph(
 		}
 
 		composable<NavigationRoute.ProfileScreen> {
-			val profileViewModel = koinViewModel<ProfileViewModel>()
-			ProfileScreen(
-				navController = navController, profileViewModel = profileViewModel
-			)
-		}
+			val sessionState by sessionManager.sessionState.collectAsState()
 
+			// Responsive redirection: if the user is not logged in, they go to Login
+			LaunchedEffect(sessionState) {
+				if (sessionState is SessionState.LoggedOut) {
+					navController.navigate(NavigationRoute.LoginScreen) {
+						popUpTo(NavigationRoute.ProfileScreen) { inclusive = true }
+					}
+				}
+			}
+
+			if (sessionState is SessionState.LoggedIn) {
+				ProfileScreen(
+					navController = navController, profileViewModel = profileViewModel
+				)
+			} else {
+				Box(modifier = Modifier.fillMaxSize())
+			}
+		}
 		composable<NavigationRoute.AchievementsScreen> {
 			AchievementsScreen(
 				navController = navController, achievementsViewModel = achievementsViewModel
 			)
+		}
+
+		composable<NavigationRoute.SettingsScreen> {
+			val settingsViewModel = koinViewModel<SettingsViewModel>()
+			val themeState: UiThemeState by settingsViewModel.state.collectAsStateWithLifecycle()
+			// AuthRepository is injected directly here for the logout action,
+			val authRepository: AuthRepository = org.koin.compose.koinInject()
+
+			SettingsScreen(
+				navController = navController,
+				themeState = themeState,
+				themeActions = settingsViewModel.actions,
+				profileViewModel = profileViewModel,
+				onLogout = {
+					// navigate to LoginScreen on completion
+					CoroutineScope(Dispatchers.IO).launch {
+						authRepository.logout()
+					}
+					navController.navigate(NavigationRoute.LoginScreen) {
+						popUpTo(0) { inclusive = true }
+					}
+				})
 		}
 
 		composable<NavigationRoute.GameScreen> { backStackEntry ->
@@ -172,12 +211,9 @@ fun NavGraph(
 
 		composable<NavigationRoute.GamesGridScreen> { backStackEntry ->
 			val route: NavigationRoute.GamesGridScreen = backStackEntry.toRoute()
-
-			// Retrieve the list of games passed
 			val games =
 				navController.previousBackStackEntry?.savedStateHandle?.get<List<Game>>("grid_games")
 					?: emptyList()
-
 			GamesGridScreen(
 				navController = navController, title = route.title, games = games
 			)
@@ -189,17 +225,6 @@ fun NavGraph(
 
 		composable<NavigationRoute.SignUpScreen> {
 			SignUpScreen(navController)
-		}
-
-		composable<NavigationRoute.SettingsScreen> {
-			val settingsViewModel = koinViewModel<SettingsViewModel>()
-			val themeState: UiThemeState by settingsViewModel.state.collectAsStateWithLifecycle()
-
-			SettingsScreen(
-				navController,
-				themeState = themeState,
-				themeActions = settingsViewModel.actions
-			)
 		}
 	}
 }

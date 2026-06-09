@@ -1,5 +1,8 @@
 package com.example.checkpoint.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.dp
@@ -50,7 +54,6 @@ import com.example.checkpoint.NavigationRoute
 import com.example.checkpoint.data.ChipContent
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.repositories.Game
-import com.example.checkpoint.data.sampleChipContents
 import com.example.checkpoint.ui.composable.AppShell
 import com.example.checkpoint.ui.composable.ChipRow
 import com.example.checkpoint.ui.composable.NavigationItem
@@ -66,16 +69,14 @@ import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 @Composable
 fun ProfileScreen(
 	navController: NavHostController,
-	// it will be removed :<(
 	profileViewModel: ProfileViewModel,
 	modifier: Modifier = Modifier,
 ) {
 	val uiState by profileViewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
+	val context = LocalContext.current
 
-	// I extract the data from the DB
 	val currentUser = uiState.user
-
 	val safeUser = currentUser ?: UserEntity(
 		id = 0,
 		username = "User",
@@ -86,10 +87,8 @@ fun ProfileScreen(
 		createdAt = ""
 	)
 
-	// Filter
-	val achievements = uiState.achievements.filter { it.isPinned }
+	val pinnedAchievements = uiState.achievements.filter { it.isPinned }
 
-	// Function to navigate to the list grid
 	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
 		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
 		navController.navigate(NavigationRoute.GamesGridScreen(title))
@@ -97,6 +96,13 @@ fun ProfileScreen(
 
 	var showBiographyUpdateDialog by remember { mutableStateOf(false) }
 	var showGenresUpdateDialog by remember { mutableStateOf(false) }
+
+	// Photo picker — no permission required (use system picker)
+	val avatarPickerLauncher = rememberLauncherForActivityResult(
+		contract = ActivityResultContracts.GetContent()
+	) { uri: Uri? ->
+		uri?.let { profileViewModel.updateAvatar(context, it) }
+	}
 
 	AppShell(
 		navController = navController,
@@ -127,6 +133,7 @@ fun ProfileScreen(
 			// ── Header
 			ProfileHeader(
 				user = safeUser,
+				onAvatarClick = { avatarPickerLauncher.launch("image/*") },
 				modifier = Modifier
 					.fillMaxWidth()
 					.padding(vertical = 8.dp, horizontal = 16.dp)
@@ -156,8 +163,7 @@ fun ProfileScreen(
 					.padding(top = 16.dp)
 					.padding(horizontal = 16.dp)
 			)
-			val preferredGenres = uiState.preferredGenres
-			if (preferredGenres.isEmpty()) {
+			if (uiState.preferredGenres.isEmpty()) {
 				Text(
 					text = "No favorite genre selected.",
 					style = MaterialTheme.typography.bodyMedium,
@@ -166,7 +172,7 @@ fun ProfileScreen(
 				)
 			} else {
 				ChipRow(
-					chips = preferredGenres.map { ChipContent(label = it) },
+					chips = uiState.preferredGenres.map { ChipContent(label = it) },
 					padding = PaddingValues(horizontal = 16.dp),
 					modifier = Modifier.padding(bottom = 8.dp)
 				)
@@ -181,17 +187,17 @@ fun ProfileScreen(
 					navigateToGrid(carousel.listEntity.name, carousel.games)
 				})
 
-			// ── Achievement dal DB
+			// ── Achievement from DB
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			AchievementsSection(
-				pinnedAchievements = achievements, onSeeAllClick = {
-					navController.navigate(NavigationRoute.AchievementsScreen)
-				}, modifier = Modifier
+				pinnedAchievements = pinnedAchievements,
+				onSeeAllClick = { navController.navigate(NavigationRoute.AchievementsScreen) },
+				modifier = Modifier
 					.padding(horizontal = 16.dp)
 					.padding(vertical = 8.dp)
 			)
 
-			// ── Reviews from the DB
+			// ── Reviews
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
@@ -202,18 +208,27 @@ fun ProfileScreen(
 			)
 		}
 
+		// ── Dialogs
+
 		if (showBiographyUpdateDialog) {
 			UpdateTextDialog(
-				onSubmit = { /* TODO: Update username in database */ },
+				onSubmit = { newBio ->
+					profileViewModel.updateBiography(newBio)
+					showBiographyUpdateDialog = false
+				},
 				onDismissRequest = { showBiographyUpdateDialog = false },
 				fieldToUpdate = "Biography",
 				previousValue = currentUser?.bio
 			)
 		} else if (showGenresUpdateDialog) {
 			UpdateFavouriteGenresDialog(
-				onSubmit = { genres -> /* TODO: Update favourite genres in database */ },
+				onSubmit = { selectedChips ->
+					profileViewModel.updatePreferredGenres(selectedChips.map { it.label })
+					showGenresUpdateDialog = false
+				},
 				onDismissRequest = { showGenresUpdateDialog = false },
-				genreChips = sampleChipContents /* TODO: Pass actual genres from igdb */
+				genreChips = uiState.allAvailableGenres.map { ChipContent(label = it) },
+				initialSelectedGenres = uiState.preferredGenres
 			)
 		}
 	}
@@ -224,7 +239,9 @@ fun ProfileScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileHeader(user: UserEntity, modifier: Modifier = Modifier) {
+private fun ProfileHeader(
+	user: UserEntity, onAvatarClick: () -> Unit, modifier: Modifier = Modifier
+) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
 		Box(contentAlignment = Alignment.BottomEnd) {
 			ProfilePicture(
@@ -232,7 +249,7 @@ private fun ProfileHeader(user: UserEntity, modifier: Modifier = Modifier) {
 				modifier = Modifier
 					.size(80.dp)
 					.clip(CircleShape)
-					.clickable { /* TODO: Edit profile picture */ },
+					.clickable(onClick = onAvatarClick),
 				fontSize = ProfileMonogramFontSize.Profile
 			)
 			Icon(
@@ -246,7 +263,8 @@ private fun ProfileHeader(user: UserEntity, modifier: Modifier = Modifier) {
 		Column {
 			Text(
 				text = user.username,
-				style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold
+				style = MaterialTheme.typography.headlineSmall,
+				fontWeight = FontWeight.Bold
 			)
 			Text(
 				text = user.email,
@@ -296,7 +314,6 @@ private fun MyCollectionsSection(
 			fontWeight = FontWeight.Bold,
 			modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
 		)
-
 		if (carousels.isEmpty()) {
 			Text(
 				text = "No list created.",
@@ -313,7 +330,6 @@ private fun MyCollectionsSection(
 				items(carousels) { carousel ->
 					val list = carousel.listEntity
 					val isPrimary = list.type == "BACKLOG" || list.type == "SAVED"
-
 					Card(
 						onClick = { onCollectionClick(carousel) },
 						modifier = Modifier
@@ -377,7 +393,6 @@ private fun AchievementsSection(
 			}
 		}
 		Spacer(Modifier.height(4.dp))
-
 		if (pinnedAchievements.isEmpty()) {
 			Text(
 				text = "Complete and pin up to three achievements to display them here!",
@@ -423,7 +438,6 @@ private fun AchievementBadge(achievement: AchievementUiModel) {
 	else MaterialTheme.colorScheme.surfaceVariant
 	val textColor = if (achievement.isUnlocked) MaterialTheme.colorScheme.primary
 	else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-
 	Box(
 		modifier = Modifier
 			.size(48.dp)

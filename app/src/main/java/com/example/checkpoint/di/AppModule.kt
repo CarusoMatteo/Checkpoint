@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.checkpoint.BuildConfig
+import com.example.checkpoint.data.achievements.AchievementEvaluator
 import com.example.checkpoint.data.database.AppDatabase
 import com.example.checkpoint.data.database.DatabaseSeeder
 import com.example.checkpoint.data.remote.igdb.IgdbClient
@@ -16,16 +17,16 @@ import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
 import com.example.checkpoint.data.repositories.SettingsRepository
+import com.example.checkpoint.data.repositories.UserRepository
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.ExploreViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
-import com.example.checkpoint.ui.viewmodel.ProfileViewModel
-import com.example.checkpoint.data.repositories.UserRepository
 import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.LoginViewModel
-import com.example.checkpoint.ui.viewmodel.SignUpViewModel
+import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.ui.viewmodel.SettingsViewModel
+import com.example.checkpoint.ui.viewmodel.SignUpViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -44,14 +45,10 @@ val Context.dataStore by preferencesDataStore("theme")
 
 val appModule = module {
 
-	// The SessionManager must be a singleton
+	// ── Session
+
 	single { SessionManager(context = androidContext()) }
 
-	single {
-		AuthRepository(
-			userDao = get(), sessionManager = get()
-		)
-	}
 	// ── Ktor
 
 	single {
@@ -87,9 +84,7 @@ val appModule = module {
 			override fun onCreate(db: SupportSQLiteDatabase) {
 				super.onCreate(db)
 				CoroutineScope(Dispatchers.IO).launch {
-
 					val database = get<AppDatabase>()
-
 					DatabaseSeeder.seed(db = database)
 				}
 			}
@@ -97,6 +92,7 @@ val appModule = module {
 	}
 
 	// ── DataStore
+
 	single { get<Context>().dataStore }
 
 	// ── DAO
@@ -113,9 +109,11 @@ val appModule = module {
 	single { get<AppDatabase>().userAchievementDao() }
 	single { get<AppDatabase>().gamePlatformDao() }
 	single { get<AppDatabase>().userPreferredGenreDao() }
+	single { get<AppDatabase>().achievementMetricsDao() }
 
 	// ── Repository
 
+	single { AuthRepository(userDao = get(), sessionManager = get()) }
 	single {
 		GameRepository(
 			gameDao = get(),
@@ -129,46 +127,35 @@ val appModule = module {
 	single { GameLogRepository(gameLogDao = get()) }
 	single { ReviewRepository(reviewDao = get()) }
 	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
-	single {
-		GameRepository(
-			gameDao = get(),
-			platformDao = get(),
-			genreDao = get(),
-			gamePlatformDao = get(),
-			igdbClient = get()
-		)
-	}
-	single { GameLogRepository(gameLogDao = get()) }
-	single { ReviewRepository(reviewDao = get()) }
-	single { GameListRepository(gameListDao = get(), listEntryDao = get()) }
 	single { AchievementRepository(achievementDao = get(), userAchievementDao = get()) }
 	single { SettingsRepository(get()) }
 
-	// ── ViewModel
+	// ── Achievement evaluator
 
+	single { AchievementEvaluator(metricsDao = get(), achievementRepository = get()) }
+
+	// ── ViewModel
 
 	viewModel { ExploreViewModel(gameRepository = get()) }
 	viewModel { LoginViewModel(authRepository = get()) }
 	viewModel { SignUpViewModel(authRepository = get()) }
-
 	viewModel {
 		AchievementsViewModel(
-			achievementRepository = get(), sessionManager = get()
+			sessionManager = get(), achievementRepository = get(), achievementEvaluator = get()
 		)
 	}
 	viewModel {
 		ProfileViewModel(
 			sessionManager = get(),
-			userDao = get(),
-			reviewRepository = get(),
+			userRepository = get(),
+			gameRepository = get(),
+			gameListRepository = get(),
 			achievementRepository = get(),
 			genreDao = get(),
-			gameListRepository = get(),
-			gameLogRepository = get(),
-			igdbClient = get()
+			userPreferredGenreDao = get(),
+			reviewDao = get()
 		)
 	}
-
 	viewModel {
 		LibraryViewModel(
 			sessionManager = get(), gameListRepository = get(), igdbClient = get()
@@ -185,8 +172,5 @@ val appModule = module {
 			userRepository = get()
 		)
 	}
-
-	viewModel {
-		SettingsViewModel(get())
-	}
+	viewModel { SettingsViewModel(get()) }
 }
