@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,8 +40,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LibraryScreen(
-	navController: NavHostController,
-	vm: LibraryViewModel = koinViewModel()
+	navController: NavHostController, vm: LibraryViewModel = koinViewModel()
 ) {
 	val state by vm.state.collectAsStateWithLifecycle()
 	val scrollState = rememberScrollState()
@@ -49,11 +49,14 @@ fun LibraryScreen(
 	var newListName by remember { mutableStateOf("") }
 
 	// Statuses for confirmation windows
-	var selectedGameContext by remember { mutableStateOf<Pair<Int, Game>?>(null) } // (List ID, Game)
-	var listToDelete by remember { mutableStateOf<Int?>(null) } // Contains the ID of the list to be deleted
+	var selectedGameContext by remember { mutableStateOf<Pair<Int, Game>?>(null) }
+	var listToDelete by remember { mutableStateOf<Int?>(null) }
 
-	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
+	val navigateToGrid: (String, List<Game>, Int) -> Unit = { title, gamesList, listId ->
 		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
+		navController.currentBackStackEntry?.savedStateHandle?.set(
+			"grid_list_id", listId
+		)
 		navController.navigate(NavigationRoute.GamesGridScreen(title))
 	}
 
@@ -115,25 +118,27 @@ fun LibraryScreen(
 								onSeeAllClick = {
 									navigateToGrid(
 										carouselModel.listEntity.name,
-										carouselModel.games
+										carouselModel.games,
+										carouselModel.listEntity.id
 									)
-								}
-							)
+								})
 						}
 					}
 				}
 			}
 
 			// FAB to create a new list
-			FloatingActionButton(
-				onClick = { showAddListDialog = true },
-				containerColor = MaterialTheme.colorScheme.primaryContainer,
-				contentColor = MaterialTheme.colorScheme.primary,
-				modifier = Modifier
-					.align(Alignment.BottomEnd)
-					.padding(16.dp)
-			) {
-				Icon(imageVector = Icons.Rounded.Add, contentDescription = "New List")
+			if (state.errorMessage == null && !state.isLoading) {
+				FloatingActionButton(
+					onClick = { showAddListDialog = true },
+					containerColor = MaterialTheme.colorScheme.primaryContainer,
+					contentColor = MaterialTheme.colorScheme.primary,
+					modifier = Modifier
+						.align(Alignment.BottomEnd)
+						.padding(16.dp)
+				) {
+					Icon(imageVector = Icons.Rounded.Add, contentDescription = "New List")
+				}
 			}
 		}
 
@@ -161,13 +166,11 @@ fun LibraryScreen(
 								newListName = ""
 								showAddListDialog = false
 							}
-						}
-					) { Text("Create") }
+						}) { Text("Create") }
 				},
 				dismissButton = {
 					TextButton(onClick = { showAddListDialog = false }) { Text("Cancel") }
-				}
-			)
+				})
 		}
 
 		// 2. Dialog to remove a game from the list
@@ -185,13 +188,11 @@ fun LibraryScreen(
 						onClick = {
 							vm.removeGameFromListByIgdbId(listId, game.igdbId)
 							selectedGameContext = null
-						}
-					) { Text("Remove") }
+						}) { Text("Remove") }
 				},
 				dismissButton = {
-					TextButton(onClick = { selectedGameContext = null }) { Text("Cancel") }
-				}
-			)
+					TextButton(onClick = { selectedGameContext = null }) { Text("Abort") }
+				})
 		}
 
 		// 3. NEW Dialog to delete a Custom List
@@ -206,13 +207,11 @@ fun LibraryScreen(
 						onClick = {
 							vm.deleteCustomList(listId)
 							listToDelete = null // Closes the dialog
-						}
-					) { Text("Delete") }
+						}) { Text("Delete") }
 				},
 				dismissButton = {
 					TextButton(onClick = { listToDelete = null }) { Text("Abort") }
-				}
-			)
+				})
 		}
 	}
 }
