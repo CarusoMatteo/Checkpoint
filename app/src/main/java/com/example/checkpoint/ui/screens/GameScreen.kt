@@ -84,6 +84,10 @@ fun GameScreen(
 	val scrollState = rememberScrollState()
 	val ctx = LocalContext.current
 
+	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
+		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
+		navController.navigate(NavigationRoute.GamesGridScreen(title))
+	}
 	AppShell(
 		navController = navController,
 		title = "Game",
@@ -225,7 +229,14 @@ fun GameScreen(
 							hasStartingDivider = true,
 							onGameClick = { clickedIgdbId ->
 								navController.navigate(NavigationRoute.GameScreen(clickedIgdbId))
-							})
+							},
+							onSeeAllClick = {
+								navigateToGrid(
+									"From the series",
+									state.franchiseGames
+								)
+							}
+						)
 					}
 
 					if (state.similarGames.isNotEmpty()) {
@@ -235,7 +246,9 @@ fun GameScreen(
 							hasStartingDivider = true,
 							onGameClick = { clickedIgdbId ->
 								navController.navigate(NavigationRoute.GameScreen(clickedIgdbId))
-							})
+							},
+							onSeeAllClick = { navigateToGrid("Similar games", state.similarGames) }
+						)
 					}
 
 					ReviewList(
