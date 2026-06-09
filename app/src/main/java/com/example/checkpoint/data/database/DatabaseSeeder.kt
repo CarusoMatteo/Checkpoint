@@ -98,13 +98,7 @@ object DatabaseSeeder {
 
 	val achievementCategories = listOf(
 		AchievementCategoryEntity(
-			id = 1, code = "SOCIAL", name = "Social", description = "Interact with the community"
-		),
-		AchievementCategoryEntity(
-			id = 2,
-			code = "EXPLORER",
-			name = "Explorer",
-			description = "Explore new genres and platforms"
+			id = 2, code = "EXPLORER", name = "Explorer", description = "Explore new genres"
 		),
 		AchievementCategoryEntity(
 			id = 3,
@@ -119,22 +113,6 @@ object DatabaseSeeder {
 
 	val achievements = listOf(
 		AchievementEntity(
-			id = 1,
-			categoryId = 2,
-			code = "MULTI_PLATFORM",
-			name = "Multiplatform Enjoyer",
-			description = "Play on 5 different platforms",
-			threshold = 5
-		),
-		AchievementEntity(
-			id = 2,
-			categoryId = 1,
-			code = "NOTIFICATIONS",
-			name = "Lots to Look Forward",
-			description = "Activate notifications for 15 games",
-			threshold = 15
-		),
-		AchievementEntity(
 			id = 3,
 			categoryId = 2,
 			code = "VARIETY_GAMER",
@@ -147,7 +125,7 @@ object DatabaseSeeder {
 			categoryId = 3,
 			code = "GAME_FINISHER",
 			name = "Game Finisher",
-			description = "Complete 10 games",
+			description = "100% complete 10 games",
 			threshold = 10
 		),
 		AchievementEntity(
@@ -160,25 +138,15 @@ object DatabaseSeeder {
 		),
 		AchievementEntity(
 			id = 6,
-			categoryId = 2,
+			categoryId = 3,
 			code = "CONSISTENT",
 			name = "Consistent Player",
-			description = "Play 20 games of the same genre",
+			description = "Add 20 games to your Backlog",
 			threshold = 20
 		),
 	)
 
 	val userAchievements = listOf(
-		UserAchievementEntity(
-			userId = 1, achievementId = 1, progress = 5, unlockedAt = null, isPinned = false
-		),
-		UserAchievementEntity(
-			userId = 1,
-			achievementId = 2,
-			progress = 15,
-			unlockedAt = Instant.now().toString(),
-			isPinned = true
-		),
 		UserAchievementEntity(
 			userId = 1, achievementId = 3, progress = 0, unlockedAt = null, isPinned = false
 		),

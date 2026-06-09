@@ -7,6 +7,7 @@ import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.di.appModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -19,6 +20,13 @@ private const val TAG = "Checkpoint"
 
 class CheckpointApplication : Application(), KoinComponent {
 
+	/**
+	 * Scope tied to the application lifecycle
+	 * SupervisorJob makes sure that a failure
+	 * in one child you do not erase the others.
+	 */
+	private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
 	override fun onCreate() {
 		super.onCreate()
 
@@ -30,18 +38,17 @@ class CheckpointApplication : Application(), KoinComponent {
 
 		// Force open the DB immediately after Koin is ready
 		val db: AppDatabase by inject()
-		CoroutineScope(Dispatchers.IO).launch {
+		applicationScope.launch {
 			db.openHelper.writableDatabase
 		}
 
 		// This MUST happen BEFORE the MainActivity checks sessionState
-		// otherwise MainActivity always sees LoggedOut
 		val sessionManager: SessionManager by inject()
-		CoroutineScope(Dispatchers.IO).launch {
+		applicationScope.launch {
 			try {
 				Log.d(TAG, "Restoring session from DataStore...")
 				sessionManager.restoreSession()
-				Log.d(TAG, "Session restored")
+				Log.d(TAG, "Session restore collector ended")
 			} catch (e: Exception) {
 				Log.e(TAG, "Error restoring session: ${e.message}", e)
 			}

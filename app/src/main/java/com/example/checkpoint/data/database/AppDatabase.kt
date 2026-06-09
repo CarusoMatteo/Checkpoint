@@ -3,6 +3,7 @@ package com.example.checkpoint.data.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.example.checkpoint.data.database.daos.AchievementDao
+import com.example.checkpoint.data.database.daos.AchievementMetricsDao
 import com.example.checkpoint.data.database.daos.GameDao
 import com.example.checkpoint.data.database.daos.GameListDao
 import com.example.checkpoint.data.database.daos.GameLogDao
@@ -43,7 +44,7 @@ import com.example.checkpoint.data.database.entities.UserPreferredGenreEntity
 		AchievementCategoryEntity::class,
 		AchievementEntity::class,
 		UserAchievementEntity::class,
-	], version = 2, exportSchema = false
+	], version = 3, exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 	abstract fun userDao(): UserDao
@@ -58,4 +59,5 @@ abstract class AppDatabase : RoomDatabase() {
 	abstract fun userAchievementDao(): UserAchievementDao
 	abstract fun gamePlatformDao(): GamePlatformDao
 	abstract fun userPreferredGenreDao(): UserPreferredGenreDao
+	abstract fun achievementMetricsDao(): AchievementMetricsDao
 }

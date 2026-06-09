@@ -184,3 +184,32 @@ interface UserPreferredGenreDao {
 	@Query("DELETE FROM user_preferred_genres WHERE user_id = :userId")
 	suspend fun deleteAllForUser(userId: Int)
 }
+
+// ─── Achievement metric queries
+
+@Dao
+interface AchievementMetricsDao {
+
+	/** Count only games in the user's BACKLOG list */
+	@Query(
+		"""
+        SELECT COUNT(le.game_id)
+        FROM list_entries le
+        INNER JOIN lists l ON l.id = le.list_id
+        WHERE l.user_id = :userId AND l.type = 'BACKLOG'
+    """
+	)
+	suspend fun countBacklogGames(userId: Int): Int
+
+	/** Count the number of total reviews written */
+	@Query("SELECT COUNT(*) FROM reviews WHERE user_id = :userId")
+	suspend fun countReviews(userId: Int): Int
+
+	/** Count games with a 100% completed review ('COMPLETED') */
+	@Query("SELECT COUNT(*) FROM reviews WHERE user_id = :userId AND completion = 'COMPLETED'")
+	suspend fun countCompletedGames(userId: Int): Int
+
+	/** Count the number of favorite genres */
+	@Query("SELECT COUNT(*) FROM user_preferred_genres WHERE user_id = :userId")
+	suspend fun countPreferredGenres(userId: Int): Int
+}

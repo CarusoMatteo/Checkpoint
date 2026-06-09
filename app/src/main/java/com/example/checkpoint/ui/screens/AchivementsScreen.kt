@@ -27,6 +27,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,10 +48,14 @@ fun AchievementsScreen(
 	achievementsViewModel: AchievementsViewModel,
 	modifier: Modifier = Modifier
 ) {
-	// I collect the global UI state from the ViewModel
 	val uiState by achievementsViewModel.uiState.collectAsState()
 
-	// Calculate the number of pinned achievements directly from the real list
+	// Triggered once when the screen enters composition:
+	// evaluates all achievement metrics against the DB and updates progress.
+	LaunchedEffect(Unit) {
+		achievementsViewModel.refreshProgress()
+	}
+
 	val currentPinnedCount = uiState.achievements.count { it.isPinned }
 
 	AppShell(
@@ -59,7 +64,6 @@ fun AchievementsScreen(
 		selectedNavigationItem = NavigationItem.Profile
 	) { innerPadding ->
 
-		// Initial load management from the DB
 		if (uiState.isLoading) {
 			Box(
 				modifier = Modifier
@@ -83,14 +87,28 @@ fun AchievementsScreen(
 				color = MaterialTheme.colorScheme.onSurfaceVariant,
 				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
 			)
-			Text(
-				text = "Pinned: $currentPinnedCount / 3",
-				style = MaterialTheme.typography.labelMedium,
-				fontWeight = FontWeight.SemiBold,
-				color = if (currentPinnedCount == 3) MaterialTheme.colorScheme.primary
-				else MaterialTheme.colorScheme.onSurfaceVariant,
-				modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-			)
+
+			Row(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(horizontal = 16.dp, vertical = 4.dp),
+				verticalAlignment = Alignment.CenterVertically,
+				horizontalArrangement = Arrangement.SpaceBetween
+			) {
+				Text(
+					text = "Pinned: $currentPinnedCount / 3",
+					style = MaterialTheme.typography.labelMedium,
+					fontWeight = FontWeight.SemiBold,
+					color = if (currentPinnedCount == 3) MaterialTheme.colorScheme.primary
+					else MaterialTheme.colorScheme.onSurfaceVariant
+				)
+
+				if (uiState.isRefreshing) {
+					CircularProgressIndicator(
+						modifier = Modifier.size(16.dp), strokeWidth = 2.dp
+					)
+				}
+			}
 
 			HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
@@ -189,13 +207,12 @@ private fun AchievementRow(
 				.then(
 					if (!isPinned && canPin) Modifier.border(
 						1.dp, MaterialTheme.colorScheme.outline, CircleShape
-					)
-					else Modifier
+					) else Modifier
 				)
 		) {
 			Icon(
 				imageVector = Icons.Rounded.PushPin,
-				contentDescription = if (isPinned) "Rimuovi pin" else "Pinna achievement",
+				contentDescription = if (isPinned) "Remove pin" else "Pin achievement",
 				tint = pinTint,
 				modifier = Modifier.size(20.dp)
 			)
@@ -218,7 +235,6 @@ private fun AchievementBadge(achievement: AchievementUiModel) {
 			.background(bgColor),
 		contentAlignment = Alignment.Center
 	) {
-
 		Text(
 			text = achievement.name.firstOrNull()?.toString() ?: "",
 			style = MaterialTheme.typography.titleMedium,

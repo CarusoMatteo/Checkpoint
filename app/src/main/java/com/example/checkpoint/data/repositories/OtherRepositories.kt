@@ -11,6 +11,7 @@ import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.database.entities.ListEntryEntity
 import com.example.checkpoint.data.database.entities.UserAchievementEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import java.time.Instant
 
 /**
@@ -81,7 +82,9 @@ data class AchievementWithProgress(
 class AchievementRepository(
 	private val achievementDao: AchievementDao, private val userAchievementDao: UserAchievementDao
 ) {
+
 	fun getAllAchievements(): Flow<List<AchievementEntity>> = achievementDao.getAllAchievements()
+
 	fun getAllCategories(): Flow<List<AchievementCategoryEntity>> =
 		achievementDao.getAllCategories()
 
@@ -91,9 +94,22 @@ class AchievementRepository(
 	fun getUnlockedAchievements(userId: Int): Flow<List<UserAchievementEntity>> =
 		userAchievementDao.getUnlockedAchievements(userId)
 
+	/**
+	 * One-shot suspend version of getAllAchievements.
+	 * Used by AchievementEvaluator to resolve code → id + threshold.
+	 */
+	suspend fun getAllAchievementsOnce(): List<AchievementEntity> =
+		achievementDao.getAllAchievements().first()
+
+	/**
+	 * Updates the progress for a single achievement.
+	 * If newProgress >= threshold, stamps unlocked_at (only the first time).
+	 */
 	suspend fun updateProgress(userId: Int, achievementId: Int, newProgress: Int, threshold: Int) {
 		val current = userAchievementDao.getUserAchievement(userId, achievementId)
-		val unlockedAt = if (newProgress >= threshold) Instant.now().toString() else null
+		// Preserve existing unlocked_at so we don't overwrite the original unlock timestamp
+		val unlockedAt =
+			current?.unlockedAt ?: if (newProgress >= threshold) Instant.now().toString() else null
 		userAchievementDao.upsert(
 			UserAchievementEntity(
 				userId = userId,
