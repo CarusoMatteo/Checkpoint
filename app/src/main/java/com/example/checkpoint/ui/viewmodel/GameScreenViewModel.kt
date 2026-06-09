@@ -34,6 +34,7 @@ data class GameScreenState(
 	val userLists: List<GameListEntity> = emptyList(),
 	val listsContainingGame: Set<Int> = emptySet(),
 	val error: String? = null,
+	val isLoggedIn: Boolean = false
 )
 
 data class GameScreenActions(
@@ -55,7 +56,7 @@ data class GameScreenActions(
 
 class GameScreenViewModel(
 	private val igdbId: Int,
-	private val sessionManager: SessionManager, // <--- Sostituito userId con SessionManager
+	private val sessionManager: SessionManager,
 	private val gameRepository: GameRepository,
 	private val gameLogRepository: GameLogRepository,
 	private val reviewRepository: ReviewRepository,
@@ -66,10 +67,9 @@ class GameScreenViewModel(
 	private val _state = MutableStateFlow(GameScreenState())
 	val state: StateFlow<GameScreenState> = _state
 
-	// Gestisce l'id del gioco in locale appena viene caricato/creato
+
 	private val localGameId = MutableStateFlow<Int?>(null)
 
-	// Recupera l'ID dell'utente dalla sessione in modo reattivo (Metodo Profile)
 	private val loggedInUserId = sessionManager.sessionState
 		.map { if (it is SessionState.LoggedIn) it.userId else null }
 		.distinctUntilChanged()
@@ -89,7 +89,6 @@ class GameScreenViewModel(
 		observeUserDataAndLists()
 	}
 
-	// Funzione helper sincrona per le azioni immediate
 	private fun getCurrentUserId(): Int? {
 		return (sessionManager.sessionState.value as? SessionState.LoggedIn)?.userId
 	}
@@ -130,7 +129,6 @@ class GameScreenViewModel(
 		}
 	}
 
-	// Dati legati al gioco (indipendenti dall'utente loggato)
 	private fun observeGameSpecificData(gameId: Int) {
 		viewModelScope.launch {
 			reviewRepository.getAverageRating(gameId)
@@ -157,19 +155,18 @@ class GameScreenViewModel(
 		}
 	}
 
-	// Dati SPECIFICI dell'utente (ascoltati in modo reattivo)
 	private fun observeUserDataAndLists() {
 		viewModelScope.launch {
 			loggedInUserId.collectLatest { userId ->
+				_state.update { it.copy(isLoggedIn = userId != null) }
 				if (userId != null) {
-					// 1. Osserva le liste dell'utente corretto
+
 					launch {
 						gameListRepository.getListsForUser(userId).collect { lists ->
 							_state.update { it.copy(userLists = lists) }
 						}
 					}
 
-					// 2. Osserva i Log e le Review solo quando localGameId è pronto
 					launch {
 						localGameId.filterNotNull().collectLatest { gameId ->
 							if (gameId != 0) {
@@ -188,7 +185,6 @@ class GameScreenViewModel(
 						}
 					}
 				} else {
-					// Pulisce lo stato se l'utente fa il logout
 					_state.update {
 						it.copy(
 							userLog = null,
@@ -221,7 +217,6 @@ class GameScreenViewModel(
 			localGameId.value = gameId
 			observeGameSpecificData(gameId)
 
-			// FIX BUG: Filtra l'intersezione in modo da toccare solo le liste dell'utente corrente
 			val userListIds = _state.value.userLists.map { it.id }.toSet()
 			val currentLists = _state.value.listsContainingGame.intersect(userListIds)
 

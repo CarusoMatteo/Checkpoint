@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -89,8 +90,14 @@ fun GameScreen(
 		selectedNavigationItem = NavigationItem.Explore,
 		appBarActions = {
 			IconButton(onClick = {
-				if (state.isSaved) viewModel.actions.onRemoveGame()
-				else viewModel.actions.onSaveGame()
+				if (state.isLoggedIn) {
+					if (state.isSaved) viewModel.actions.onRemoveGame()
+					else viewModel.actions.onSaveGame()
+				} else {
+					Toast.makeText(
+						ctx, "Log in to follow the games.", Toast.LENGTH_SHORT
+					).show()
+				}
 			}) {
 				Icon(
 					imageVector = if (state.isSaved) Icons.Rounded.Notifications
@@ -137,11 +144,25 @@ fun GameScreen(
 						averageRating = state.averageRating,
 						userLists = state.userLists,
 						listsContainingGame = state.listsContainingGame,
-						onPrimaryClick = { viewModel.actions.onAddGameToBacklog() },
+						onPrimaryClick = {
+							if (state.isLoggedIn) {
+								viewModel.actions.onAddGameToBacklog()
+							} else {
+								Toast.makeText(ctx, "Login to add to backlogs.", Toast.LENGTH_SHORT)
+									.show()
+							}
+						},
+						onSecondaryClick = {
+							if (!state.isLoggedIn) {
+								Toast.makeText(ctx, "Log in to manage lists.", Toast.LENGTH_SHORT)
+									.show()
+							}
+						},
 						onConfirmListsClick = { listIds ->
 							viewModel.actions.onSynchronizeLists(listIds)
 						},
 						onCreateListClick = { name -> viewModel.actions.onCreateNewList(name) },
+						isLoggedIn = state.isLoggedIn,
 						modifier = Modifier
 							.fillMaxWidth()
 							.padding(horizontal = 16.dp)
@@ -175,9 +196,7 @@ fun GameScreen(
 									.padding(vertical = 8.dp, horizontal = 16.dp)
 							) {
 								addEventToCalendar(
-									ctx = ctx,
-									title = game.name,
-									startTime = game.firstReleaseDate
+									ctx = ctx, title = game.name, startTime = game.firstReleaseDate
 								)
 							}
 						} else {
@@ -225,8 +244,7 @@ fun GameScreen(
 						users = state.reviewUsers,
 						modifier = Modifier.padding(horizontal = 16.dp),
 						hasStartingDivider = true,
-						// Hides the button if the user has already reviewed the game
-						hasWriteReviewButton = state.userReview == null,
+						hasWriteReviewButton = state.isLoggedIn && state.userReview == null,
 						onReviewSubmit = { rating, body, completion ->
 							viewModel.actions.onWriteReview(rating, body, completion)
 						})
@@ -244,8 +262,10 @@ private fun GameHeader(
 	userLists: List<GameListEntity>,
 	listsContainingGame: Set<Int>,
 	onPrimaryClick: () -> Unit,
+	onSecondaryClick: () -> Unit,
 	onConfirmListsClick: (List<Int>) -> Unit,
 	onCreateListClick: (String) -> Unit,
+	isLoggedIn: Boolean,
 	modifier: Modifier = Modifier
 ) {
 	var showDialog by remember { mutableStateOf(false) }
@@ -281,20 +301,20 @@ private fun GameHeader(
 				rating = finalRating, modifier = Modifier.fillMaxWidth()
 			)
 
-			SmallSplitButtons(
-				onPrimaryClick = onPrimaryClick,
-				onSecondaryClick = { showDialog = true },
-				primaryIcon = {
-					Icon(
-						imageVector = Icons.Rounded.AddCircleOutline, contentDescription = null
-					)
-				},
-				primaryLabel = if (isSaved) "Saved" else "Add to Backlog",
-				secondaryIcon = {
-					Icon(
-						imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
-					)
-				})
+			SmallSplitButtons(onPrimaryClick = onPrimaryClick, onSecondaryClick = {
+				onSecondaryClick()
+				if (isLoggedIn) {
+					showDialog = true
+				}
+			}, primaryIcon = {
+				Icon(
+					imageVector = Icons.Rounded.AddCircleOutline, contentDescription = null
+				)
+			}, primaryLabel = if (isSaved) "Saved" else "Add to Backlog", secondaryIcon = {
+				Icon(
+					imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
+				)
+			})
 		}
 	}
 
@@ -477,9 +497,7 @@ private fun SaveToListsDialog(
 }
 
 private fun addEventToCalendar(
-	ctx: Context,
-	title: String,
-	startTime: Long
+	ctx: Context, title: String, startTime: Long
 ) {
 	val intent = Intent(Intent.ACTION_INSERT).apply {
 		data = CalendarContract.Events.CONTENT_URI
