@@ -51,15 +51,13 @@ class LibraryViewModel(
 					gameListRepository.getListsForUser(session.userId).collectLatest { lists ->
 						val loadedCarousels = mutableListOf<LibraryListUiModel>()
 
-						val sortedLists = lists.sortedWith(
-							compareBy<GameListEntity> {
-								when (it.type) {
-									"BACKLOG" -> 0
-									"SAVED" -> 1
-									else -> 2
-								}
-							}.thenBy { it.id }
-						)
+						val sortedLists = lists.sortedWith(compareBy<GameListEntity> {
+							when (it.type) {
+								"BACKLOG" -> 0
+								"SAVED" -> 1
+								else -> 2
+							}
+						}.thenBy { it.id })
 
 						for (list in sortedLists) {
 							try {
@@ -99,9 +97,7 @@ class LibraryViewModel(
 								loadedCarousels.add(LibraryListUiModel(list, games))
 							} catch (e: Exception) {
 								Log.e(
-									"LibraryViewModel",
-									"Error loading the list ${list.name}",
-									e
+									"LibraryViewModel", "Error loading the list ${list.name}", e
 								)
 							}
 						}
@@ -123,7 +119,8 @@ class LibraryViewModel(
 
 	fun createCustomList(name: String) {
 		viewModelScope.launch {
-			val userId = (sessionManager.sessionState.value as? SessionState.LoggedIn)?.userId ?: 1
+			val userId = (sessionManager.sessionState.value as? SessionState.LoggedIn)?.userId
+				?: return@launch
 			gameListRepository.createList(userId, name, "CUSTOM", true)
 		}
 	}

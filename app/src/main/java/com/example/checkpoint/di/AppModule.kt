@@ -164,7 +164,7 @@ val appModule = module {
 	viewModel { (igdbId: Int, userId: Int) ->
 		GameScreenViewModel(
 			igdbId = igdbId,
-			userId = userId,
+			sessionManager = get(),
 			gameRepository = get(),
 			gameLogRepository = get(),
 			reviewRepository = get(),

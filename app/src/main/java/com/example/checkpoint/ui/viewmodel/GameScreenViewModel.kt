@@ -13,10 +13,9 @@ import com.example.checkpoint.data.repositories.GameLogRepository
 import com.example.checkpoint.data.repositories.GameRepository
 import com.example.checkpoint.data.repositories.ReviewRepository
 import com.example.checkpoint.data.repositories.UserRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
+import com.example.checkpoint.data.session.SessionManager
+import com.example.checkpoint.data.session.SessionState
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -56,7 +55,7 @@ data class GameScreenActions(
 
 class GameScreenViewModel(
 	private val igdbId: Int,
-	private val userId: Int,
+	private val sessionManager: SessionManager, // <--- Sostituito userId con SessionManager
 	private val gameRepository: GameRepository,
 	private val gameLogRepository: GameLogRepository,
 	private val reviewRepository: ReviewRepository,
@@ -66,6 +65,14 @@ class GameScreenViewModel(
 
 	private val _state = MutableStateFlow(GameScreenState())
 	val state: StateFlow<GameScreenState> = _state
+
+	// Gestisce l'id del gioco in locale appena viene caricato/creato
+	private val localGameId = MutableStateFlow<Int?>(null)
+
+	// Recupera l'ID dell'utente dalla sessione in modo reattivo (Metodo Profile)
+	private val loggedInUserId = sessionManager.sessionState
+		.map { if (it is SessionState.LoggedIn) it.userId else null }
+		.distinctUntilChanged()
 
 	val actions = GameScreenActions(
 		onSaveGame = { saveGame() },
@@ -79,7 +86,12 @@ class GameScreenViewModel(
 
 	init {
 		loadGame()
-		observeUserLists()
+		observeUserDataAndLists()
+	}
+
+	// Funzione helper sincrona per le azioni immediate
+	private fun getCurrentUserId(): Int? {
+		return (sessionManager.sessionState.value as? SessionState.LoggedIn)?.userId
 	}
 
 	private fun loadGame() {
@@ -110,19 +122,16 @@ class GameScreenViewModel(
 
 			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
 			val gameId = localEntity?.id ?: game.id
-			if (gameId != 0) observeUserData(gameId)
+			localGameId.value = gameId
+
+			if (gameId != 0) {
+				observeGameSpecificData(gameId)
+			}
 		}
 	}
 
-	private fun observeUserData(gameId: Int) {
-		viewModelScope.launch {
-			gameLogRepository.getLogForGame(userId, gameId)
-				.collect { log -> _state.update { it.copy(userLog = log) } }
-		}
-		viewModelScope.launch {
-			reviewRepository.getReviewForGame(userId, gameId)
-				.collect { review -> _state.update { it.copy(userReview = review) } }
-		}
+	// Dati legati al gioco (indipendenti dall'utente loggato)
+	private fun observeGameSpecificData(gameId: Int) {
 		viewModelScope.launch {
 			reviewRepository.getAverageRating(gameId)
 				.collect { avg -> _state.update { it.copy(averageRating = avg) } }
@@ -131,19 +140,13 @@ class GameScreenViewModel(
 			reviewRepository.getReviewCount(gameId)
 				.collect { count -> _state.update { it.copy(reviewCount = count) } }
 		}
-
 		viewModelScope.launch {
 			gameListRepository.getListsContainingGame(gameId)
 				.collect { listIds -> _state.update { it.copy(listsContainingGame = listIds.toSet()) } }
 		}
-
-		// I retrieve reviews and users
 		viewModelScope.launch {
 			reviewRepository.getReviewsForGame(gameId).collect { reviews ->
-
 				_state.update { it.copy(reviews = reviews) }
-
-				// I extract the unique IDs and ask the database who they are
 				val authorIds = reviews.map { it.userId }.distinct()
 				if (authorIds.isNotEmpty()) {
 					val users = userRepository.getUsersByIds(authorIds)
@@ -154,10 +157,47 @@ class GameScreenViewModel(
 		}
 	}
 
-	private fun observeUserLists() {
+	// Dati SPECIFICI dell'utente (ascoltati in modo reattivo)
+	private fun observeUserDataAndLists() {
 		viewModelScope.launch {
-			gameListRepository.getListsForUser(userId).collect { lists ->
-				_state.update { it.copy(userLists = lists) }
+			loggedInUserId.collectLatest { userId ->
+				if (userId != null) {
+					// 1. Osserva le liste dell'utente corretto
+					launch {
+						gameListRepository.getListsForUser(userId).collect { lists ->
+							_state.update { it.copy(userLists = lists) }
+						}
+					}
+
+					// 2. Osserva i Log e le Review solo quando localGameId è pronto
+					launch {
+						localGameId.filterNotNull().collectLatest { gameId ->
+							if (gameId != 0) {
+								launch {
+									gameLogRepository.getLogForGame(userId, gameId).collect { log ->
+										_state.update { it.copy(userLog = log) }
+									}
+								}
+								launch {
+									reviewRepository.getReviewForGame(userId, gameId)
+										.collect { review ->
+											_state.update { it.copy(userReview = review) }
+										}
+								}
+							}
+						}
+					}
+				} else {
+					// Pulisce lo stato se l'utente fa il logout
+					_state.update {
+						it.copy(
+							userLog = null,
+							userReview = null,
+							userLists = emptyList(),
+							listsContainingGame = emptySet()
+						)
+					}
+				}
 			}
 		}
 	}
@@ -174,11 +214,17 @@ class GameScreenViewModel(
 	}
 
 	private fun synchronizeGameLists(selectedListIds: List<Int>) {
+		val userId = getCurrentUserId() ?: return
 		viewModelScope.launch {
 			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
 			val gameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
+			localGameId.value = gameId
+			observeGameSpecificData(gameId)
 
-			val currentLists = _state.value.listsContainingGame
+			// FIX BUG: Filtra l'intersezione in modo da toccare solo le liste dell'utente corrente
+			val userListIds = _state.value.userLists.map { it.id }.toSet()
+			val currentLists = _state.value.listsContainingGame.intersect(userListIds)
+
 			val toAdd = selectedListIds.filter { it !in currentLists }
 			val toRemove = currentLists.filter { it !in selectedListIds }
 
@@ -190,11 +236,11 @@ class GameScreenViewModel(
 			}
 
 			_state.update { it.copy(isSaved = true) }
-			observeUserData(gameId)
 		}
 	}
 
 	private fun createList(name: String) {
+		val userId = getCurrentUserId() ?: return
 		viewModelScope.launch {
 			gameListRepository.createList(userId = userId, name = name)
 		}
@@ -204,7 +250,8 @@ class GameScreenViewModel(
 		viewModelScope.launch {
 			val entity = gameRepository.saveGame(igdbId)
 			_state.update { it.copy(isSaved = true) }
-			observeUserData(entity.id)
+			localGameId.value = entity.id
+			observeGameSpecificData(entity.id)
 		}
 	}
 
@@ -217,10 +264,10 @@ class GameScreenViewModel(
 					isSaved = false,
 					userLog = null,
 					userReview = null,
-					reviews = emptyList(),
 					listsContainingGame = emptySet()
 				)
 			}
+			localGameId.value = 0
 		}
 	}
 
@@ -231,9 +278,9 @@ class GameScreenViewModel(
 		startedAt: LocalDate?,
 		finishedAt: LocalDate?,
 	) {
+		val userId = getCurrentUserId() ?: return
 		val existingId = _state.value.userLog?.id ?: 0
 		viewModelScope.launch {
-			// I make sure the game exists locally before adding the log
 			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
 			val verifiedGameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
 
@@ -247,14 +294,13 @@ class GameScreenViewModel(
 				finishedAt = finishedAt,
 				existingId = existingId,
 			)
-			observeUserData(verifiedGameId)
 		}
 	}
 
 	private fun writeReview(rating: Float, body: String, completion: CompletionType) {
+		val userId = getCurrentUserId() ?: return
 		val existingId = _state.value.userReview?.id ?: 0
 		viewModelScope.launch {
-			// I make sure the game exists locally before reviewing it
 			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
 			val verifiedGameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
 
@@ -266,7 +312,6 @@ class GameScreenViewModel(
 				completion = completion,
 				existingId = existingId,
 			)
-			observeUserData(verifiedGameId)
 		}
 	}
 
