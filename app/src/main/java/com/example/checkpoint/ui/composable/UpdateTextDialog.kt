@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -26,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -99,11 +103,15 @@ fun UpdateTextDialog(
 @Composable
 fun UpdateFavouriteGenresDialog(
 	genreChips: List<ChipContent>,
+	initialSelectedGenres: List<String> = emptyList(),
 	onDismissRequest: () -> Unit,
 	onSubmit: (List<ChipContent>) -> Unit
 ) {
-	// TODO: Implement viewmodel and pass the selected chips at onSubmit
-	val selectedChips = 3
+	val selectedChips = remember {
+		mutableStateListOf<String>().apply {
+			addAll(genreChips.map { it.label }.filter { it in initialSelectedGenres })
+		}
+	}
 
 	Dialog(
 		onDismissRequest = onDismissRequest,
@@ -119,14 +127,7 @@ fun UpdateFavouriteGenresDialog(
 					title = { Text("Edit favourite genres") },
 					actions = {
 						TextButton(onClick = {
-							// TODO: Pass the selected chips instead of hardcoded ones
-							onSubmit(
-								listOf(
-									ChipContent("Action"),
-									ChipContent("Adventure"),
-									ChipContent("RPG")
-								)
-							)
+							onSubmit(selectedChips.map { ChipContent(it) })
 							onDismissRequest()
 						}) {
 							Text("Save")
@@ -145,7 +146,7 @@ fun UpdateFavouriteGenresDialog(
 				Row(
 					modifier = Modifier
 						.padding(horizontal = 16.dp)
-						.padding(bottom = 8.dp),
+						.padding(vertical = 12.dp),
 					verticalAlignment = Alignment.CenterVertically
 				) {
 					Text(
@@ -157,21 +158,41 @@ fun UpdateFavouriteGenresDialog(
 							.padding(end = 8.dp)
 					)
 					Text(
-						text = "Selected: $selectedChips / 3",
+						text = "Selected: ${selectedChips.size} / 3",
 						style = MaterialTheme.typography.labelMedium,
 						fontWeight = FontWeight.SemiBold,
-						color = if (selectedChips == 3)
+						color = if (selectedChips.size == 3)
 							MaterialTheme.colorScheme.primary
 						else
 							MaterialTheme.colorScheme.onSurfaceVariant
 					)
 				}
-				ChipGrid(
-					chips = genreChips,
+
+				//ChipGrid could not find a vai to implement, im stupid
+				FlowRow(
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(horizontal = 16.dp)
-				)
+						.padding(horizontal = 16.dp),
+					horizontalArrangement = Arrangement.spacedBy(8.dp),
+					verticalArrangement = Arrangement.spacedBy(8.dp)
+				) {
+					genreChips.forEach { chip ->
+						val isSelected = selectedChips.contains(chip.label)
+						FilterChip(
+							selected = isSelected,
+							onClick = {
+								if (isSelected) {
+									selectedChips.remove(chip.label)
+								} else {
+									if (selectedChips.size < 3) {
+										selectedChips.add(chip.label)
+									}
+								}
+							},
+							label = { Text(chip.label) }
+						)
+					}
+				}
 			}
 		}
 	}
@@ -196,6 +217,7 @@ private fun UUpdateFavouriteGenresDialogPreview() {
 	Box(Modifier.fillMaxSize()) {
 		UpdateFavouriteGenresDialog(
 			sampleChipContents,
+			initialSelectedGenres = listOf("Action", "RPG"),
 			onDismissRequest = { },
 			onSubmit = { },
 		)
