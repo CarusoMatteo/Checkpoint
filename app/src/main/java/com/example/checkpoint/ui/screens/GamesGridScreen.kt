@@ -38,17 +38,17 @@ fun GamesGridScreen(
 	games: List<Game>,
 	modifier: Modifier = Modifier,
 ) {
-	// 1. Recuperiamo l'entry dello schermo precedente nella navigazione (la LibraryScreen)
+	// 1. Let's retrieve the entry of the previous screen in the navigation (the LibraryScreen)
 	val previousEntry = remember(navController) { navController.previousBackStackEntry }
 
-	// 2. Diciamo a Koin di usare il ViewModel dello schermo precedente (se esiste), condividendo l'istanza
+	// 2. We tell Koin to use the ViewModel of the previous screen (if it exists), sharing the instance
 	val libraryVm: LibraryViewModel = if (previousEntry != null) {
 		koinViewModel(viewModelStoreOwner = previousEntry)
 	} else {
 		koinViewModel()
 	}
 
-	// 3. Recuperiamo l'ID della lista dal savedStateHandle del livello precedente
+	// 3. retrieve the list ID from the savedStateHandle of the previous level
 	val listId = remember {
 		previousEntry?.savedStateHandle?.get<Int>("grid_list_id")
 	}
@@ -104,7 +104,7 @@ fun GamesGridScreen(
 					colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
 					onClick = {
 						if (listId != null) {
-							// Modificando questo ViewModel condiviso, cambiamo istantaneamente lo stato di LibraryScreen
+							// By editing this shared ViewModel, we instantly change the state of the LibraryScreen
 							libraryVm.removeGameFromListByIgdbId(listId, game.igdbId)
 						}
 						gameToRemove = null
