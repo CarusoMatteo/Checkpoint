@@ -108,7 +108,7 @@ fun UserScreen(
 					// ── Header (read-only, no avatar click)
 					ProfileHeader(
 						user = safeUser,
-						onAvatarClick = {},
+						onAvatarClick = null,
 						modifier = Modifier
 							.fillMaxWidth()
 							.padding(vertical = 8.dp, horizontal = 16.dp)
@@ -170,7 +170,7 @@ fun UserScreen(
 					HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 					AchievementsSection(
 						pinnedAchievements = pinnedAchievements,
-						onSeeAllClick = {},
+						onSeeAllClick = null,
 						modifier = Modifier
 							.padding(horizontal = 16.dp)
 							.padding(vertical = 8.dp)
@@ -191,7 +191,8 @@ fun UserScreen(
 									igdbId
 								)
 							)
-						})
+						}
+					)
 				}
 			}
 		}

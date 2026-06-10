@@ -30,8 +30,8 @@ import com.example.checkpoint.ui.icons.Reviews
 fun ReviewList(
 	title: String,
 	reviews: List<ReviewEntity>,
-	users: Map<Int, UserEntity> = emptyMap(),
 	modifier: Modifier = Modifier,
+	users: Map<Int, UserEntity> = emptyMap(),
 	hasStartingDivider: Boolean = false,
 	hasWriteReviewButton: Boolean = true,
 	onReviewClick: ((ReviewEntity) -> Unit)? = null,

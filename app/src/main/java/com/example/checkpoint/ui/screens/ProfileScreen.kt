@@ -242,24 +242,31 @@ fun ProfileScreen(
 
 @Composable
 internal fun ProfileHeader(
-	user: UserEntity, onAvatarClick: () -> Unit, modifier: Modifier = Modifier
+	user: UserEntity,
+	onAvatarClick: (() -> Unit)?,
+	modifier: Modifier = Modifier,
 ) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
 		Box(contentAlignment = Alignment.BottomEnd) {
 			ProfilePicture(
 				user = user,
-				modifier = Modifier
+				modifier = if (onAvatarClick != null) Modifier
 					.size(80.dp)
 					.clip(CircleShape)
-					.clickable(onClick = onAvatarClick),
+					.clickable(onClick = onAvatarClick)
+				else Modifier
+					.size(80.dp)
+					.clip(CircleShape),
 				fontSize = ProfileMonogramFontSize.Profile
 			)
-			Icon(
-				imageVector = Icons.Rounded.Edit,
-				contentDescription = "Edit profile picture",
-				tint = MaterialTheme.colorScheme.onSurface,
-				modifier = Modifier.size(24.dp)
-			)
+			if (onAvatarClick != null) {
+				Icon(
+					imageVector = Icons.Rounded.Edit,
+					contentDescription = "Edit profile picture",
+					tint = MaterialTheme.colorScheme.onSurface,
+					modifier = Modifier.size(24.dp)
+				)
+			}
 		}
 		Spacer(Modifier.width(16.dp))
 		Column {
@@ -373,7 +380,7 @@ internal fun MyCollectionsSection(
 @Composable
 internal fun AchievementsSection(
 	pinnedAchievements: List<AchievementUiModel>,
-	onSeeAllClick: () -> Unit,
+	onSeeAllClick: (() -> Unit)?,
 	modifier: Modifier = Modifier,
 ) {
 	Column(modifier = modifier) {
@@ -387,11 +394,13 @@ internal fun AchievementsSection(
 				style = MaterialTheme.typography.titleMedium,
 				fontWeight = FontWeight.Bold
 			)
-			IconButton(onClick = onSeeAllClick) {
-				Icon(
-					imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-					contentDescription = "See all achievements"
-				)
+			if (onSeeAllClick != null) {
+				IconButton(onClick = onSeeAllClick) {
+					Icon(
+						imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+						contentDescription = "See all achievements"
+					)
+				}
 			}
 		}
 		Spacer(Modifier.height(4.dp))

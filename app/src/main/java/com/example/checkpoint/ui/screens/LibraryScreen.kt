@@ -20,7 +20,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -178,10 +177,11 @@ fun LibraryScreen(
 			val listId = context.first
 			val game = context.second
 
+			// TODO: Add list name to delete dialog
 			AlertDialog(
 				onDismissRequest = { selectedGameContext = null },
 				title = { Text(text = game.name) },
-				text = { Text("Do you really want to remove this game from the list?") },
+				text = { Text("Do you really want to remove this game from the list \"\"?") },
 				confirmButton = {
 					TextButton(
 						colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),

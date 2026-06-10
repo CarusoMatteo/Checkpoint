@@ -98,7 +98,7 @@ fun GamesGridScreen(
 		AlertDialog(
 			onDismissRequest = { gameToRemove = null },
 			title = { Text(text = game.name) },
-			text = { Text("Do you really want to remove this game from the list?") },
+			text = { Text("Do you really want to remove this game from the list \"$title\"?") },
 			confirmButton = {
 				TextButton(
 					colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -112,7 +112,7 @@ fun GamesGridScreen(
 				) { Text("Remove") }
 			},
 			dismissButton = {
-				TextButton(onClick = { gameToRemove = null }) { Text("Cancel") }
+				TextButton(onClick = { gameToRemove = null }) { Text("Abort") }
 			}
 		)
 	}
