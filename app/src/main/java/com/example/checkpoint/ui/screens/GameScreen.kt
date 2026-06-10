@@ -304,7 +304,9 @@ private fun GameHeader(
 			)
 			if (game.developer != null) {
 				Text(
-					text = game.developer, style = MaterialTheme.typography.titleMedium
+					text = game.developer,
+					style = MaterialTheme.typography.titleMedium,
+					modifier = Modifier.basicMarquee()
 				)
 			}
 
