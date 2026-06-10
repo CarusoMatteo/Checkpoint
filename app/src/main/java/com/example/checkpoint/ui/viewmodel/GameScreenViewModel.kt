@@ -282,9 +282,16 @@ class GameScreenViewModel(
 	) {
 		val userId = getCurrentUserId() ?: return
 		val existingId = _state.value.userLog?.id ?: 0
+
 		viewModelScope.launch {
-			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
-			val verifiedGameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
+			var verifiedGameId = localGameId.value ?: 0
+
+			if (verifiedGameId == 0) {
+				val newEntity = gameRepository.saveGame(igdbId)
+				verifiedGameId = newEntity.id
+				localGameId.value = verifiedGameId
+				observeGameSpecificData(verifiedGameId)
+			}
 
 			gameLogRepository.upsertLog(
 				userId = userId,
@@ -302,10 +309,18 @@ class GameScreenViewModel(
 	private fun writeReview(rating: Float, body: String, completion: CompletionType) {
 		val userId = getCurrentUserId() ?: return
 		val existingId = _state.value.userReview?.id ?: 0
-		viewModelScope.launch {
-			val localEntity = gameRepository.getLocalEntityByIgdbId(igdbId)
-			val verifiedGameId = localEntity?.id ?: gameRepository.saveGame(igdbId).id
 
+		viewModelScope.launch {
+			var verifiedGameId = localGameId.value ?: 0
+
+			if (verifiedGameId == 0) {
+				val newEntity = gameRepository.saveGame(igdbId)
+				verifiedGameId = newEntity.id
+
+				// tell to the ViewModel to use the new ID
+				localGameId.value = verifiedGameId
+				observeGameSpecificData(verifiedGameId)
+			}
 			reviewRepository.upsertReview(
 				userId = userId,
 				gameId = verifiedGameId,

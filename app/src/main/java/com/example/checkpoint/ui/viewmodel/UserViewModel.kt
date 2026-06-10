@@ -34,7 +34,7 @@ data class UserUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class UserViewModel(
 	private val userId: Int,
-	private val userRepository: UserRepository,
+	userRepository: UserRepository,
 	private val gameRepository: GameRepository,
 	private val gameListRepository: GameListRepository,
 	private val achievementRepository: AchievementRepository,
