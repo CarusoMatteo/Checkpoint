@@ -1,5 +1,6 @@
 package com.example.checkpoint.ui.composable
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +24,8 @@ fun Review(
 	review: ReviewEntity,
 	user: UserEntity,
 	modifier: Modifier = Modifier,
-	onClick: (() -> Unit)? = null
+	onClick: (() -> Unit)? = null,
+	headerLabel: String? = null
 ) {
 	OutlinedCard(
 		modifier = modifier, onClick = onClick ?: {}) {
@@ -31,6 +33,7 @@ fun Review(
 			ReviewHeader(
 				review = review,
 				user = user,
+				headerLabel = headerLabel,
 				modifier = Modifier
 					.fillMaxWidth()
 					.padding(vertical = 12.dp)
@@ -44,7 +47,10 @@ fun Review(
 
 @Composable
 fun ReviewHeader(
-	review: ReviewEntity, user: UserEntity, modifier: Modifier = Modifier
+	review: ReviewEntity,
+	user: UserEntity,
+	modifier: Modifier = Modifier,
+	headerLabel: String? = null
 ) {
 	Row(
 		modifier = modifier,
@@ -54,24 +60,18 @@ fun ReviewHeader(
 		Row(
 			modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically
 		) {
-			ProfilePicture(
-				user = user,
-			)
-			Column(
-				modifier = Modifier.padding(start = 8.dp)
-			) {
+			ProfilePicture(user = user)
+			Column(modifier = Modifier.padding(start = 8.dp)) {
 				Text(
-					text = user.username,
+					text = headerLabel ?: user.username,
 					style = MaterialTheme.typography.titleMedium,
 					maxLines = 1,
-					overflow = TextOverflow.Ellipsis
+					overflow = TextOverflow.Ellipsis,
+					modifier = Modifier.basicMarquee()
 				)
-				ReviewRating(
-					rating = review.rating
-				)
+				ReviewRating(rating = review.rating)
 			}
 		}
-
 		Text(
 			text = review.completionEnum?.displayName ?: review.completion,
 			style = MaterialTheme.typography.titleMedium,
@@ -80,7 +80,7 @@ fun ReviewHeader(
 	}
 }
 
-@Preview()
+@Preview
 @Composable
 private fun ReviewPreview() {
 	val previewUser = DatabaseSeeder.users.first()

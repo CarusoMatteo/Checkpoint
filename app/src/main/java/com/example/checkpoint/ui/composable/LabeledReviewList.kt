@@ -30,11 +30,12 @@ import com.example.checkpoint.ui.icons.Reviews
 fun ReviewList(
 	title: String,
 	reviews: List<ReviewEntity>,
-	modifier: Modifier = Modifier,
 	users: Map<Int, UserEntity> = emptyMap(),
+	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
 	hasWriteReviewButton: Boolean = true,
 	onReviewClick: ((ReviewEntity) -> Unit)? = null,
+	gameNames: Map<Int, String>? = null,
 	onReviewSubmit: (Float, String, CompletionType) -> Unit = { _, _, _ -> }
 ) {
 	var showWriteReviewDialog by remember { mutableStateOf(false) }
@@ -84,7 +85,9 @@ fun ReviewList(
 				modifier = Modifier
 					.padding(bottom = 8.dp)
 					.fillMaxWidth(),
-				onClick = onReviewClick?.let { cb -> { cb(review) } })
+				onClick = onReviewClick?.let { cb -> { cb(review) } },
+				headerLabel = gameNames?.get(review.gameId)
+			)
 		}
 	}
 

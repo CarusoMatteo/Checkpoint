@@ -55,7 +55,8 @@ data class ProfileUiState(
 	val carousels: List<LibraryListUiModel> = emptyList(),
 	val reviews: List<ReviewEntity> = emptyList(),
 	val allAvailableGenres: List<String> = emptyList(),
-	val igdbIdByGameId: Map<Int, Int> = emptyMap()
+	val igdbIdByGameId: Map<Int, Int> = emptyMap(),
+	val gameNameByGameId: Map<Int, String> = emptyMap()
 )
 
 // ─── ViewModel ────────────────────────────────────────────────────────────────
@@ -105,13 +106,14 @@ class ProfileViewModel(
 					}
 				}
 
-			// Review flow + map gameId -> igdbId for navigating to the game
-			val reviewsFlow = reviewDao.getReviewsByUser(userId).flatMapLatest { reviews ->
-				flow {
-					val igdbIdByGameId = resolveIgdbIds(reviews.map { it.gameId }.distinct())
-					emit(Pair(reviews, igdbIdByGameId))
+			// Review flow + map gameId -> igdbId e gameId -> name for navigation and UI
+			val reviewsFlow = reviewDao.getReviewsByUser(userId)
+				.flatMapLatest { reviews ->
+					flow {
+						val info = resolveGameInfo(reviews.map { it.gameId }.distinct())
+						emit(Triple(reviews, info.first, info.second))
+					}
 				}
-			}
 
 			val preferredGenresFlow =
 				genreDao.getPreferredGenresForUser(userId).map { list -> list.map { it.name } }
@@ -119,35 +121,39 @@ class ProfileViewModel(
 			val allGenresFlow =
 				gameRepository.getAllGenresFromDb().map { list -> list.map { it.name } }
 
-			// Carousel
-			val carouselsFlow = gameListRepository.getListsForUser(userId).flatMapLatest { lists ->
-				if (lists.isEmpty()) {
-					flowOf(emptyList<LibraryListUiModel>())
-				} else {
-					val carouselFlows = lists.map { listEntity ->
-						gameListRepository.getGamesInList(listEntity.id).flatMapLatest { entities ->
-							flow {
-								val games = fetchGamesFromEntities(entities.map { it.igdbId })
-								emit(LibraryListUiModel(listEntity, games))
-							}
+			// Carousel with real IGDB fetch by name and cover
+			val carouselsFlow = gameListRepository.getListsForUser(userId)
+				.flatMapLatest { lists ->
+					if (lists.isEmpty()) {
+						flowOf(emptyList<LibraryListUiModel>())
+					} else {
+						val carouselFlows = lists.map { listEntity ->
+							gameListRepository.getGamesInList(listEntity.id)
+								.flatMapLatest { entities ->
+									flow {
+										val games =
+											fetchGamesFromEntities(entities.map { it.igdbId })
+										emit(LibraryListUiModel(listEntity, games))
+									}
+								}
 						}
+						combine(carouselFlows) { array: Array<LibraryListUiModel> -> array.toList() }
 					}
-					combine(carouselFlows) { array: Array<LibraryListUiModel> -> array.toList() }
 				}
-			}
 
 			combine(
 				combine(userFlow, achievementsFlow, ::Pair),
 				combine(reviewsFlow, preferredGenresFlow, ::Pair),
 				combine(allGenresFlow, carouselsFlow, ::Pair)
-			) { (user, achs), (revPair, prefG), (allG, carousels) ->
-				val (revs, igdbIdByGameId) = revPair
+			) { (user, achs), (revTriple, prefG), (allG, carousels) ->
+				val (revs, igdbIdByGameId, gameNameByGameId) = revTriple
 				ProfileUiState(
 					user = user,
 					isLoading = false,
 					achievements = achs,
 					reviews = revs,
 					igdbIdByGameId = igdbIdByGameId,
+					gameNameByGameId = gameNameByGameId,
 					preferredGenres = prefG,
 					allAvailableGenres = allG,
 					carousels = carousels
@@ -160,34 +166,52 @@ class ProfileViewModel(
 		initialValue = ProfileUiState(isLoading = true)
 	)
 
-	/** Resolves a list of gameIds (Rooms) in a map gameId -> igdbId */
-	private suspend fun resolveIgdbIds(gameIds: List<Int>): Map<Int, Int> = coroutineScope {
-		gameIds.map { gameId ->
-			async { gameId to (gameDao.getById(gameId)?.igdbId) }
-		}.awaitAll().mapNotNull { (gameId, igdbId) -> igdbId?.let { gameId to it } }.toMap()
-	}
+	/**
+	 * For each gameId (Room) resolves igdbId and game name in parallel.
+	 * Returns Pair(igdbIdByGameId, gameNameByGameId).
+	 */
+	private suspend fun resolveGameInfo(gameIds: List<Int>): Pair<Map<Int, Int>, Map<Int, String>> =
+		coroutineScope {
+			gameIds.map { gameId ->
+				async {
+					val entity = gameDao.getById(gameId)
+					val igdbId = entity?.igdbId
+					val name = igdbId?.let { gameRepository.fetchGameDetails(it)?.name }
+					Triple(gameId, igdbId, name)
+				}
+			}.awaitAll().let { results ->
+				val igdbIdMap = results.mapNotNull { (gameId, igdbId, _) ->
+					igdbId?.let { gameId to it }
+				}.toMap()
+				val nameMap = results.mapNotNull { (gameId, _, name) ->
+					name?.let { gameId to it }
+				}.toMap()
+				Pair(igdbIdMap, nameMap)
+			}
+		}
 
 	/** Fetch the IGDB details in parallel for a list of igdbIds */
-	private suspend fun fetchGamesFromEntities(igdbIds: List<Int>): List<Game> = coroutineScope {
-		igdbIds.map { igdbId ->
-			async {
-				gameRepository.fetchGameDetails(igdbId) ?: Game(
-					id = 0,
-					igdbId = igdbId,
-					name = "Game #$igdbId",
-					summary = null,
-					coverUrl = null,
-					genres = emptyList(),
-					platforms = emptyList(),
-					developer = null,
-					publisher = null,
-					firstReleaseDate = null,
-					totalRating = null,
-					totalRatingCount = null
-				)
-			}
-		}.awaitAll()
-	}
+	private suspend fun fetchGamesFromEntities(igdbIds: List<Int>): List<Game> =
+		coroutineScope {
+			igdbIds.map { igdbId ->
+				async {
+					gameRepository.fetchGameDetails(igdbId) ?: Game(
+						id = 0,
+						igdbId = igdbId,
+						name = "Game #$igdbId",
+						summary = null,
+						coverUrl = null,
+						genres = emptyList(),
+						platforms = emptyList(),
+						developer = null,
+						publisher = null,
+						firstReleaseDate = null,
+						totalRating = null,
+						totalRatingCount = null
+					)
+				}
+			}.awaitAll()
+		}
 
 	suspend fun updatePassword(current: String, new: String): Result<Unit> {
 		val currentUser = state.value.user ?: return Result.failure(Exception("User not logged in"))

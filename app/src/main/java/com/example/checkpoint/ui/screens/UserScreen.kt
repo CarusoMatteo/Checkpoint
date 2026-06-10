@@ -184,6 +184,7 @@ fun UserScreen(
 						users = uiState.user?.let { mapOf(it.id to it) } ?: emptyMap(),
 						modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
 						hasWriteReviewButton = false,
+						gameNames = uiState.gameNameByGameId,
 						onReviewClick = { review ->
 							val igdbId = uiState.igdbIdByGameId[review.gameId]
 							if (igdbId != null) navController.navigate(
@@ -191,8 +192,7 @@ fun UserScreen(
 									igdbId
 								)
 							)
-						}
-					)
+						})
 				}
 			}
 		}

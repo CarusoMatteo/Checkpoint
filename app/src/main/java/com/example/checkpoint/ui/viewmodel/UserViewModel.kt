@@ -27,7 +27,8 @@ data class UserUiState(
 	val carousels: List<LibraryListUiModel> = emptyList(),
 	val reviews: List<ReviewEntity> = emptyList(),
 	val allAvailableGenres: List<String> = emptyList(),
-	val igdbIdByGameId: Map<Int, Int> = emptyMap()
+	val igdbIdByGameId: Map<Int, Int> = emptyMap(),
+	val gameNameByGameId: Map<Int, String> = emptyMap()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -67,12 +68,10 @@ class UserViewModel(
 					}
 				}
 
-			// Review flow + map gameId -> igdbId for navigating to game
 			val reviewsFlow = reviewDao.getReviewsByUser(userId).flatMapLatest { reviews ->
 				flow {
-					val igdbIdByGameId =
-						resolveIgdbIds(reviews.map { it.gameId }.distinct())
-					emit(Pair(reviews, igdbIdByGameId))
+					val info = resolveGameInfo(reviews.map { it.gameId }.distinct())
+					emit(Triple(reviews, info.first, info.second))
 				}
 			}
 
@@ -105,8 +104,8 @@ class UserViewModel(
 				combine(flowOf(user), achievementsFlow, ::Pair),
 				combine(reviewsFlow, preferredGenresFlow, ::Pair),
 				combine(allGenresFlow, carouselsFlow, ::Pair)
-			) { (u, achs), (revPair, prefG), (allG, carousels) ->
-				val (revs, igdbIdByGameId) = revPair
+			) { (u, achs), (revTriple, prefG), (allG, carousels) ->
+				val (revs, igdbIdByGameId, gameNameByGameId) = revTriple
 				UserUiState(
 					user = u,
 					isLoading = false,
@@ -114,6 +113,7 @@ class UserViewModel(
 					achievements = achs,
 					reviews = revs,
 					igdbIdByGameId = igdbIdByGameId,
+					gameNameByGameId = gameNameByGameId,
 					preferredGenres = prefG,
 					allAvailableGenres = allG,
 					carousels = carousels
@@ -126,12 +126,29 @@ class UserViewModel(
 		initialValue = UserUiState(isLoading = true)
 	)
 
-	/** Resolves a list of gameIds (Rooms) in a map gameId -> igdbId */
-	private suspend fun resolveIgdbIds(gameIds: List<Int>): Map<Int, Int> = coroutineScope {
-		gameIds.map { gameId ->
-			async { gameId to (gameDao.getById(gameId)?.igdbId) }
-		}.awaitAll().mapNotNull { (gameId, igdbId) -> igdbId?.let { gameId to it } }.toMap()
-	}
+	/**
+	 * For each gameId (Room) resolves igdbId and game name in parallel.
+	 * Returns Pair(igdbIdByGameId, gameNameByGameId).
+	 */
+	private suspend fun resolveGameInfo(gameIds: List<Int>): Pair<Map<Int, Int>, Map<Int, String>> =
+		coroutineScope {
+			gameIds.map { gameId ->
+				async {
+					val entity = gameDao.getById(gameId)
+					val igdbId = entity?.igdbId
+					val name = igdbId?.let { gameRepository.fetchGameDetails(it)?.name }
+					Triple(gameId, igdbId, name)
+				}
+			}.awaitAll().let { results ->
+				val igdbIdMap = results.mapNotNull { (gameId, igdbId, _) ->
+					igdbId?.let { gameId to it }
+				}.toMap()
+				val nameMap = results.mapNotNull { (gameId, _, name) ->
+					name?.let { gameId to it }
+				}.toMap()
+				Pair(igdbIdMap, nameMap)
+			}
+		}
 
 	/** Fetch the IGDB details in parallel for a list of igdbIds */
 	private suspend fun fetchGamesFromEntities(igdbIds: List<Int>): List<Game> = coroutineScope {

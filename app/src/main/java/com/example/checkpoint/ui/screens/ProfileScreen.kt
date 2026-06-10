@@ -204,6 +204,7 @@ fun ProfileScreen(
 				users = mapOf(safeUser.id to safeUser),
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
 				hasWriteReviewButton = false,
+				gameNames = uiState.gameNameByGameId,
 				onReviewClick = { review ->
 					val igdbId = uiState.igdbIdByGameId[review.gameId]
 					if (igdbId != null) navController.navigate(NavigationRoute.GameScreen(igdbId))
@@ -242,9 +243,7 @@ fun ProfileScreen(
 
 @Composable
 internal fun ProfileHeader(
-	user: UserEntity,
-	onAvatarClick: (() -> Unit)?,
-	modifier: Modifier = Modifier,
+	user: UserEntity, onAvatarClick: (() -> Unit)?, modifier: Modifier = Modifier
 ) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
 		Box(contentAlignment = Alignment.BottomEnd) {
