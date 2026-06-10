@@ -70,7 +70,7 @@ class ProfileViewModel(
 	private val reviewDao: ReviewDao,
 	private val genreDao: GenreDao,
 	private val userPreferredGenreDao: UserPreferredGenreDao,
-	private val sessionManager: SessionManager,
+	sessionManager: SessionManager,
 	private val gameDao: GameDao,
 ) : ViewModel() {
 
@@ -97,9 +97,9 @@ class ProfileViewModel(
 								description = ach.description,
 								iconUrl = ach.iconUrl,
 								threshold = ach.threshold,
-								progress = ua?.progress ?: 0,
-								unlockedAt = ua?.unlockedAt,
-								isPinned = ua?.isPinned ?: false,
+								progress = ua.progress,
+								unlockedAt = ua.unlockedAt,
+								isPinned = ua.isPinned,
 								categoryId = ach.categoryId
 							)
 						} else null
@@ -125,7 +125,7 @@ class ProfileViewModel(
 			val carouselsFlow = gameListRepository.getListsForUser(userId)
 				.flatMapLatest { lists ->
 					if (lists.isEmpty()) {
-						flowOf(emptyList<LibraryListUiModel>())
+						flowOf(emptyList())
 					} else {
 						val carouselFlows = lists.map { listEntity ->
 							gameListRepository.getGamesInList(listEntity.id)

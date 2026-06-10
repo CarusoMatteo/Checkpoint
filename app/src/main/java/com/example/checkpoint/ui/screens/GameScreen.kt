@@ -3,7 +3,6 @@ package com.example.checkpoint.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -509,20 +508,18 @@ private fun SaveToListsDialog(
 	}
 }
 
-private fun addEventToCalendar(
-	ctx: Context, title: String, startTime: Long
-) {
+private fun addEventToCalendar(ctx: Context, title: String, startTime: Long) {
+	val startTimeMs = startTime * 1000L
 	val intent = Intent(Intent.ACTION_INSERT).apply {
 		data = CalendarContract.Events.CONTENT_URI
 		putExtra(CalendarContract.Events.TITLE, title)
 		putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
-		Log.i(
-			"GameScreen",
-			"Adding calendar event with start time: $startTime (${Instant.ofEpochSecond(startTime)})"
-		)
+		putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTimeMs)
+		putExtra(CalendarContract.EXTRA_EVENT_END_TIME, startTimeMs)
 	}
-
-	if (intent.resolveActivity(ctx.packageManager) != null) {
+	try {
 		ctx.startActivity(intent)
+	} catch (e: Exception) {
+		Toast.makeText(ctx, "No calendar app found.", Toast.LENGTH_SHORT).show()
 	}
 }
