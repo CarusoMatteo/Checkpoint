@@ -27,6 +27,7 @@ import com.example.checkpoint.ui.viewmodel.LoginViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.ui.viewmodel.SettingsViewModel
 import com.example.checkpoint.ui.viewmodel.SignUpViewModel
+import com.example.checkpoint.ui.viewmodel.UserViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -153,7 +154,8 @@ val appModule = module {
 			achievementRepository = get(),
 			genreDao = get(),
 			userPreferredGenreDao = get(),
-			reviewDao = get()
+			reviewDao = get(),
+			gameDao = get()
 		)
 	}
 	viewModel {
@@ -173,4 +175,16 @@ val appModule = module {
 		)
 	}
 	viewModel { SettingsViewModel(get()) }
+	viewModel { (userId: Int) ->
+		UserViewModel(
+			userId = userId,
+			userRepository = get(),
+			gameRepository = get(),
+			gameListRepository = get(),
+			achievementRepository = get(),
+			reviewDao = get(),
+			genreDao = get(),
+			gameDao = get()
+		)
+	}
 }

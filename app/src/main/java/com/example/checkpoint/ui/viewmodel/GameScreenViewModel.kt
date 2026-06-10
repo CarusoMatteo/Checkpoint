@@ -70,9 +70,9 @@ class GameScreenViewModel(
 
 	private val localGameId = MutableStateFlow<Int?>(null)
 
-	private val loggedInUserId = sessionManager.sessionState
-		.map { if (it is SessionState.LoggedIn) it.userId else null }
-		.distinctUntilChanged()
+	private val loggedInUserId =
+		sessionManager.sessionState.map { if (it is SessionState.LoggedIn) it.userId else null }
+			.distinctUntilChanged()
 
 	val actions = GameScreenActions(
 		onSaveGame = { saveGame() },
@@ -105,7 +105,6 @@ class GameScreenViewModel(
 				return@launch
 			}
 
-			val isSaved = gameRepository.savedIgdbIds.first().contains(igdbId)
 			val similar = gameRepository.getSimilarGames(igdbId)
 			val franchise = gameRepository.getFranchiseGames(igdbId)
 
@@ -115,7 +114,6 @@ class GameScreenViewModel(
 					similarGames = similar,
 					franchiseGames = franchise,
 					isLoading = false,
-					isSaved = isSaved
 				)
 			}
 
@@ -181,12 +179,24 @@ class GameScreenViewModel(
 											_state.update { it.copy(userReview = review) }
 										}
 								}
+								launch {
+									combine(
+										gameListRepository.getListsContainingGame(gameId),
+										gameListRepository.getListsForUser(userId)
+									) { listsContaining, userLists ->
+										val userListIds = userLists.map { it.id }.toSet()
+										listsContaining.any { it in userListIds }
+									}.collect { isSaved ->
+										_state.update { it.copy(isSaved = isSaved) }
+									}
+								}
 							}
 						}
 					}
 				} else {
 					_state.update {
 						it.copy(
+							isSaved = false,
 							userLog = null,
 							userReview = null,
 							userLists = emptyList(),
@@ -229,8 +239,6 @@ class GameScreenViewModel(
 			toRemove.forEach { listId ->
 				gameListRepository.removeGameFromList(listId, gameId)
 			}
-
-			_state.update { it.copy(isSaved = true) }
 		}
 	}
 
@@ -244,7 +252,6 @@ class GameScreenViewModel(
 	private fun saveGame() {
 		viewModelScope.launch {
 			val entity = gameRepository.saveGame(igdbId)
-			_state.update { it.copy(isSaved = true) }
 			localGameId.value = entity.id
 			observeGameSpecificData(entity.id)
 		}

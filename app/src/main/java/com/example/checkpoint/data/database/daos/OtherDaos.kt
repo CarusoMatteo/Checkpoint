@@ -24,6 +24,9 @@ interface GameDao {
 	@Query("SELECT * FROM games WHERE igdb_id = :igdbId LIMIT 1")
 	suspend fun getByIgdbId(igdbId: Int): GameEntity?
 
+	@Query("SELECT * FROM games WHERE id = :id LIMIT 1")
+	suspend fun getById(id: Int): GameEntity?
+
 	@Query("SELECT igdb_id FROM games")
 	fun getAllIgdbIds(): Flow<List<Int>>
 

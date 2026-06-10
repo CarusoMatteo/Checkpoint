@@ -34,6 +34,7 @@ import com.example.checkpoint.ui.screens.LoginScreen
 import com.example.checkpoint.ui.screens.ProfileScreen
 import com.example.checkpoint.ui.screens.SettingsScreen
 import com.example.checkpoint.ui.screens.SignUpScreen
+import com.example.checkpoint.ui.screens.UserScreen
 import com.example.checkpoint.ui.theme.CheckpointTheme
 import com.example.checkpoint.ui.viewmodel.AchievementsViewModel
 import com.example.checkpoint.ui.viewmodel.GameScreenViewModel
@@ -41,6 +42,7 @@ import com.example.checkpoint.ui.viewmodel.LibraryViewModel
 import com.example.checkpoint.ui.viewmodel.ProfileViewModel
 import com.example.checkpoint.ui.viewmodel.SettingsViewModel
 import com.example.checkpoint.ui.viewmodel.UiThemeState
+import com.example.checkpoint.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,7 +103,7 @@ sealed interface NavigationRoute {
 	data class GameScreen(val igdbId: Int) : NavigationRoute
 
 	@Serializable
-	data object UserScreen : NavigationRoute
+	data class UserScreen(val userId: Int) : NavigationRoute
 
 	@Serializable
 	data object LibraryScreen : NavigationRoute
@@ -156,7 +158,7 @@ fun NavGraph(
 		composable<NavigationRoute.ProfileScreen> {
 			val sessionState by sessionManager.sessionState.collectAsState()
 
-			// Responsive redirection: if the user is not logged in, they go to Login
+			// Responsive redirection: if the user is not logged in, they go to LoginScreen
 			LaunchedEffect(sessionState) {
 				if (sessionState is SessionState.LoggedOut) {
 					navController.navigate(NavigationRoute.LoginScreen) {
@@ -173,6 +175,15 @@ fun NavGraph(
 				Box(modifier = Modifier.fillMaxSize())
 			}
 		}
+
+		composable<NavigationRoute.UserScreen> { backStackEntry ->
+			val route: NavigationRoute.UserScreen = backStackEntry.toRoute()
+			val vm: UserViewModel = koinViewModel { parametersOf(route.userId) }
+			UserScreen(
+				navController = navController, userViewModel = vm
+			)
+		}
+
 		composable<NavigationRoute.AchievementsScreen> {
 			AchievementsScreen(
 				navController = navController, achievementsViewModel = achievementsViewModel

@@ -20,9 +20,9 @@ class AuthRepository(
 	 */
 	suspend fun login(usernameOrEmail: String, password: String): Result<UserEntity> {
 		return try {
-			val user = userDao.getUserByUsername(usernameOrEmail)
-				?: userDao.getUserByEmail(usernameOrEmail)
-				?: return Result.failure(Exception("User not found"))
+			val user = userDao.getUserByUsername(usernameOrEmail) ?: userDao.getUserByEmail(
+				usernameOrEmail
+			) ?: return Result.failure(Exception("User not found"))
 
 			val isCorrect = if (user.passwordHash.contains(":")) {
 				val parts = user.passwordHash.split(":")
@@ -78,16 +78,10 @@ class AuthRepository(
 
 			// Create the default lists for the new user
 			gameListRepository.createList(
-				userId = loggedInUser.id,
-				name = "Backlog",
-				type = "BACKLOG",
-				isPublic = true
+				userId = loggedInUser.id, name = "Backlog", type = "BACKLOG", isPublic = true
 			)
 			gameListRepository.createList(
-				userId = loggedInUser.id,
-				name = "Saved",
-				type = "SAVED",
-				isPublic = true
+				userId = loggedInUser.id, name = "Saved", type = "SAVED", isPublic = true
 			)
 			Log.d(TAG, "Default lists created for userId=${loggedInUser.id}")
 

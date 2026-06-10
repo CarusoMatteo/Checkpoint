@@ -51,16 +51,19 @@ object DatabaseSeeder {
 
 	// Fictitious games to which to associate reviews
 	val sampleGames = listOf(
-		GameEntity(id = 1, igdbId = 22439),
-		GameEntity(id = 2, igdbId = 1002),
-		GameEntity(id = 3, igdbId = 1003),
-		GameEntity(id = 4, igdbId = 42931),
-		GameEntity(id = 5, igdbId = 1026),
-		GameEntity(id = 6, igdbId = 6036)
+		GameEntity(id = 1, igdbId = 22439),  // The Witcher 3
+		GameEntity(id = 2, igdbId = 6036),   // The Last of Us
+		GameEntity(id = 3, igdbId = 42931),  // Bloodborne
+		GameEntity(id = 4, igdbId = 1026),  // Zelda a link to the past
+		GameEntity(id = 5, igdbId = 23),   // System Shock
+		GameEntity(id = 6, igdbId = 41),   // Deus Ex
+		GameEntity(id = 7, igdbId = 20),   // BioShock
+		GameEntity(id = 8, igdbId = 338),   // Half-Life 2
+		GameEntity(id = 9, igdbId = 333),   // Quake
+		GameEntity(id = 10, igdbId = 71),   // Portal
 	)
-
-	// Reviews hooked to the users and games defined above
 	val sampleDbReviews = listOf(
+		// john_doe (userId=1)
 		ReviewEntity(
 			id = 1,
 			userId = 1,
@@ -69,7 +72,8 @@ object DatabaseSeeder {
 			body = "Great game with an engaging story and fun gameplay! I completed everything and loved every minute of it.",
 			completion = "COMPLETED",
 			createdAt = Instant.now().toString()
-		), ReviewEntity(
+		),
+		ReviewEntity(
 			id = 2,
 			userId = 1,
 			gameId = 2,
@@ -77,7 +81,36 @@ object DatabaseSeeder {
 			body = "The game was enjoyable, but I found the controls a bit clunky.",
 			completion = "MAIN",
 			createdAt = Instant.now().toString()
-		), ReviewEntity(
+		),
+		ReviewEntity(
+			id = 5,
+			userId = 1,
+			gameId = 5,
+			rating = 5.0f,
+			body = "A masterpiece of immersive simulation. Tense atmosphere and incredible depth.",
+			completion = "COMPLETED",
+			createdAt = Instant.now().toString()
+		),
+		ReviewEntity(
+			id = 6,
+			userId = 1,
+			gameId = 6,
+			rating = 4.0f,
+			body = "Deus Ex defined the genre. Unmatched freedom of choice and a gripping conspiracy story.",
+			completion = "MAIN_AND_EXTRA",
+			createdAt = Instant.now().toString()
+		),
+		ReviewEntity(
+			id = 7,
+			userId = 1,
+			gameId = 7,
+			rating = 4.5f,
+			body = "BioShock blew me away. Rapture is one of the most memorable settings in gaming history.",
+			completion = "MAIN",
+			createdAt = Instant.now().toString()
+		),
+		// jane_smith (userId=2)
+		ReviewEntity(
 			id = 3,
 			userId = 2,
 			gameId = 1,
@@ -85,7 +118,18 @@ object DatabaseSeeder {
 			body = "Absolutely loved it! The graphics and soundtrack were amazing.",
 			completion = "MAIN_AND_EXTRA",
 			createdAt = Instant.now().toString()
-		), ReviewEntity(
+		),
+		ReviewEntity(
+			id = 8,
+			userId = 2,
+			gameId = 8,
+			rating = 4.5f,
+			body = "Half-Life 2 is still a benchmark for storytelling through environment.",
+			completion = "COMPLETED",
+			createdAt = Instant.now().toString()
+		),
+		// alex_j (userId=3)
+		ReviewEntity(
 			id = 4,
 			userId = 3,
 			gameId = 3,
@@ -93,7 +137,7 @@ object DatabaseSeeder {
 			body = "The game had potential, but it was plagued with bugs and performance issues.",
 			completion = "MAIN",
 			createdAt = Instant.now().toString()
-		)
+		),
 	)
 
 	val achievementCategories = listOf(
@@ -154,7 +198,11 @@ object DatabaseSeeder {
 			userId = 1, achievementId = 4, progress = 7, unlockedAt = null, isPinned = false
 		),
 		UserAchievementEntity(
-			userId = 1, achievementId = 5, progress = 2, unlockedAt = null, isPinned = false
+			userId = 1,
+			achievementId = 5,
+			progress = 5,
+			unlockedAt = "2026-06-01T12:00:00Z",
+			isPinned = true
 		),
 		UserAchievementEntity(
 			userId = 1, achievementId = 6, progress = 3, unlockedAt = null, isPinned = false
@@ -162,20 +210,42 @@ object DatabaseSeeder {
 	)
 
 	val sampleLists = listOf(
+		// john_doe (userId=1)
 		GameListEntity(id = 1, userId = 1, name = "Backlog", type = "BACKLOG", isPublic = true),
 		GameListEntity(id = 2, userId = 1, name = "Saved", type = "SAVED", isPublic = true),
-		GameListEntity(id = 3, userId = 1, name = "Favorites", type = "CUSTOM", isPublic = true)
+		GameListEntity(id = 3, userId = 1, name = "Favorites", type = "CUSTOM", isPublic = true),
+		// jane_smith (userId=2)
+		GameListEntity(id = 4, userId = 2, name = "Backlog", type = "BACKLOG", isPublic = true),
+		GameListEntity(id = 5, userId = 2, name = "Saved", type = "SAVED", isPublic = true),
+		// alex_j (userId=3)
+		GameListEntity(id = 6, userId = 3, name = "Backlog", type = "BACKLOG", isPublic = false),
+		GameListEntity(id = 7, userId = 3, name = "Saved", type = "SAVED", isPublic = false),
 	)
 
 	val sampleListEntries = listOf(
-		ListEntryEntity(listId = 1, gameId = 1, addedAt = "2026-05-01T12:00:00Z"), // BackLog
-		ListEntryEntity(listId = 1, gameId = 2, addedAt = "2026-05-02T14:30:00Z"), // BackLog
-		ListEntryEntity(listId = 2, gameId = 3, addedAt = "2026-05-03T09:15:00Z"), // Saved
-		ListEntryEntity(listId = 1, gameId = 4, addedAt = "2026-06-04T10:00:00Z"), // Backlog
-		ListEntryEntity(listId = 2, gameId = 5, addedAt = "2026-06-05T11:00:00Z"), // Saved
-		ListEntryEntity(
-			listId = 3, gameId = 6, addedAt = "2026-06-06T12:00:00Z"
-		)  // Favorites (Custom)
+		// john_doe — Backlog (listId=1)
+		ListEntryEntity(listId = 1, gameId = 1, addedAt = "2026-05-01T12:00:00Z"),
+		ListEntryEntity(listId = 1, gameId = 2, addedAt = "2026-05-02T14:30:00Z"),
+		ListEntryEntity(listId = 1, gameId = 4, addedAt = "2026-06-04T10:00:00Z"),
+		// john_doe — Saved (listId=2)
+		ListEntryEntity(listId = 2, gameId = 3, addedAt = "2026-05-03T09:15:00Z"),
+		ListEntryEntity(listId = 2, gameId = 5, addedAt = "2026-06-05T11:00:00Z"),
+		// john_doe — Favorites (listId=3)
+		ListEntryEntity(listId = 3, gameId = 6, addedAt = "2026-06-06T12:00:00Z"),
+
+		// jane_smith — Backlog (listId=4)
+		ListEntryEntity(listId = 4, gameId = 7, addedAt = "2026-05-10T10:00:00Z"),
+		ListEntryEntity(listId = 4, gameId = 8, addedAt = "2026-05-11T11:00:00Z"),
+		ListEntryEntity(listId = 4, gameId = 9, addedAt = "2026-05-12T12:00:00Z"),
+		// jane_smith — Saved (listId=5)
+		ListEntryEntity(listId = 5, gameId = 1, addedAt = "2026-05-13T09:00:00Z"),
+		ListEntryEntity(listId = 5, gameId = 10, addedAt = "2026-05-14T08:00:00Z"),
+
+		// alex_j — Backlog (listId=6)
+		ListEntryEntity(listId = 6, gameId = 2, addedAt = "2026-06-01T10:00:00Z"),
+		ListEntryEntity(listId = 6, gameId = 5, addedAt = "2026-06-02T11:00:00Z"),
+		// alex_j — Saved (listId=7)
+		ListEntryEntity(listId = 7, gameId = 6, addedAt = "2026-06-03T12:00:00Z"),
 	)
 
 	val sampleGameLogs = listOf(
@@ -187,7 +257,8 @@ object DatabaseSeeder {
 			hoursPlayed = 42.5,
 			completionType = "COMPLETED",
 			finishedAt = "2026-04-10"
-		), GameLogEntity(
+		),
+		GameLogEntity(
 			id = 2,
 			userId = 1,
 			gameId = 2,
@@ -195,14 +266,33 @@ object DatabaseSeeder {
 			hoursPlayed = 18.0,
 			completionType = "MAIN",
 			finishedAt = "2026-05-20"
-		), GameLogEntity(
+		),
+		GameLogEntity(
 			id = 3,
 			userId = 1,
 			gameId = 3,
 			hoursPlayed = 5.5,
 			completionType = null,
 			finishedAt = null
-		)
+		),
+		GameLogEntity(
+			id = 4,
+			userId = 2,
+			gameId = 7,
+			rating = 9,
+			hoursPlayed = 30.0,
+			completionType = "COMPLETED",
+			finishedAt = "2026-05-25"
+		),
+		GameLogEntity(
+			id = 5,
+			userId = 2,
+			gameId = 8,
+			rating = 10,
+			hoursPlayed = 15.0,
+			completionType = "COMPLETED",
+			finishedAt = "2026-06-01"
+		),
 	)
 
 	// game genres
