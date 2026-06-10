@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.checkpoint.data.database.daos.GameDao
 import com.example.checkpoint.data.database.daos.GenreDao
 import com.example.checkpoint.data.database.daos.ReviewDao
 import com.example.checkpoint.data.database.daos.UserPreferredGenreDao
-import com.example.checkpoint.data.database.entities.GameListEntity
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserEntity
 import com.example.checkpoint.data.database.entities.UserPreferredGenreEntity
@@ -20,6 +20,9 @@ import com.example.checkpoint.data.security.PasswordHasher
 import com.example.checkpoint.data.session.SessionManager
 import com.example.checkpoint.data.session.SessionState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
@@ -43,7 +46,6 @@ data class AchievementUiModel(
 	val progressFraction: Float get() = (progress.toFloat() / threshold).coerceIn(0f, 1f)
 }
 
-
 data class ProfileUiState(
 	val user: UserEntity? = null,
 	val isLoading: Boolean = false,
@@ -52,7 +54,8 @@ data class ProfileUiState(
 	val preferredGenres: List<String> = emptyList(),
 	val carousels: List<LibraryListUiModel> = emptyList(),
 	val reviews: List<ReviewEntity> = emptyList(),
-	val allAvailableGenres: List<String> = emptyList()
+	val allAvailableGenres: List<String> = emptyList(),
+	val igdbIdByGameId: Map<Int, Int> = emptyMap()
 )
 
 // ─── ViewModel ────────────────────────────────────────────────────────────────
@@ -66,7 +69,8 @@ class ProfileViewModel(
 	private val reviewDao: ReviewDao,
 	private val genreDao: GenreDao,
 	private val userPreferredGenreDao: UserPreferredGenreDao,
-	private val sessionManager: SessionManager
+	private val sessionManager: SessionManager,
+	private val gameDao: GameDao,
 ) : ViewModel() {
 
 	// Get User ID from Session
@@ -101,7 +105,13 @@ class ProfileViewModel(
 					}
 				}
 
-			val reviewsFlow = reviewDao.getReviewsByUser(userId)
+			// Review flow + map gameId -> igdbId for navigating to the game
+			val reviewsFlow = reviewDao.getReviewsByUser(userId).flatMapLatest { reviews ->
+				flow {
+					val igdbIdByGameId = resolveIgdbIds(reviews.map { it.gameId }.distinct())
+					emit(Pair(reviews, igdbIdByGameId))
+				}
+			}
 
 			val preferredGenresFlow =
 				genreDao.getPreferredGenresForUser(userId).map { list -> list.map { it.name } }
@@ -109,44 +119,35 @@ class ProfileViewModel(
 			val allGenresFlow =
 				gameRepository.getAllGenresFromDb().map { list -> list.map { it.name } }
 
+			// Carousel
 			val carouselsFlow = gameListRepository.getListsForUser(userId).flatMapLatest { lists ->
 				if (lists.isEmpty()) {
 					flowOf(emptyList<LibraryListUiModel>())
 				} else {
 					val carouselFlows = lists.map { listEntity ->
-						gameListRepository.getGamesInList(listEntity.id).map { gameEntities ->
-							val games = gameEntities.map { entity ->
-								Game(
-									id = entity.id,
-									igdbId = entity.igdbId,
-									name = "Game #${entity.igdbId}",
-									summary = null,
-									coverUrl = null,
-									genres = emptyList(),
-									platforms = emptyList(),
-									developer = null,
-									publisher = null,
-									firstReleaseDate = null,
-									totalRating = null,
-									totalRatingCount = null
-								)
+						gameListRepository.getGamesInList(listEntity.id).flatMapLatest { entities ->
+							flow {
+								val games = fetchGamesFromEntities(entities.map { it.igdbId })
+								emit(LibraryListUiModel(listEntity, games))
 							}
-							LibraryListUiModel(listEntity, games)
 						}
 					}
-					// combine flows into a single list
 					combine(carouselFlows) { array: Array<LibraryListUiModel> -> array.toList() }
 				}
 			}
+
 			combine(
-				combine(userFlow, achievementsFlow, reviewsFlow, ::Triple),
-				combine(preferredGenresFlow, allGenresFlow, carouselsFlow, ::Triple)
-			) { (user, achs, revs), (prefG, allG, carousels) ->
+				combine(userFlow, achievementsFlow, ::Pair),
+				combine(reviewsFlow, preferredGenresFlow, ::Pair),
+				combine(allGenresFlow, carouselsFlow, ::Pair)
+			) { (user, achs), (revPair, prefG), (allG, carousels) ->
+				val (revs, igdbIdByGameId) = revPair
 				ProfileUiState(
 					user = user,
 					isLoading = false,
 					achievements = achs,
 					reviews = revs,
+					igdbIdByGameId = igdbIdByGameId,
 					preferredGenres = prefG,
 					allAvailableGenres = allG,
 					carousels = carousels
@@ -159,6 +160,34 @@ class ProfileViewModel(
 		initialValue = ProfileUiState(isLoading = true)
 	)
 
+	/** Resolves a list of gameIds (Rooms) in a map gameId -> igdbId */
+	private suspend fun resolveIgdbIds(gameIds: List<Int>): Map<Int, Int> = coroutineScope {
+		gameIds.map { gameId ->
+			async { gameId to (gameDao.getById(gameId)?.igdbId) }
+		}.awaitAll().mapNotNull { (gameId, igdbId) -> igdbId?.let { gameId to it } }.toMap()
+	}
+
+	/** Fetch the IGDB details in parallel for a list of igdbIds */
+	private suspend fun fetchGamesFromEntities(igdbIds: List<Int>): List<Game> = coroutineScope {
+		igdbIds.map { igdbId ->
+			async {
+				gameRepository.fetchGameDetails(igdbId) ?: Game(
+					id = 0,
+					igdbId = igdbId,
+					name = "Game #$igdbId",
+					summary = null,
+					coverUrl = null,
+					genres = emptyList(),
+					platforms = emptyList(),
+					developer = null,
+					publisher = null,
+					firstReleaseDate = null,
+					totalRating = null,
+					totalRatingCount = null
+				)
+			}
+		}.awaitAll()
+	}
 
 	suspend fun updatePassword(current: String, new: String): Result<Unit> {
 		val currentUser = state.value.user ?: return Result.failure(Exception("User not logged in"))
@@ -178,7 +207,6 @@ class ProfileViewModel(
 			val salt = PasswordHasher.generateSalt()
 			val hash = PasswordHasher.hashPassword(new, salt)
 			val combinedHash = "$salt:$hash"
-
 			userRepository.upsertUser(currentUser.copy(passwordHash = combinedHash))
 			Result.success(Unit)
 		} catch (e: Exception) {
@@ -211,7 +239,6 @@ class ProfileViewModel(
 		viewModelScope.launch {
 			userPreferredGenreDao.deleteAllForUser(user.id)
 			val allGenres = gameRepository.getAllGenresFromDb().first()
-
 			genreNames.forEach { name ->
 				allGenres.find { it.name == name }?.let { genre ->
 					userPreferredGenreDao.upsert(
