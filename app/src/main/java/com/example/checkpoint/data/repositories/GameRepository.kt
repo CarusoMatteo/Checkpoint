@@ -76,6 +76,8 @@ class GameRepository(
 
 	suspend fun getLocalEntityByIgdbId(igdbId: Int): GameEntity? = gameDao.getByIgdbId(igdbId)
 
+	suspend fun getLocalEntityById(id: Int): GameEntity? = gameDao.getById(id)
+
 	suspend fun saveGame(igdbId: Int): GameEntity {
 		val existing = gameDao.getByIgdbId(igdbId)
 		if (existing != null) return existing
@@ -140,6 +142,13 @@ class GameRepository(
 
 	suspend fun getGamesByGenre(genreIgdbId: Int, limit: Int = 20): List<Game> = runCatching {
 		igdbClient.getGamesByGenre(genreIgdbId, limit).map { dto ->
+			dto.toDomain(localId = gameDao.getByIgdbId(dto.id)?.id ?: 0)
+		}
+	}.getOrElse { emptyList() }
+
+	/** Top-rated games on a specific platform by IGDB platform ID. */
+	suspend fun getGamesByPlatform(platformIgdbId: Int, limit: Int = 20): List<Game> = runCatching {
+		igdbClient.getGamesByPlatform(platformIgdbId, limit).map { dto ->
 			dto.toDomain(localId = gameDao.getByIgdbId(dto.id)?.id ?: 0)
 		}
 	}.getOrElse { emptyList() }
