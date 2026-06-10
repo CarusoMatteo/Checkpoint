@@ -82,6 +82,8 @@ fun GameScreen(
 	val state by viewModel.state.collectAsState()
 	val scrollState = rememberScrollState()
 	val ctx = LocalContext.current
+	val currentUnixTime = System.currentTimeMillis() / 1000L
+	val isReleased = state.game?.firstReleaseDate?.let { it <= currentUnixTime } ?: true
 
 	val navigateToGrid: (String, List<Game>) -> Unit = { title, gamesList ->
 		navController.currentBackStackEntry?.savedStateHandle?.set("grid_games", gamesList)
@@ -246,20 +248,21 @@ fun GameScreen(
 							},
 							onSeeAllClick = { navigateToGrid("Similar games", state.similarGames) })
 					}
-
-					ReviewList(
-						title = "Reviews",
-						reviews = state.reviews,
-						users = state.reviewUsers,
-						modifier = Modifier.padding(horizontal = 16.dp),
-						hasStartingDivider = true,
-						hasWriteReviewButton = state.isLoggedIn && state.userReview == null,
-						onReviewClick = { review ->
-							navController.navigate(NavigationRoute.UserScreen(review.userId))
-						},
-						onReviewSubmit = { rating, body, completion ->
-							viewModel.actions.onWriteReview(rating, body, completion)
-						})
+					if (isReleased) {
+						ReviewList(
+							title = "Reviews",
+							reviews = state.reviews,
+							users = state.reviewUsers,
+							modifier = Modifier.padding(horizontal = 16.dp),
+							hasStartingDivider = true,
+							hasWriteReviewButton = state.isLoggedIn && state.userReview == null,
+							onReviewClick = { review ->
+								navController.navigate(NavigationRoute.UserScreen(review.userId))
+							},
+							onReviewSubmit = { rating, body, completion ->
+								viewModel.actions.onWriteReview(rating, body, completion)
+							})
+					}
 				}
 			}
 		}
