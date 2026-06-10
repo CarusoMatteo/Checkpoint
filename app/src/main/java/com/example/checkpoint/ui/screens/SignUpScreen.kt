@@ -170,6 +170,14 @@ private fun SignUpCard(
 				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
 			)
 		}
+		if (password.text.isNotEmpty() && password.text.length < 8) {
+			Text(
+				text = "The password must be at least 8 characters long.",
+				color = MaterialTheme.colorScheme.error,
+				style = MaterialTheme.typography.bodyMedium,
+				modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+			)
+		}
 
 		OutlinedTextField(
 			state = email,
@@ -281,7 +289,7 @@ private fun SignUpCard(
 						)
 					}
 				},
-				enabled = !uiState.isLoading && isOldEnough && password.text.isNotBlank() && password.text.toString() == repeatPassword.text.toString()
+				enabled = !uiState.isLoading && isOldEnough && password.text.length >= 8 && password.text.toString() == repeatPassword.text.toString()
 			) {
 				Text("Register")
 			}
