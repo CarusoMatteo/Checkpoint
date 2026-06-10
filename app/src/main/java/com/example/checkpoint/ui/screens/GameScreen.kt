@@ -232,11 +232,9 @@ fun GameScreen(
 							},
 							onSeeAllClick = {
 								navigateToGrid(
-									"From the series",
-									state.franchiseGames
+									"From the series", state.franchiseGames
 								)
-							}
-						)
+							})
 					}
 
 					if (state.similarGames.isNotEmpty()) {
@@ -247,8 +245,7 @@ fun GameScreen(
 							onGameClick = { clickedIgdbId ->
 								navController.navigate(NavigationRoute.GameScreen(clickedIgdbId))
 							},
-							onSeeAllClick = { navigateToGrid("Similar games", state.similarGames) }
-						)
+							onSeeAllClick = { navigateToGrid("Similar games", state.similarGames) })
 					}
 
 					ReviewList(
@@ -258,6 +255,9 @@ fun GameScreen(
 						modifier = Modifier.padding(horizontal = 16.dp),
 						hasStartingDivider = true,
 						hasWriteReviewButton = state.isLoggedIn && state.userReview == null,
+						onReviewClick = { review ->
+							navController.navigate(NavigationRoute.UserScreen(review.userId))
+						},
 						onReviewSubmit = { rating, body, completion ->
 							viewModel.actions.onWriteReview(rating, body, completion)
 						})
@@ -448,7 +448,6 @@ private fun SaveToListsDialog(
 
 				Spacer(modifier = Modifier.height(8.dp))
 
-
 				TextButton(
 					onClick = { showCreateListDialog = true }, modifier = Modifier.fillMaxWidth()
 				) {
@@ -460,7 +459,6 @@ private fun SaveToListsDialog(
 
 				Spacer(modifier = Modifier.height(16.dp))
 
-				// actions
 				Row(
 					modifier = Modifier.fillMaxWidth(),
 					horizontalArrangement = Arrangement.End,
@@ -520,8 +518,6 @@ private fun addEventToCalendar(
 			"GameScreen",
 			"Adding calendar event with start time: $startTime (${Instant.ofEpochSecond(startTime)})"
 		)
-		// TODO: Fix starting time
-		// putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTime)
 	}
 
 	if (intent.resolveActivity(ctx.packageManager) != null) {

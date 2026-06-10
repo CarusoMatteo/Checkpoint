@@ -34,6 +34,7 @@ fun ReviewList(
 	modifier: Modifier = Modifier,
 	hasStartingDivider: Boolean = false,
 	hasWriteReviewButton: Boolean = true,
+	onReviewClick: ((ReviewEntity) -> Unit)? = null,
 	onReviewSubmit: (Float, String, CompletionType) -> Unit = { _, _, _ -> }
 ) {
 	var showWriteReviewDialog by remember { mutableStateOf(false) }
@@ -67,7 +68,6 @@ fun ReviewList(
 
 		reviews.forEach { review ->
 
-			// If for some reason it is not present , we use a secure fallback.
 			val reviewUser = users[review.userId] ?: UserEntity(
 				id = review.userId,
 				username = "Gamer_${review.userId}",
@@ -83,8 +83,8 @@ fun ReviewList(
 				user = reviewUser,
 				modifier = Modifier
 					.padding(bottom = 8.dp)
-					.fillMaxWidth()
-			)
+					.fillMaxWidth(),
+				onClick = onReviewClick?.let { cb -> { cb(review) } })
 		}
 	}
 

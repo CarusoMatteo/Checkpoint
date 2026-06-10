@@ -97,7 +97,6 @@ fun ProfileScreen(
 	var showBiographyUpdateDialog by remember { mutableStateOf(false) }
 	var showGenresUpdateDialog by remember { mutableStateOf(false) }
 
-	// Photo picker — no permission required (use system picker)
 	val avatarPickerLauncher = rememberLauncherForActivityResult(
 		contract = ActivityResultContracts.GetContent()
 	) { uri: Uri? ->
@@ -197,15 +196,18 @@ fun ProfileScreen(
 					.padding(vertical = 8.dp)
 			)
 
-			// ── Reviews
+			// ── Reviews — click opens the GameScreen of the reviewed game
 			HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 			ReviewList(
 				title = "Your Reviews",
 				reviews = uiState.reviews,
 				users = mapOf(safeUser.id to safeUser),
 				modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
-				hasWriteReviewButton = false
-			)
+				hasWriteReviewButton = false,
+				onReviewClick = { review ->
+					val igdbId = uiState.igdbIdByGameId[review.gameId]
+					if (igdbId != null) navController.navigate(NavigationRoute.GameScreen(igdbId))
+				})
 		}
 
 		// ── Dialogs
@@ -239,7 +241,7 @@ fun ProfileScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileHeader(
+internal fun ProfileHeader(
 	user: UserEntity, onAvatarClick: () -> Unit, modifier: Modifier = Modifier
 ) {
 	Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -302,7 +304,7 @@ private fun ProfileSection(
 }
 
 @Composable
-private fun MyCollectionsSection(
+internal fun MyCollectionsSection(
 	carousels: List<LibraryListUiModel>,
 	modifier: Modifier = Modifier,
 	onCollectionClick: (LibraryListUiModel) -> Unit = {}
@@ -369,7 +371,7 @@ private fun MyCollectionsSection(
 }
 
 @Composable
-private fun AchievementsSection(
+internal fun AchievementsSection(
 	pinnedAchievements: List<AchievementUiModel>,
 	onSeeAllClick: () -> Unit,
 	modifier: Modifier = Modifier,

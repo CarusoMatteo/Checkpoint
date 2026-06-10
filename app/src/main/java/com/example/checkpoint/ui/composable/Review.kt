@@ -15,7 +15,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.checkpoint.data.database.DatabaseSeeder
-// Importiamo le Entity corrette del database
 import com.example.checkpoint.data.database.entities.ReviewEntity
 import com.example.checkpoint.data.database.entities.UserEntity
 
@@ -23,9 +22,11 @@ import com.example.checkpoint.data.database.entities.UserEntity
 fun Review(
 	review: ReviewEntity,
 	user: UserEntity,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	onClick: (() -> Unit)? = null
 ) {
-	OutlinedCard(modifier = modifier) {
+	OutlinedCard(
+		modifier = modifier, onClick = onClick ?: {}) {
 		Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 			ReviewHeader(
 				review = review,
@@ -35,8 +36,7 @@ fun Review(
 					.padding(vertical = 12.dp)
 			)
 			Text(
-				text = review.body,
-				modifier = Modifier.padding(bottom = 16.dp)
+				text = review.body, modifier = Modifier.padding(bottom = 16.dp)
 			)
 		}
 	}
@@ -44,9 +44,7 @@ fun Review(
 
 @Composable
 fun ReviewHeader(
-	review: ReviewEntity,
-	user: UserEntity,
-	modifier: Modifier = Modifier
+	review: ReviewEntity, user: UserEntity, modifier: Modifier = Modifier
 ) {
 	Row(
 		modifier = modifier,
@@ -54,16 +52,13 @@ fun ReviewHeader(
 		verticalAlignment = Alignment.CenterVertically
 	) {
 		Row(
-			modifier = Modifier
-				.weight(1f),
-			verticalAlignment = Alignment.CenterVertically
+			modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically
 		) {
 			ProfilePicture(
 				user = user,
 			)
 			Column(
-				modifier = Modifier
-					.padding(start = 8.dp)
+				modifier = Modifier.padding(start = 8.dp)
 			) {
 				Text(
 					text = user.username,
@@ -80,8 +75,7 @@ fun ReviewHeader(
 		Text(
 			text = review.completionEnum?.displayName ?: review.completion,
 			style = MaterialTheme.typography.titleMedium,
-			modifier = Modifier
-				.padding(start = 8.dp)
+			modifier = Modifier.padding(start = 8.dp)
 		)
 	}
 }
