@@ -277,6 +277,25 @@ class IgdbClient(
 	}
 
 	/**
+	 * Top-rated games on a specific platform (by IGDB platform ID).
+	 */
+	suspend fun getGamesByPlatform(platformIgdbId: Int, limit: Int = 20): List<IgdbGameDto> {
+		return query(
+			endpoint = "games", body = """
+                fields name, summary,
+                       cover.image_id,
+                       genres.name,
+                       platforms.name,
+                       first_release_date,
+                       total_rating;
+                where platforms = [$platformIgdbId] & cover != null & total_rating_count > 50;
+                sort total_rating desc;
+                limit $limit;
+            """.trimIndent()
+		)
+	}
+
+	/**
 	 * Retrieves the full list of genres from IGDB.
 	 * Max 500 per request.
 	 */

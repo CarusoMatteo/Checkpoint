@@ -41,8 +41,7 @@ fun ExploreScreen(
 			selectedPlatformIds = state.selectedPlatformIds,
 			onGenreToggle = { vm.toggleGenreId(it) },
 			onPlatformToggle = { vm.togglePlatformId(it) },
-			onResetAll = { vm.clearFilters() }
-		)
+			onResetAll = { vm.clearFilters() })
 	}
 
 	SearchAppShell(
@@ -67,17 +66,14 @@ fun ExploreScreen(
 				navController.navigate(NavigationRoute.GamesGridScreen(title))
 			}
 
-			Column(
-				modifier = Modifier.verticalScroll(scrollState)
-			) {
-				// 1. Popular games
+			Column(modifier = Modifier.verticalScroll(scrollState)) {
+
+				// 1. Popular right now
 				if (state.popularGames.isNotEmpty()) {
 					LazyGamesCarousel(
 						title = "Popular right now",
 						games = state.popularGames,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
 						onSeeAllClick = { navigateToGrid("Popular right now", state.popularGames) })
 				}
 
@@ -87,9 +83,7 @@ fun ExploreScreen(
 						title = "Coming soon",
 						games = state.comingSoonGames,
 						hasStartingDivider = true,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
 						onSeeAllClick = { navigateToGrid("Coming soon", state.comingSoonGames) })
 				}
 
@@ -99,63 +93,56 @@ fun ExploreScreen(
 						title = "Recent releases",
 						games = state.recentReleases,
 						hasStartingDivider = true,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
 						onSeeAllClick = { navigateToGrid("Recent releases", state.recentReleases) })
 				}
 
-				// 4. Because you played...
+				// 4. Because you played (based on user's highest-rated review)
 				if (state.becauseYouPlayed.isNotEmpty()) {
 					LazyGamesCarousel(
-						title = "Because you played",
+						title = "Because you played \"${state.becauseYouPlayedGameName}\"",
 						games = state.becauseYouPlayed,
 						hasStartingDivider = true,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
 						onSeeAllClick = {
-							navigateToGrid("Because you played", state.becauseYouPlayed)
+							navigateToGrid(
+								"Because you played", state.becauseYouPlayed
+							)
 						})
 				}
 
-				// 5. The best on "Platform"
-				if (state.bestOnPlatform.isNotEmpty()) {
+				// 5. The best on PC
+				if (state.bestOnPc.isNotEmpty()) {
 					LazyGamesCarousel(
 						title = "The best on PC",
-						games = state.bestOnPlatform,
+						games = state.bestOnPc,
 						hasStartingDivider = true,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
-						onSeeAllClick = { navigateToGrid("The best on PC", state.bestOnPlatform) })
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
+						onSeeAllClick = { navigateToGrid("The best on PC", state.bestOnPc) })
 				}
 
-				// 6. Since you like "Genre"
+				// 6. The best on PS5
+				if (state.bestOnConsole.isNotEmpty()) {
+					LazyGamesCarousel(
+						title = "The best on PS5",
+						games = state.bestOnConsole,
+						hasStartingDivider = true,
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
+						onSeeAllClick = { navigateToGrid("The best on PS5", state.bestOnConsole) })
+				}
+
+				// 7. Since you like <genre> (based on user's first preferred genre)
 				if (state.sinceYouLikeGenre.isNotEmpty()) {
 					LazyGamesCarousel(
-						title = "Since you like RPG",
+						title = "Since you like ${state.sinceYouLikeGenreName}",
 						games = state.sinceYouLikeGenre,
 						hasStartingDivider = true,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
+						onGameClick = { navController.navigate(NavigationRoute.GameScreen(it)) },
 						onSeeAllClick = {
-							navigateToGrid("Since you like RPG", state.sinceYouLikeGenre)
-						})
-				}
-
-				// 7. Since you searched
-				if (state.searchQuery.isNotBlank() && state.searchResults.isNotEmpty()) {
-					LazyGamesCarousel(
-						title = "Since you searched \"${state.searchQuery}\"",
-						games = state.searchResults,
-						hasStartingDivider = true,
-						onGameClick = { igdbId ->
-							navController.navigate(NavigationRoute.GameScreen(igdbId))
-						},
-						onSeeAllClick = {
-							navigateToGrid("Since you searched", state.searchResults)
+							navigateToGrid(
+								"Since you like ${state.sinceYouLikeGenreName}",
+								state.sinceYouLikeGenre
+							)
 						})
 				}
 			}
@@ -174,12 +161,8 @@ fun ExploreScreen(
 					selectedGenreIds = state.selectedGenreIds,
 					selectedPlatformIds = state.selectedPlatformIds,
 					onGenreToggle = { vm.toggleGenreId(it) },
-					onPlatformToggle = { vm.togglePlatformId(it) }
-				)
+					onPlatformToggle = { vm.togglePlatformId(it) })
 			}
 		},
-		onSearch = { query ->
-			vm.onSearchQueryChange(query)
-		}
-	)
+		onSearch = { query -> vm.onSearchQueryChange(query) })
 }

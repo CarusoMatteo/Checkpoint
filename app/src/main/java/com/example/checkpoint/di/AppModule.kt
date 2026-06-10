@@ -137,7 +137,14 @@ val appModule = module {
 
 	// ── ViewModel
 
-	viewModel { ExploreViewModel(gameRepository = get()) }
+	viewModel {
+		ExploreViewModel(
+			gameRepository = get(),
+			reviewDao = get(),
+			sessionManager = get(),
+			genreDao = get()
+		)
+	}
 	viewModel { LoginViewModel(authRepository = get()) }
 	viewModel { SignUpViewModel(authRepository = get()) }
 	viewModel {
